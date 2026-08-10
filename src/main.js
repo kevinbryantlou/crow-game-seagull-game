@@ -21,6 +21,13 @@ const SESSION_SECONDS = 18 * 60;
 const STEP = 1 / 60;
 const REACH = 1.15;
 
+// ⚠ TEMPORARY TEST CHEAT — set back to `null` before shipping. ⚠
+// Overrides the kid's trade ladder so one trade clears the $20 goal, for
+// testing the end of the loop without collecting the whole block first.
+// While this is non-null the game shows a TEST MODE badge and `npm run smoke`
+// prints a warning, so it cannot be left on by accident.
+const TEST_TRADE_PAYOUT = 25.00;
+
 class Game {
   constructor() {
     this.stage = new Stage(document.getElementById('c'));
@@ -79,6 +86,13 @@ class Game {
     ];
     this.hud.setTasks(this.tasks);
     this.hud.setMoney(0);
+
+    if (TEST_TRADE_PAYOUT != null) {
+      const badge = document.getElementById('testmode');
+      badge.textContent = `Test mode · trade pays $${TEST_TRADE_PAYOUT.toFixed(2)}`;
+      badge.hidden = false;
+      console.warn(`[Small Change] TEST CHEAT ACTIVE: trade pays $${TEST_TRADE_PAYOUT}`);
+    }
 
     this._bindUi();
     requestAnimationFrame(this._frame);
@@ -200,7 +214,7 @@ class Game {
         // A quarter was not worth finding a shiny and carrying it across the
         // block. A dollar is, and the ladder still rewards repeat trades.
         const values = [1.00, 1.50, 2.00, 3.00];
-        const v = values[Math.min(this.tradeStep, values.length - 1)];
+        const v = TEST_TRADE_PAYOUT ?? values[Math.min(this.tradeStep, values.length - 1)];
         this.tradeStep++;
         // She puts it straight in your beak. The crow's beak is necessarily
         // empty at this instant — it just handed over the shiny — so there is

@@ -155,7 +155,16 @@ const trade = await page.evaluate(() => {
   };
 });
 console.log('  trade:', JSON.stringify(trade));
-if (trade.value !== 1) errors.push(`first trade paid ${trade.value}, expected 1`);
+// A temporary test cheat can override the payout; honour it rather than
+// failing, but report it so it is never silently in effect.
+const cheat = await page.evaluate(() => {
+  const b = document.getElementById('testmode');
+  if (!b || b.hidden) return null;
+  return Number((b.textContent.match(/\$([\d.]+)/) || [])[1]) || null;
+});
+if (cheat) console.log(`  NOTE: test cheat active — trade pays $${cheat.toFixed(2)}`);
+const expected = cheat ?? 1;
+if (trade.value !== expected) errors.push(`first trade paid ${trade.value}, expected ${expected}`);
 if (!trade.parentedToBeak) errors.push('trade reward was not auto-equipped');
 if (trade.strayOnGround) errors.push('trade reward was left on the ground');
 

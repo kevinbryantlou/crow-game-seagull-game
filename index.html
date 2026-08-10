@@ -121,6 +121,17 @@
   #prompt.on { display: block; }
   #prompt b { color: var(--brass); font-weight: 700; }
 
+  /* Visible while a test cheat is active, so it cannot be forgotten. */
+  #testmode {
+    position: absolute; top: calc(var(--safe-t) + 14px); left: 50%;
+    transform: translateX(-50%);
+    background: var(--red); color: #2a0f0a;
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    letter-spacing: .16em; text-transform: uppercase;
+    padding: 5px 12px; border-bottom: 2px solid #8f2e1f;
+  }
+  #testmode[hidden] { display: none; }
+
   /* ── control legend ────────────────────────────────────────────────────── */
   kbd, #controls .kbd {
     font-family: var(--mono); font-size: 9px; color: #14261f;
@@ -330,6 +341,7 @@
   <div id="stam"><i id="stam-fill"></i></div>
   <div id="prompt"></div>
   <div id="toast"></div>
+  <div id="testmode" hidden>Test mode</div>
 
   <div id="controls">
     <button id="controls-toggle" type="button" aria-expanded="true" aria-controls="controls-body">

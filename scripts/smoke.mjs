@@ -278,5 +278,15 @@ coin.bank(world.root.userData.nestGroup, 0);
 check('banked item lands in the nest', coin.root.parent === world.root.userData.nestGroup);
 check('banked item is marked taken', coin.taken === true);
 
+// Loud warning if a temporary test cheat is still wired in.
+const mainSrc = await import('node:fs').then((fs) => fs.readFileSync('src/main.js', 'utf8'));
+const cheat = mainSrc.match(/const TEST_TRADE_PAYOUT = ([^;]+);/);
+if (cheat && cheat[1].trim() !== 'null') {
+  console.log(`\n  ${'!'.repeat(60)}`);
+  console.log(`  TEST CHEAT ACTIVE — TEST_TRADE_PAYOUT = ${cheat[1].trim()}`);
+  console.log('  Set it back to null in src/main.js before shipping.');
+  console.log(`  ${'!'.repeat(60)}`);
+}
+
 console.log(`\n${failures === 0 ? 'PASS' : `FAIL — ${failures} failing check(s)`}\n`);
 process.exit(failures === 0 ? 0 : 1);
