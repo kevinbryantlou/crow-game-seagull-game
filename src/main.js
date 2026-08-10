@@ -21,12 +21,12 @@ const SESSION_SECONDS = 18 * 60;
 const STEP = 1 / 60;
 const REACH = 1.15;
 
-// ⚠ TEMPORARY TEST CHEAT — set back to `null` before shipping. ⚠
-// Overrides the kid's trade ladder so one trade clears the $20 goal, for
-// testing the end of the loop without collecting the whole block first.
-// While this is non-null the game shows a TEST MODE badge and `npm run smoke`
-// prints a warning, so it cannot be left on by accident.
-const TEST_TRADE_PAYOUT = 25.00;
+// Test hook: set to a number to override the kid's trade ladder, so one trade
+// clears the $20 goal and the end of the loop can be tested without collecting
+// the whole block first. Null in normal play. While it is non-null the game
+// shows a TEST MODE badge, `npm run smoke` prints a banner and startup logs a
+// warning, so it cannot be shipped by accident.
+const TEST_TRADE_PAYOUT = null;
 
 class Game {
   constructor() {

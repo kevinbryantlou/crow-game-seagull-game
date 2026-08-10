@@ -23,13 +23,15 @@ export function setEndingTitle(total) {
   const addLine = (text, cls) => {
     const line = document.createElement('span');
     line.className = `ln${cls ? ` ${cls}` : ''}`;
-    for (const word of text.split(' ')) {
+    const parts = text.split(' ');
+    parts.forEach((word, idx) => {
       const w = document.createElement('span');
-      w.className = 'w';
+      // The unit word — "dollars" / "cents" — is brass; the number is not.
+      w.className = idx === parts.length - 1 ? 'w u' : 'w';
       w.textContent = word;
       w.style.animationDelay = `${0.09 * i++}s`;
       line.append(w, document.createTextNode(' '));
-    }
+    });
     el.append(line);
   };
 

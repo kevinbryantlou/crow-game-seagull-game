@@ -271,6 +271,8 @@
     display: inline-block; color: inherit;
     animation: word-in .5s cubic-bezier(.2,.7,.3,1) both;
   }
+  /* The unit word carries the brass; the number itself stays cream. */
+  #ending-title .w.u { color: var(--brass); }
   @keyframes word-in {
     from { opacity: 0; transform: translateY(.34em) rotate(-1.5deg); }
     to   { opacity: 1; transform: none; }
