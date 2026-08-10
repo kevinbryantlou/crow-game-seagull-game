@@ -72,6 +72,32 @@ const meshCount = countMeshes(world.root);
 check('no mesh renders black from a missing color attribute',
   blackMeshes.length === 0, `(${blackMeshes.length} of ${meshCount} meshes)`);
 
+console.log('\nmoney in words');
+const { moneyInWords } = await import('../src/ui/words.js');
+const say = (n) => {
+  const { dollars, cents } = moneyInWords(n);
+  return [dollars, cents].filter(Boolean).join(', ');
+};
+for (const [amount, expected] of [
+  [20.00, 'twenty dollars'],
+  [22.66, 'twenty-two dollars, sixty-six cents'],
+  [20.01, 'twenty dollars, one cent'],
+  [21.00, 'twenty-one dollars'],
+  [33.95, 'thirty-three dollars, ninety-five cents'],
+  [1.00,  'one dollar'],
+  [0.05,  'five cents'],
+  [0.00,  'zero dollars'],
+  [40.10, 'forty dollars, ten cents'],
+  [115.15,'one hundred fifteen dollars, fifteen cents'],
+]) {
+  check(`$${amount.toFixed(2)} reads as "${expected}"`, say(amount) === expected, `(got "${say(amount)}")`);
+}
+// Floating-point sums of pennies must not drift into the wrong words.
+let drift = 0;
+for (let i = 0; i < 2066; i++) drift += 0.01;
+check('a sum of 2066 pennies still reads correctly',
+  say(drift) === 'twenty dollars, sixty-six cents', `(got "${say(drift)}")`);
+
 console.log('\nlevel-design rules');
 
 // Nothing may be built inside the fountain basin. A bench spawned in the water

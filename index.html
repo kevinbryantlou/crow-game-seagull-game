@@ -246,7 +246,32 @@
     letter-spacing: .16em; text-transform: uppercase; color: #6f8c80;
   }
 
-  #ending .title-h { font-size: clamp(42px, 11vw, 88px); }
+  #ending .title-h { font-size: clamp(30px, 7.5vw, 72px); }
+
+  /* The amount, spelled out and delivered a word at a time — the number is the
+     whole story, so it gets read rather than shown.
+     `.w` must take `color: inherit`: the generic `.title-h span` rule matches
+     the word spans too and would paint the whole headline brass. */
+  #ending-title .ln { display: block; color: var(--paper); }
+  #ending-title .ln.cents { color: var(--brass); }
+  #ending-title .w {
+    display: inline-block; color: inherit;
+    animation: word-in .5s cubic-bezier(.2,.7,.3,1) both;
+  }
+  @keyframes word-in {
+    from { opacity: 0; transform: translateY(.34em) rotate(-1.5deg); }
+    to   { opacity: 1; transform: none; }
+  }
+  #rank, #ending-body, #again { animation: fade-up .6s ease both; }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #ending-title .w, #rank, #ending-body, #again {
+      animation: none !important; opacity: 1; transform: none;
+    }
+  }
   #rank {
     font-family: var(--mono); font-size: 13px; letter-spacing: .16em;
     text-transform: uppercase; color: var(--brass); margin-top: 18px;
@@ -348,7 +373,7 @@
   <h1 class="title-h" id="ending-title">Twenty<span>Dollars</span></h1>
   <div id="rank"></div>
   <p id="ending-body"></p>
-  <button class="start" id="again">Again</button>
+  <button class="start" id="again">Again!</button>
 </div>
 
 <div id="loading">Building the block…</div>

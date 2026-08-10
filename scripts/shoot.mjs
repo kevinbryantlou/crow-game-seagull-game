@@ -154,6 +154,25 @@ const state = await page.evaluate(() => {
 });
 console.log('  hud:', JSON.stringify(state));
 
+// The ending screen, with a deliberately awkward amount.
+const ending = await page.evaluate(() => {
+  const g = window.__game;
+  g.total = 22.66; g.elapsed = 247; g.finished = false; g.running = true;
+  g._finish(true);
+  return {
+    title: document.getElementById('ending-title').textContent.replace(/\s+/g, ' ').trim(),
+    rank: document.getElementById('rank').textContent,
+    again: document.getElementById('again').textContent,
+  };
+});
+console.log('  ending:', JSON.stringify(ending));
+if (!/twenty-two dollars sixty-six cents/i.test(ending.title)) {
+  errors.push(`ending headline wrong: "${ending.title}"`);
+}
+if (/\$/.test(ending.rank)) errors.push(`amount still in the eyebrow: "${ending.rank}"`);
+await new Promise((r) => setTimeout(r, 1600));
+await shoot('10-ending');
+
 await browser.close();
 
 console.log('');

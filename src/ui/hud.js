@@ -6,7 +6,43 @@
  * See docs/style-guide.html §7.
  */
 
+import { moneyInWords } from './words.js';
+
 const $ = (id) => document.getElementById(id);
+
+/**
+ * Spell the final amount across the ending headline, one word at a time.
+ * Dollars on the first line, cents on the second in brass.
+ */
+export function setEndingTitle(total) {
+  const el = $('ending-title');
+  const { dollars, cents } = moneyInWords(total);
+  el.textContent = '';
+
+  let i = 0;
+  const addLine = (text, cls) => {
+    const line = document.createElement('span');
+    line.className = `ln${cls ? ` ${cls}` : ''}`;
+    for (const word of text.split(' ')) {
+      const w = document.createElement('span');
+      w.className = 'w';
+      w.textContent = word;
+      w.style.animationDelay = `${0.09 * i++}s`;
+      line.append(w, document.createTextNode(' '));
+    }
+    el.append(line);
+  };
+
+  if (dollars) addLine(dollars);
+  if (cents) addLine(cents, 'cents');
+
+  // Everything below the headline waits for the words to finish landing.
+  const after = `${0.09 * i + 0.25}s`;
+  for (const id of ['rank', 'ending-body', 'again']) {
+    const node = $(id);
+    if (node) node.style.animationDelay = after;
+  }
+}
 
 export class Hud {
   constructor(goal) {

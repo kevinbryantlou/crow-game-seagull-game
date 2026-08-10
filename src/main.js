@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { Stage } from './render/stage.js';
 import { Input } from './core/input.js';
 import { Audio } from './core/audio.js';
-import { Hud } from './ui/hud.js';
+import { Hud, setEndingTitle } from './ui/hud.js';
 import { buildLevel } from './world/level.js';
 import { Crow } from './entities/crow.js';
 import { Human, Pigeon } from './entities/human.js';
@@ -297,10 +297,10 @@ class Game {
     const title = document.getElementById('ending-title');
     const body = document.getElementById('ending-body');
     document.getElementById('rank').textContent =
-      `${rank} · ${mins}m ${String(secs).padStart(2, '0')}s · $${this.total.toFixed(2)}`;
+      `${rank} · ${mins}m ${String(secs).padStart(2, '0')}s`;
 
     if (won) {
-      title.innerHTML = 'Twenty<span>Dollars</span>';
+      setEndingTitle(this.total);
       body.innerHTML = 'The last coin lands in the nest and the weight of it goes through you '
         + 'like a held breath let go. Fingers. Shoulders. The ache of standing up.<br><br>'
         + 'The first thing you see, from the top of a war memorial you have no business being on, '
