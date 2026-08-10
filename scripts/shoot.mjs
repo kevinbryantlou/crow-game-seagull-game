@@ -101,6 +101,46 @@ await drive(['d', ' '], 2600);
 await drive(['d'], 1600);
 await shoot('05-cart-corner');
 
+/** Put the crow somewhere specific and photograph it, for spot checks. */
+const look = async (name, x, y, z) => {
+  const ok = await page.evaluate(([px, py, pz]) => {
+    if (!window.__game) return false;
+    window.__game.crow.pos.set(px, py, pz);
+    window.__game.crow.vel.set(0, 0, 0);
+    return true;
+  }, [x, y, z]);
+  if (!ok) { errors.push('no __game handle for spot checks'); return; }
+  await new Promise((r) => setTimeout(r, 900));   // let the camera settle
+  await shoot(name);
+};
+
+await look('06-newsstand', 11, 2.2, 10.5);
+await look('07-cart', 15, 2.0, -2.0);
+await look('08-nest', -12.5, 5.0, -6.5);
+await look('09-kid', -17.5, 0, 11.5);
+
+// Functional check: trading a shiny must put the reward straight in the beak,
+// never on the ground where scenery can hide it.
+const trade = await page.evaluate(() => {
+  const g = window.__game;
+  const shiny = g.pickups.find((p) => p.kind === 'shiny' && !p.taken);
+  if (!shiny) return { error: 'no shiny available' };
+  shiny.setCarried(g.crow.grip);
+  g.crow.carried = shiny;
+  g._doAction({ kind: 'trade' });
+  const reward = g.crow.carried;
+  return {
+    carrying: reward ? reward.label : null,
+    value: reward ? reward.value : 0,
+    parentedToBeak: !!reward && reward.root.parent === g.crow.grip,
+    strayOnGround: g.pickups.filter((p) => p.id >= 900 && p.state === 'world').length,
+  };
+});
+console.log('  trade:', JSON.stringify(trade));
+if (trade.value !== 1) errors.push(`first trade paid ${trade.value}, expected 1`);
+if (!trade.parentedToBeak) errors.push('trade reward was not auto-equipped');
+if (trade.strayOnGround) errors.push('trade reward was left on the ground');
+
 // Look at what the crow can see right now.
 const state = await page.evaluate(() => {
   const amt = document.getElementById('amt')?.textContent;

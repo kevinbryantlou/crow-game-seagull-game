@@ -88,7 +88,7 @@ class Game {
       document.getElementById('title').classList.add('hidden');
       this.running = true;
       this._last = performance.now();
-      this.hud.beginControlsCountdown(25);
+      this.hud.beginControlsCountdown(10);
       setTimeout(() => { if (this.running) this.hud.toast('Find the shine', 2.2); }, 900);
     };
     document.getElementById('start').addEventListener('click', start);
@@ -187,16 +187,22 @@ class Game {
         this.crow.carried = null;
         p.taken = true;
         p.root.visible = false;
-        const values = [0.25, 0.50, 1.00, 2.00];
+        // A quarter was not worth finding a shiny and carrying it across the
+        // block. A dollar is, and the ladder still rewards repeat trades.
+        const values = [1.00, 1.50, 2.00, 3.00];
         const v = values[Math.min(this.tradeStep, values.length - 1)];
         this.tradeStep++;
-        // She puts a coin on the bench for you.
+        // She puts it straight in your beak. The crow's beak is necessarily
+        // empty at this instant — it just handed over the shiny — so there is
+        // no reason to make the player hunt for a coin on the ground, where
+        // the bench and the trees can hide it.
         const coin = new Pickup({
-          kind: v >= 1 ? 'coins' : 'quarter', value: v, id: 900 + this.tradeStep,
+          kind: 'coins', value: v, id: 900 + this.tradeStep,
           pos: [this.kid.pos.x + 0.9, 0.70, this.kid.pos.z + 0.5],
         });
-        this.stage.scene.add(coin.root);
         this.pickups.push(coin);
+        coin.setCarried(this.crow.grip);
+        this.crow.carried = coin;
         this.audio.ding();
         this.hud.toast(`She gives you $${v.toFixed(2)}`, 1.8);
         this._tick('trade');
@@ -382,7 +388,11 @@ class Game {
 // A thrown error during construction would otherwise leave a black screen with
 // the reason only in the console — which is no use at all on a phone.
 try {
-  new Game();
+  const game = new Game();
+  // Dev-only handle so scripts/shoot.mjs can inspect any part of the block
+  // instead of only wherever the crow happens to have flown. Stripped from
+  // production builds by Vite's dead-code elimination.
+  if (import.meta.env?.DEV) window.__game = game;
 } catch (err) {
   console.error(err);
   const el = document.getElementById('loading');

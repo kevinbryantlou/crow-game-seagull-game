@@ -132,6 +132,47 @@ const buried = pickups.filter((p) => world.colliders.some((c) => {
 check('no pickup is buried inside solid geometry', buried.length === 0,
   `(${buried.map((p) => p.label).join(', ')})`);
 
+/**
+ * The camera never rotates, so whether a pickup can be seen is a fixed property
+ * of where it sits — not something that varies with play. Cast a ray from each
+ * pickup along the one sightline the game ever uses (38 deg pitch, 25 deg yaw)
+ * and see whether solid, non-fading geometry stands in the way.
+ *
+ * Registered occluders are exempt: they fade to a silhouette when they come
+ * between the camera and the crow. Transparent things are exempt too — you can
+ * see the wishing coins through the water.
+ */
+const PITCH = (38 * Math.PI) / 180, YAW = (25 * Math.PI) / 180;
+const toCamera = new THREE.Vector3(
+  Math.sin(YAW) * Math.cos(PITCH), Math.sin(PITCH), Math.cos(YAW) * Math.cos(PITCH),
+).normalize();
+
+// Raycasting reads matrixWorld, which is only refreshed during a render. With
+// no renderer here it has to be done by hand, or every hit is computed against
+// an identity transform and the results are quietly meaningless.
+world.root.updateMatrixWorld(true);
+
+const fading = new Set(world.occluders.filter(Boolean));
+const opaque = [];
+world.root.traverse((o) => {
+  if (!o.isMesh || fading.has(o)) return;
+  const m = Array.isArray(o.material) ? o.material[0] : o.material;
+  if (m && m.transparent && m.opacity < 0.9) return;
+  opaque.push(o);
+});
+
+const ray = new THREE.Raycaster();
+ray.far = 40;
+const hidden = [];
+for (const p of pickups) {
+  const from = p.home.clone().addScaledVector(toCamera, 0.06);
+  ray.set(from, toCamera);
+  const hit = ray.intersectObjects(opaque, false);
+  if (hit.length) hidden.push(`${p.label} behind ${hit[0].object.geometry.type}`);
+}
+check('no pickup is hidden from the fixed camera', hidden.length === 0,
+  `(${hidden.join('; ')})`);
+
 const money = pickups.reduce((a, p) => a + p.value, 0);
 const free = pickups.filter((p) => !p.owner && !p.inWater && p.value > 0)
   .reduce((a, p) => a + p.value, 0);

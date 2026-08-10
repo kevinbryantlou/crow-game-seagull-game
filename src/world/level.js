@@ -279,7 +279,7 @@ export function buildLevel() {
 
   addTree(-28, -7);
   addTree(-27.5, 9, 0.9);
-  addTree(-14, 11, 1.05);
+  addTree(-11.5, 12.5, 1.05);   // clear of the kid's bench and its sightline
   addTree(4, -9, 0.95);
   addTree(21, 10.5);
   addPlanter(-17, -8.5);
@@ -406,13 +406,13 @@ export function buildLevel() {
     // The canopy sits high enough to leave headroom over the counter. At its
     // old height its collider band swallowed the counter top, so anything
     // resting there could not be reached at all.
-    g.add(at(box(3.8, 0.16, 2.6, PAL.cloth[4], { up: PAL.clothLit[4], down: PAL.shade }), 0, 3.05, 0.4));
+    g.add(at(box(3.8, 0.16, 2.6, PAL.cloth[4], { up: PAL.clothLit[4], down: PAL.shade }), 0, 3.05, 1.15));
     for (const px of [-1.7, 1.7]) {
-      g.add(at(cyl(0.06, 0.06, 1.4, 5, PAL.steel, { up: PAL.steel, down: PAL.steelDark }), px, 2.32, 1.6));
+      g.add(at(cyl(0.06, 0.06, 1.4, 5, PAL.steel, { up: PAL.steel, down: PAL.steelDark }), px, 2.32, 2.3));
     }
     g.add(at(box(3.0, 0.1, 0.7, PAL.barkShade, { up: PAL.bark }), 0, 1.35, -1.0));
     // The till, moved off the hot dog cart.
-    g.add(at(box(0.52, 0.26, 0.38, PAL.steelDark, { up: PAL.steel, down: PAL.shade }), 1.0, 2.33, 0.55));
+    g.add(at(box(0.52, 0.26, 0.38, PAL.steelDark, { up: PAL.steel, down: PAL.shade }), 1.0, 2.33, -0.55));
     for (let i = 0; i < 5; i++) {
       const mag = box(0.42, 0.03, 0.58, PAL.cloth[i % 5], { shadow: false });
       mag.position.set(-1.2 + i * 0.6, 1.42, -1.0);
@@ -423,8 +423,8 @@ export function buildLevel() {
     g.rotation.y = Math.PI;
     root.add(g);
     solid(11, 7.5, 3.4, 1.8, 2.2);
-    solid(11, 6.5, 3.8, 2.6, 3.13, 2.97);
-    perches.push({ x: 11, y: 3.13, z: 6.9 });
+    solid(11, 6.35, 3.8, 2.6, 3.13, 2.97);
+    perches.push({ x: 11, y: 3.13, z: 6.35 });
   }
 
   // Bins
@@ -516,7 +516,7 @@ function pickupPlacements({ FOUNTAIN, CART, CASE, tableTops }) {
 
   // — Fountain Plaza: free money, deliberately easy, teaches the loop —
   const scatter = [
-    ['penny', -26, 3.5], ['penny', -18.5, 5.2], ['penny', -29, 1], ['penny', -24, -6.5],
+    ['penny', -24, 7.5], ['penny', -18.5, 5.2], ['penny', -30.5, 2], ['penny', -24, -6.5],
     ['penny', -15, 2.2], ['penny', -20, 8.5], ['penny', -28.5, -3], ['penny', -13, 6],
     ['penny', -16.5, -3.5], ['penny', -22, 9.5],
   ];
@@ -525,9 +525,9 @@ function pickupPlacements({ FOUNTAIN, CART, CASE, tableTops }) {
   for (const [x, z] of [[-21, 11], [-29.5, -6], [-15.5, 8.5], [-11, 3]]) add('dime', 0.10, x, 0.06, z);
 
   // Wishing coins — on the fountain floor, so you have to go in.
-  for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2 + 0.4;
-    const r = 1.4 + (i % 3) * 1.1;
+  const WISHING = [[20, 3.0], [80, 3.6], [140, 3.0], [200, 3.6], [260, 4.3], [320, 3.6]];
+  for (const [deg, r] of WISHING) {
+    const a = (deg * Math.PI) / 180;
     add('quarter', 0.25, FOUNTAIN.x + Math.cos(a) * r, FOUNTAIN.rim - 0.28, FOUNTAIN.z + Math.sin(a) * r, { inWater: true });
   }
 
@@ -551,15 +551,15 @@ function pickupPlacements({ FOUNTAIN, CART, CASE, tableTops }) {
   // dip. The cart now tells one story — the ten, and the hot dog that gets you
   // to it — and the cash moved to the newsstand, which gives the newsagent
   // something worth guarding instead of a lone dollar.
-  add('bill1', 1.00, 11.6, 2.28, 6.7, { owner: 'newsagent' });
-  add('bill5', 5.00, 10.0, 2.50, 6.95, { owner: 'newsagent', label: 'CASH TIN' });
+  add('bill1', 1.00, 11.9, 2.28, 8.05, { owner: 'newsagent' });
+  add('bill5', 5.00, 10.0, 2.50, 8.05, { owner: 'newsagent', label: 'CASH TIN' });
   // Hanging on the far end of the cart, not worn — the vendor walks away during
   // the pigeon distraction, and the ten has to stay put when he does.
   add('bill10', 10.00, CART.x + 1.15, 1.18, CART.z + 0.94, { owner: 'vendor', label: 'APRON POCKET' });
 
   // — Shinies: worthless, tradeable —
   add('shiny', 0, -27.5, 0.07, 3.5, { shinyKind: 'cap' });
-  add('shiny', 0, FOUNTAIN.x - 1.5, FOUNTAIN.rim - 0.28, FOUNTAIN.z + 1.8, { inWater: true, shinyKind: 'ring' });
+  add('shiny', 0, FOUNTAIN.x + 1.2, FOUNTAIN.rim - 0.28, FOUNTAIN.z - 1.0, { inWater: true, shinyKind: 'ring' });
   add('shiny', 0, tableTops[1].x + 0.2, tableTops[1].y + 0.04, tableTops[1].z - 0.15, { shinyKind: 'marble' });
   add('shiny', 0, 26.0, 0.07, 7.4, { shinyKind: 'key' });
 
@@ -592,9 +592,9 @@ function humanPlacements({ CART, CASE }) {
     },
     {
       id: 'newsagent', name: 'newsagent', cloth: 4, skin: 3, hair: 3,
-      pos: [11, 0, 8.6], home: [11, 0, 8.6],
-      patrol: null, speed: 1.2, chaseSpeed: 3.6, viewDist: 8, viewCos: 0.3, guardRadius: 2.8, alertness: 0.9,
-      faces: [0, -1],
+      pos: [12.3, 0, 8.6], home: [12.3, 0, 8.6],
+      patrol: null, speed: 1.2, chaseSpeed: 3.6, viewDist: 8, viewCos: 0.3, guardRadius: 3.0, alertness: 0.9,
+      faces: [-0.5, -1],
     },
     {
       id: 'phone', name: 'someone on their phone', cloth: 2, skin: 0, hair: 1,
