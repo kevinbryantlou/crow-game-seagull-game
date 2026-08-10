@@ -1,0 +1,731 @@
+<title>Small Change — Art Direction &amp; Style Guide</title>
+<style>
+  :root {
+    --paper:      #E9E5DA;
+    --paper-2:    #DFDACB;
+    --ink:        #141C18;
+    --ink-soft:   #3E4A44;
+    --nickel:     #8B948F;
+    --rule:       #C3BFB1;
+    --enamel:     #1F4D3D;
+    --brass:      #A87C22;
+    --brass-lit:  #C79A34;
+    --sheen:      #4B4B7A;
+    --band-text:  #EDEAE0;
+    --band-dim:   #9FB5AB;
+    --chip-bg:    #D7D2C2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#131815; --paper-2:#1A211D; --ink:#E4E2D7; --ink-soft:#A3ADA6;
+      --nickel:#7C857F; --rule:#2C3630; --enamel:#16332A; --brass:#D2A644;
+      --brass-lit:#E0B85C; --sheen:#8A8AC4; --band-text:#E4E2D7; --band-dim:#7E9A8D;
+      --chip-bg:#212925;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#131815; --paper-2:#1A211D; --ink:#E4E2D7; --ink-soft:#A3ADA6;
+    --nickel:#7C857F; --rule:#2C3630; --enamel:#16332A; --brass:#D2A644;
+    --brass-lit:#E0B85C; --sheen:#8A8AC4; --band-text:#E4E2D7; --band-dim:#7E9A8D;
+    --chip-bg:#212925;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper); color: var(--ink); margin: 0;
+    font-family: Charter, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-size: 17px; line-height: 1.62; -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: Menlo, ui-monospace, "SF Mono", Consolas, monospace; font-size: .82em; }
+
+  .band {
+    background: var(--enamel); color: var(--band-text);
+    padding: 3.2rem 1.5rem 2.4rem; border-bottom: 6px solid var(--brass);
+  }
+  .band-inner { max-width: 62rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1rem; }
+  .eyebrow {
+    font-family: Menlo, ui-monospace, monospace; font-size: .72rem;
+    letter-spacing: .22em; text-transform: uppercase; color: var(--band-dim);
+  }
+  h1.title {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700; font-size: clamp(2.6rem, 9vw, 5.4rem); line-height: .88;
+    text-transform: uppercase; margin: 0; letter-spacing: .005em;
+  }
+  h1.title .thin { display: block; color: var(--brass-lit); }
+  .deck { font-size: 1.1rem; max-width: 36rem; opacity: .88; margin: 0; }
+
+  main { max-width: 62rem; margin: 0 auto; padding: 0 1.5rem 6rem; }
+  .col { max-width: 38rem; }
+  section { padding-top: 3.4rem; }
+  section > * + * { margin-top: 1rem; }
+
+  h2 {
+    font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase;
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem); line-height: 1.05;
+    margin: 0 0 .2rem; padding-bottom: .55rem; border-bottom: 2px solid var(--ink);
+    display: flex; align-items: baseline; gap: .7rem;
+  }
+  h2 .sec { font-family: Menlo, monospace; font-size: .7rem; font-weight: 400; letter-spacing: .12em; color: var(--brass); flex: none; }
+  h3 {
+    font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    font-size: .95rem; margin: 1.8rem 0 .3rem;
+  }
+  p { margin: 0; } section p + p { margin-top: .85rem; }
+  ul { margin: .2rem 0; padding-left: 1.15rem; } li { margin: .3rem 0; }
+  li::marker { color: var(--nickel); }
+  em.term { font-style: normal; font-weight: 700; color: var(--sheen); }
+
+  .exhibit { margin: 2rem 0 0; }
+  .exhibit-cap {
+    font-family: Menlo, monospace; font-size: .68rem; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--nickel); margin-top: .6rem;
+  }
+  .plate { background: var(--paper-2); border: 1px solid var(--rule); padding: 1.2rem; overflow-x: auto; }
+  .plate svg { display: block; width: 100%; height: auto; min-width: 30rem; }
+  .plate.sky { background: linear-gradient(#8FB4C4, #F2C879); border-color: var(--rule); }
+
+  /* ---------- palette ---------- */
+  .ramp { display: grid; grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr)); gap: 0; border: 1px solid var(--rule); overflow: hidden; }
+  .sw { display: flex; flex-direction: column; }
+  .sw .chip { height: 5.2rem; }
+  .sw .meta { padding: .55rem .6rem .7rem; background: var(--paper-2); border-top: 1px solid var(--rule); display: flex; flex-direction: column; gap: .12rem; }
+  .sw .nm { font-family: "Avenir Next Condensed","Arial Narrow",sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; font-size: .82rem; line-height: 1.15; }
+  .sw .hx { font-family: Menlo, monospace; font-size: .66rem; color: var(--brass); letter-spacing: .06em; }
+  .sw .us { font-size: .72rem; color: var(--ink-soft); line-height: 1.35; }
+  .ramp-title {
+    font-family: Menlo, monospace; font-size: .66rem; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--ink-soft); margin: 1.6rem 0 .5rem;
+    padding-bottom: .3rem; border-bottom: 1px solid var(--rule);
+  }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--rule); background: var(--paper-2); }
+  table { border-collapse: collapse; width: 100%; min-width: 32rem; font-size: .92rem; }
+  th, td { text-align: left; padding: .6rem .85rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-family: Menlo, monospace; font-size: .66rem; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-soft); background: var(--chip-bg);
+    border-bottom: 2px solid var(--ink); white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.k { font-family: Menlo, monospace; font-size: .78rem; white-space: nowrap; color: var(--brass); }
+
+  .note { border-left: 4px solid var(--brass); background: var(--paper-2); padding: .9rem 1.1rem; font-size: .95rem; }
+  .note .lbl { font-family: Menlo, monospace; font-size: .66rem; letter-spacing: .16em; text-transform: uppercase; color: var(--brass); display: block; margin-bottom: .25rem; }
+
+  .dd { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 0; border: 1px solid var(--rule); }
+  .dd > div { padding: 1rem 1.15rem; }
+  .dd > div + div { border-left: 1px solid var(--rule); }
+  .dd h4 { font-family: Menlo, monospace; font-weight: 400; font-size: .66rem; letter-spacing: .16em; text-transform: uppercase; margin: 0 0 .5rem; color: var(--ink-soft); }
+  .dd ul { padding-left: 1rem; font-size: .9rem; }
+  .dd .do { background: var(--paper-2); }
+
+  footer {
+    border-top: 2px solid var(--ink); margin-top: 4rem; padding-top: 1rem;
+    font-family: Menlo, monospace; font-size: .7rem; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--nickel);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+  }
+  @media (max-width: 40rem) {
+    body { font-size: 16px; }
+    .dd > div + div { border-left: 0; border-top: 1px solid var(--rule); }
+    .plate svg { min-width: 26rem; }
+  }
+</style>
+
+<header class="band">
+  <div class="band-inner">
+    <div class="eyebrow">Art Direction &amp; Style Guide &nbsp;·&nbsp; v1.0</div>
+    <h1 class="title">Late Afternoon<span class="thin">Municipal</span></h1>
+    <p class="deck">Flat-shaded, untextured, low-poly. A public plaza at the hour when the
+      light goes orange and the shadows go violet — and one bird in it that the light
+      refuses to flatter.</p>
+  </div>
+</header>
+
+<main>
+
+  <section id="direction">
+    <h2><span class="sec">§1</span> The direction</h2>
+    <div class="col">
+      <p>Untitled Goose Game is a soft English garden: pastel, hazy, tidy, no hard edges.
+      That works because a goose in a manicured village is funny by contrast. Our crow is not
+      out of place — a crow on a city block is the most natural thing in the world — so the
+      comedy has to come from somewhere else, and the art has to do a different job.</p>
+
+      <p>So: not a garden. A <em class="term">municipal plaza at golden hour</em>. Poured
+      concrete, painted steel, a war memorial nobody reads, a fountain full of other
+      people's wishes. Everything is warm, dusty and slightly civic — and every surface is
+      lit by a low sun that makes cheap concrete look expensive.</p>
+
+      <p>The palette is built on one relationship: <strong>warm sunlit faces, violet shade.</strong>
+      Not grey shade, not black shade. Every shadow in the game leans blue-violet, which
+      makes the golden light read as genuinely golden and gives us a free way to keep the
+      crow legible — he is the one thing that stays dark in the light and darkest in the shade.</p>
+    </div>
+    <div class="note col">
+      <span class="lbl">One-sentence direction</span>
+      A diorama of a real city block, carved out of coloured paper and lit by a sun that is
+      about to leave.
+    </div>
+  </section>
+
+  <section id="palette">
+    <h2><span class="sec">§2</span> Palette</h2>
+    <div class="col">
+      <p>Twenty-six values, no textures, no gradients on geometry. Every colour in the build
+      comes from one file — <span class="mono">src/render/palette.js</span> — and this page
+      is generated from the same values, so if the game looks different from this document,
+      the document is wrong.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="ramp-title">Ground &amp; architecture</div>
+      <div class="ramp">
+        <div class="sw"><div class="chip" style="background:#D8C6A8"></div><div class="meta"><span class="nm">Sunlit paving</span><span class="hx">#D8C6A8</span><span class="us">Default ground. Warm sandstone.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#BFA98A"></div><div class="meta"><span class="nm">Paving mid</span><span class="hx">#BFA98A</span><span class="us">Kerbs, steps, slab variation.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#6E6478"></div><div class="meta"><span class="nm">Violet shade</span><span class="hx">#6E6478</span><span class="us">Every cast shadow. Never grey.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#B4643C"></div><div class="meta"><span class="nm">Terracotta</span><span class="hx">#B4643C</span><span class="us">Brick, the cart, planters.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#8A8F98"></div><div class="meta"><span class="nm">Civic steel</span><span class="hx">#8A8F98</span><span class="us">Railings, poles, scaffolding.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#E4DACB"></div><div class="meta"><span class="nm">Stone light</span><span class="hx">#E4DACB</span><span class="us">Memorial, fountain rim.</span></div></div>
+      </div>
+
+      <div class="ramp-title">Planting &amp; water</div>
+      <div class="ramp">
+        <div class="sw"><div class="chip" style="background:#7FA05C"></div><div class="meta"><span class="nm">Sage canopy</span><span class="hx">#7FA05C</span><span class="us">Tree crowns, hedge tops.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#4E6B3E"></div><div class="meta"><span class="nm">Canopy shade</span><span class="hx">#4E6B3E</span><span class="us">Undersides. One step, not a gradient.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#8C6E4A"></div><div class="meta"><span class="nm">Bark</span><span class="hx">#8C6E4A</span><span class="us">Trunks, benches, the newsstand.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#4E9BB0"></div><div class="meta"><span class="nm">Fountain water</span><span class="hx">#4E9BB0</span><span class="us">Flat, faintly animated normal-free plane.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#7FC4D2"></div><div class="meta"><span class="nm">Water lit</span><span class="hx">#7FC4D2</span><span class="us">Ripple crests, splash particles.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#2E8C8C"></div><div class="meta"><span class="nm">Awning teal</span><span class="hx">#2E8C8C</span><span class="us">Café awning. The one cool accent at height.</span></div></div>
+      </div>
+
+      <div class="ramp-title">The crow</div>
+      <div class="ramp">
+        <div class="sw"><div class="chip" style="background:#1E1A24"></div><div class="meta"><span class="nm">Feather base</span><span class="hx">#1E1A24</span><span class="us">Body. Near-black, violet-biased.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#3C3A63"></div><div class="meta"><span class="nm">Sheen</span><span class="hx">#3C3A63</span><span class="us">Back &amp; wing top-faces only. The tell.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#0F0D14"></div><div class="meta"><span class="nm">Feather shade</span><span class="hx">#0F0D14</span><span class="us">Underside, tail undercut.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#2A2530"></div><div class="meta"><span class="nm">Beak &amp; feet</span><span class="hx">#2A2530</span><span class="us">Slightly warmer than the body.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#E8E2D2"></div><div class="meta"><span class="nm">Eye</span><span class="hx">#E8E2D2</span><span class="us">Bone white. Only bright value on the bird.</span></div></div>
+      </div>
+
+      <div class="ramp-title">Money, people, sky</div>
+      <div class="ramp">
+        <div class="sw"><div class="chip" style="background:#E0B348"></div><div class="meta"><span class="nm">Coin gold</span><span class="hx">#E0B348</span><span class="us">Pennies, the glint, all HUD money.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#C9CDD2"></div><div class="meta"><span class="nm">Coin silver</span><span class="hx">#C9CDD2</span><span class="us">Nickels, dimes, quarters.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#5E8C63"></div><div class="meta"><span class="nm">Bill green</span><span class="hx">#5E8C63</span><span class="us">Notes. Deliberately desaturated.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#D95F4C"></div><div class="meta"><span class="nm">Person red</span><span class="hx">#D95F4C</span><span class="us">Clothing block A — the waiter.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#3F5F8C"></div><div class="meta"><span class="nm">Person blue</span><span class="hx">#3F5F8C</span><span class="us">Clothing block B.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#F2C879"></div><div class="meta"><span class="nm">Sun haze</span><span class="hx">#F2C879</span><span class="us">Horizon, fog colour, sky low.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#8FB4C4"></div><div class="meta"><span class="nm">Sky high</span><span class="hx">#8FB4C4</span><span class="us">Zenith. Cool, to sell the warm ground.</span></div></div>
+        <div class="sw"><div class="chip" style="background:#4A3F5C"></div><div class="meta"><span class="nm">Dusk</span><span class="hx">#4A3F5C</span><span class="us">End-of-session sky and ambient.</span></div></div>
+      </div>
+    </div>
+    <div class="exhibit-cap">Exhibit A — full palette. The crow's five values are the only near-blacks in the game; nothing else is permitted below #4A3F5C.</div>
+  </section>
+
+  <section id="light">
+    <h2><span class="sec">§3</span> Light and shading</h2>
+    <div class="col">
+      <p>Flat shading only — <span class="mono">flatShading: true</span> on every material,
+      no smooth normals anywhere. Each triangle takes exactly one value, which is what makes
+      a low-poly model read as carved rather than cheap.</p>
+
+      <h3>The rig</h3>
+      <ul>
+        <li><strong>One key light.</strong> Directional, low, warm <span class="mono">#FFD9A0</span>,
+          coming from behind-left of camera at about 22° elevation. It casts the only shadows.</li>
+        <li><strong>Hemisphere fill.</strong> Sun haze above, violet bounce below. This is
+          what stops shade going grey — the bounce colour <em>is</em> the shadow colour.</li>
+        <li><strong>No specular.</strong> Lambert only. The single exception is the crow's
+          sheen, which is faked with a flat colour on upward-facing faces, not with a shader.</li>
+        <li><strong>Fog</strong> matched to sun haze, starting far out, so the block edges
+          dissolve instead of ending.</li>
+      </ul>
+
+      <h3>Three tones, no more</h3>
+      <p>Any object may show a lit face, a mid face and a shade face. Anything that needs a
+      fourth value is over-modelled. This keeps silhouettes readable at phone size, which is
+      the real constraint the whole style is built around.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate">
+        <svg viewBox="0 0 900 260" role="img" aria-label="Shading model diagram showing key light direction, three tone steps and violet shadow">
+          <!-- sun -->
+          <circle cx="96" cy="62" r="26" fill="#F2C879"/>
+          <g stroke="#E0B348" stroke-width="2.5" opacity=".85">
+            <path d="M 96 20 V 4"/><path d="M 138 62 H 154"/><path d="M 126 32 L 138 20"/><path d="M 126 92 L 138 104"/>
+          </g>
+          <g stroke="#E0B348" stroke-width="2" opacity=".55" stroke-dasharray="6 6">
+            <path d="M 124 84 L 300 190"/><path d="M 124 62 L 320 150"/>
+          </g>
+          <text x="96" y="118" font-family="Menlo,monospace" font-size="10" letter-spacing="1.4" fill="currentColor" opacity=".6" text-anchor="middle">KEY · 22°</text>
+
+          <!-- cube: lit / mid / shade -->
+          <polygon points="360,140 452,110 544,140 452,172" fill="#E4DACB"/>
+          <polygon points="360,140 452,172 452,236 360,204" fill="#BFA98A"/>
+          <polygon points="544,140 452,172 452,236 544,204" fill="#6E6478"/>
+          <!-- cast shadow -->
+          <polygon points="452,236 544,204 660,242 566,278" fill="#6E6478" opacity=".55"/>
+          <g font-family="Menlo,monospace" font-size="10" letter-spacing="1.2" fill="currentColor" opacity=".7">
+            <text x="452" y="100" text-anchor="middle">LIT #E4DACB</text>
+            <text x="352" y="196" text-anchor="end">MID #BFA98A</text>
+            <text x="556" y="182">SHADE #6E6478</text>
+            <text x="614" y="272">CAST — SAME VIOLET</text>
+          </g>
+
+          <!-- wrong example -->
+          <polygon points="740,140 790,124 840,140 790,156" fill="#C9C9C9"/>
+          <polygon points="740,140 790,156 790,196 740,180" fill="#9A9A9A"/>
+          <polygon points="840,140 790,156 790,196 840,180" fill="#4A4A4A"/>
+          <text x="790" y="222" font-family="Menlo,monospace" font-size="10" letter-spacing="1.2" fill="currentColor" opacity=".7" text-anchor="middle">✕ NEUTRAL GREY</text>
+          <text x="790" y="240" font-family="Menlo,monospace" font-size="9" fill="currentColor" opacity=".45" text-anchor="middle">reads as unlit, not shaded</text>
+        </svg>
+      </div>
+      <div class="exhibit-cap">Exhibit B — the three-tone model. The right-hand cube is the failure case: correct values, no hue in the shade, and the sun stops existing.</div>
+    </div>
+  </section>
+
+  <section id="crow">
+    <h2><span class="sec">§4</span> The crow</h2>
+    <div class="col">
+      <p>He is a wedge with a hinge in it. Deep chest, short neck, heavy head, and a beak
+      that is unreasonably large because the beak is the cursor — every interaction in the
+      game happens at its tip, so the player's eye needs to find it instantly.</p>
+
+      <p>Roughly 220 triangles. Proportions are pushed past real corvid anatomy in exactly
+      two places: the head is about 30% oversized, and the legs are stubbier and further
+      back, which is what produces the indignant forward-tilted walk.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate sky">
+        <svg viewBox="0 0 900 300" role="img" aria-label="Character sheet: crow in side, front, walking, flying and carrying poses">
+
+          <!-- ============ SIDE ============ -->
+          <g transform="translate(20,40)">
+            <ellipse cx="105" cy="196" rx="72" ry="9" fill="#6E6478" opacity=".4"/>
+            <polygon points="26,120 12,104 8,140 34,144" fill="#0F0D14"/>
+            <polygon points="26,120 58,92 116,94 142,122 128,158 62,162" fill="#1E1A24"/>
+            <polygon points="58,92 116,94 142,122 96,116" fill="#3C3A63"/>
+            <polygon points="62,162 128,158 118,172 74,172" fill="#0F0D14"/>
+            <polygon points="66,106 112,102 126,132 84,142" fill="#3C3A63"/>
+            <polygon points="66,106 84,142 60,132" fill="#0F0D14"/>
+            <polygon points="120,110 132,78 162,72 182,90 176,116 146,124" fill="#1E1A24"/>
+            <polygon points="132,78 162,72 182,90 150,92" fill="#3C3A63"/>
+            <polygon points="176,96 226,102 174,116" fill="#2A2530"/>
+            <path d="M 176 106 H 214" stroke="#0F0D14" stroke-width="1.5"/>
+            <circle cx="162" cy="96" r="6.5" fill="#E8E2D2"/><circle cx="163" cy="96" r="3" fill="#0F0D14"/>
+            <g stroke="#2A2530" stroke-width="5" stroke-linecap="round">
+              <path d="M 84 166 V 194"/><path d="M 106 168 V 194"/>
+            </g>
+            <g stroke="#2A2530" stroke-width="3.5" stroke-linecap="round">
+              <path d="M 84 194 H 100"/><path d="M 84 194 L 74 200"/>
+              <path d="M 106 194 H 122"/><path d="M 106 194 L 96 200"/>
+            </g>
+            <text x="105" y="228" font-family="Menlo,monospace" font-size="10" letter-spacing="1.6" fill="#1E1A24" text-anchor="middle">SIDE — CANONICAL</text>
+          </g>
+
+          <!-- ============ FRONT ============ -->
+          <g transform="translate(232,40)">
+            <ellipse cx="66" cy="196" rx="46" ry="8" fill="#6E6478" opacity=".4"/>
+            <polygon points="34,116 66,88 98,116 92,164 40,164" fill="#1E1A24"/>
+            <polygon points="34,116 66,88 98,116 66,124" fill="#3C3A63"/>
+            <polygon points="40,164 92,164 84,176 48,176" fill="#0F0D14"/>
+            <polygon points="44,78 66,62 88,78 84,112 48,112" fill="#1E1A24"/>
+            <polygon points="44,78 66,62 88,78 66,86" fill="#3C3A63"/>
+            <polygon points="60,88 72,88 66,112" fill="#2A2530"/>
+            <circle cx="52" cy="84" r="5.5" fill="#E8E2D2"/><circle cx="52" cy="84" r="2.5" fill="#0F0D14"/>
+            <circle cx="80" cy="84" r="5.5" fill="#E8E2D2"/><circle cx="80" cy="84" r="2.5" fill="#0F0D14"/>
+            <g stroke="#2A2530" stroke-width="5" stroke-linecap="round"><path d="M 56 172 V 194"/><path d="M 76 172 V 194"/></g>
+            <g stroke="#2A2530" stroke-width="3.5" stroke-linecap="round">
+              <path d="M 48 194 H 64"/><path d="M 68 194 H 84"/>
+            </g>
+            <text x="66" y="228" font-family="Menlo,monospace" font-size="10" letter-spacing="1.6" fill="#1E1A24" text-anchor="middle">FRONT</text>
+          </g>
+
+          <!-- ============ WALK ============ -->
+          <g transform="translate(374,40)">
+            <ellipse cx="102" cy="196" rx="68" ry="8" fill="#6E6478" opacity=".4"/>
+            <polygon points="30,132 14,120 8,154 38,156" fill="#0F0D14"/>
+            <polygon points="30,132 60,100 118,100 140,126 126,160 64,168" fill="#1E1A24"/>
+            <polygon points="60,100 118,100 140,126 96,122" fill="#3C3A63"/>
+            <polygon points="70,112 114,108 124,136 88,146" fill="#3C3A63"/>
+            <polygon points="118,112 128,80 158,72 180,88 174,114 144,124" fill="#1E1A24"/>
+            <polygon points="128,80 158,72 180,88 148,92" fill="#3C3A63"/>
+            <polygon points="174,96 222,100 172,116" fill="#2A2530"/>
+            <circle cx="158" cy="94" r="6.5" fill="#E8E2D2"/><circle cx="159" cy="94" r="3" fill="#0F0D14"/>
+            <g stroke="#2A2530" stroke-width="5" stroke-linecap="round">
+              <path d="M 80 168 L 66 194"/><path d="M 106 170 L 116 186"/>
+            </g>
+            <g stroke="#2A2530" stroke-width="3.5" stroke-linecap="round">
+              <path d="M 66 194 H 82"/><path d="M 116 186 L 130 180"/>
+            </g>
+            <text x="102" y="228" font-family="Menlo,monospace" font-size="10" letter-spacing="1.6" fill="#1E1A24" text-anchor="middle">WALK — HEAD LEADS</text>
+          </g>
+
+          <!-- ============ FLY ============ -->
+          <g transform="translate(560,26)">
+            <polygon points="46,118 30,104 26,140 54,142" fill="#0F0D14"/>
+            <polygon points="46,118 76,96 128,98 150,120 138,150 78,154" fill="#1E1A24"/>
+            <polygon points="76,96 128,98 150,120 108,116" fill="#3C3A63"/>
+            <polygon points="130,108 140,78 170,70 190,86 184,112 156,120" fill="#1E1A24"/>
+            <polygon points="140,78 170,70 190,86 158,90" fill="#3C3A63"/>
+            <polygon points="184,94 230,98 182,114" fill="#2A2530"/>
+            <circle cx="170" cy="92" r="6" fill="#E8E2D2"/><circle cx="171" cy="92" r="2.8" fill="#0F0D14"/>
+            <!-- wings up -->
+            <polygon points="84,100 40,36 76,30 116,94" fill="#3C3A63"/>
+            <polygon points="84,100 76,30 116,94" fill="#1E1A24" opacity=".55"/>
+            <polygon points="104,102 84,32 118,26 134,98" fill="#3C3A63" opacity=".9"/>
+            <g stroke="#2A2530" stroke-width="4" stroke-linecap="round">
+              <path d="M 96 152 L 88 172"/><path d="M 116 150 L 112 170"/>
+            </g>
+            <text x="120" y="200" font-family="Menlo,monospace" font-size="10" letter-spacing="1.6" fill="#1E1A24" text-anchor="middle">FLAP — UPSTROKE</text>
+          </g>
+
+          <!-- ============ CARRY ============ -->
+          <g transform="translate(710,40)">
+            <ellipse cx="104" cy="196" rx="66" ry="8" fill="#6E6478" opacity=".4"/>
+            <polygon points="30,124 16,110 10,144 38,148" fill="#0F0D14"/>
+            <polygon points="30,124 60,96 116,98 140,124 126,158 64,164" fill="#1E1A24"/>
+            <polygon points="60,96 116,98 140,124 96,120" fill="#3C3A63"/>
+            <polygon points="68,108 112,104 124,134 86,144" fill="#3C3A63"/>
+            <polygon points="118,112 130,82 158,76 178,94 172,118 144,126" fill="#1E1A24"/>
+            <polygon points="130,82 158,76 178,94 148,96" fill="#3C3A63"/>
+            <polygon points="172,100 216,104 170,118" fill="#2A2530"/>
+            <circle cx="158" cy="98" r="6.5" fill="#E8E2D2"/><circle cx="159" cy="98" r="3" fill="#0F0D14"/>
+            <!-- the note -->
+            <g transform="rotate(-14 212 112)">
+              <rect x="186" y="102" width="52" height="24" fill="#5E8C63"/>
+              <rect x="186" y="102" width="52" height="24" fill="none" stroke="#3E6444" stroke-width="1.5"/>
+              <circle cx="212" cy="114" r="6" fill="none" stroke="#3E6444" stroke-width="1.5"/>
+            </g>
+            <g stroke="#2A2530" stroke-width="5" stroke-linecap="round"><path d="M 86 166 V 194"/><path d="M 108 168 V 194"/></g>
+            <g stroke="#2A2530" stroke-width="3.5" stroke-linecap="round">
+              <path d="M 86 194 H 102"/><path d="M 108 194 H 124"/>
+            </g>
+            <text x="104" y="228" font-family="Menlo,monospace" font-size="10" letter-spacing="1.6" fill="#1E1A24" text-anchor="middle">CARRY — ONE ITEM</text>
+          </g>
+        </svg>
+      </div>
+      <div class="exhibit-cap">Exhibit C — character sheet. Note that the sheen colour appears only on upward-facing planes; from below the bird is a flat silhouette.</div>
+    </div>
+
+    <div class="col">
+      <h3>Animation</h3>
+      <p>No skeletons, no imported clips. Every pose is procedural — parts are transformed
+      directly on a small rig of nested groups, which keeps the whole character under a
+      kilobyte and makes it trivially retargetable when the model changes.</p>
+      <ul>
+        <li><strong>Walk</strong> — legs alternate, body bobs on a sine, head counter-bobs so
+          it stays level. The head staying still while the body moves is the entire read.</li>
+        <li><strong>Flap</strong> — wings sweep on a fast attack and slow release. Body pitches
+          nose-up on the downstroke.</li>
+        <li><strong>Glide</strong> — wings held out flat, a slow roll into turns.</li>
+        <li><strong>Idle</strong> — a head tick every few seconds, at random. This one beat
+          does more for making the bird feel alive than everything else combined.</li>
+        <li><strong>Carry</strong> — the item parents to the beak tip and inherits its
+          transform, with a lag spring so it swings.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="people">
+    <h2><span class="sec">§5</span> People and props</h2>
+    <div class="col">
+      <p>Humans are built from six boxes and are never given faces. Two reasons: a faceless
+      human is a shape rather than a person, which keeps stealing from them funny instead of
+      mean; and the whole game is read from thirty feet up, where a face would be four pixels
+      of noise. State is communicated by <strong>posture and a marker over the head</strong>,
+      never by expression.</p>
+
+      <p>Props follow one rule: <em class="term">a thing you can take is the only thing with a
+      glint on it.</em> There is no outline system and no highlight shader — money and
+      shinies carry a small rotating gold quad, and nothing else in the game does.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate sky">
+        <svg viewBox="0 0 900 250" role="img" aria-label="Prop sheet: human archetype with three states, fountain, cafe table, hot dog cart, lamppost nest, bench">
+          <!-- human calm -->
+          <g transform="translate(30,26)">
+            <ellipse cx="40" cy="176" rx="30" ry="7" fill="#6E6478" opacity=".4"/>
+            <rect x="26" y="24" width="28" height="26" fill="#E0B07A"/>
+            <rect x="26" y="24" width="28" height="9" fill="#3A2E28"/>
+            <rect x="20" y="52" width="40" height="60" fill="#D95F4C"/>
+            <rect x="20" y="52" width="40" height="12" fill="#EE7A66"/>
+            <rect x="24" y="112" width="14" height="58" fill="#3F5F8C"/>
+            <rect x="44" y="112" width="14" height="58" fill="#3F5F8C"/>
+            <rect x="10" y="56" width="10" height="48" fill="#D95F4C"/>
+            <rect x="60" y="56" width="10" height="48" fill="#D95F4C"/>
+            <text x="40" y="204" font-family="Menlo,monospace" font-size="9.5" letter-spacing="1.2" fill="#1E1A24" text-anchor="middle">CALM</text>
+          </g>
+          <!-- human suspicious -->
+          <g transform="translate(140,26)">
+            <ellipse cx="40" cy="176" rx="30" ry="7" fill="#6E6478" opacity=".4"/>
+            <rect x="26" y="20" width="28" height="26" fill="#E0B07A"/>
+            <rect x="26" y="20" width="28" height="9" fill="#3A2E28"/>
+            <rect x="20" y="48" width="40" height="62" fill="#D95F4C"/>
+            <rect x="20" y="48" width="40" height="12" fill="#EE7A66"/>
+            <rect x="24" y="110" width="14" height="60" fill="#3F5F8C"/>
+            <rect x="44" y="110" width="14" height="60" fill="#3F5F8C"/>
+            <rect x="10" y="48" width="10" height="46" fill="#D95F4C"/>
+            <rect x="60" y="48" width="10" height="46" fill="#D95F4C"/>
+            <text x="40" y="12" font-family="Menlo,monospace" font-size="20" fill="#E0B348" text-anchor="middle" font-weight="bold">?</text>
+            <text x="40" y="204" font-family="Menlo,monospace" font-size="9.5" letter-spacing="1.2" fill="#1E1A24" text-anchor="middle">SUSPICIOUS</text>
+          </g>
+          <!-- human shooing -->
+          <g transform="translate(250,26)">
+            <ellipse cx="40" cy="176" rx="30" ry="7" fill="#6E6478" opacity=".4"/>
+            <rect x="28" y="26" width="28" height="26" fill="#E0B07A"/>
+            <rect x="28" y="26" width="28" height="9" fill="#3A2E28"/>
+            <rect x="20" y="54" width="40" height="58" fill="#D95F4C"/>
+            <rect x="20" y="54" width="40" height="12" fill="#EE7A66"/>
+            <rect x="22" y="112" width="14" height="58" fill="#3F5F8C" transform="rotate(-12 29 140)"/>
+            <rect x="46" y="112" width="14" height="58" fill="#3F5F8C" transform="rotate(14 53 140)"/>
+            <rect x="4" y="24" width="10" height="42" fill="#D95F4C" transform="rotate(-30 9 45)"/>
+            <rect x="62" y="22" width="10" height="42" fill="#D95F4C" transform="rotate(28 67 43)"/>
+            <rect x="56" y="6" width="26" height="16" fill="#E4DACB" transform="rotate(20 69 14)"/>
+            <text x="40" y="14" font-family="Menlo,monospace" font-size="20" fill="#D95F4C" text-anchor="middle" font-weight="bold">!</text>
+            <text x="40" y="204" font-family="Menlo,monospace" font-size="9.5" letter-spacing="1.2" fill="#1E1A24" text-anchor="middle">SHOOING</text>
+          </g>
+
+          <!-- fountain -->
+          <g transform="translate(360,60)">
+            <ellipse cx="72" cy="140" rx="72" ry="20" fill="#6E6478" opacity=".35"/>
+            <ellipse cx="72" cy="112" rx="70" ry="22" fill="#BFA98A"/>
+            <ellipse cx="72" cy="106" rx="58" ry="18" fill="#4E9BB0"/>
+            <ellipse cx="72" cy="104" rx="34" ry="10" fill="#7FC4D2" opacity=".7"/>
+            <rect x="64" y="66" width="16" height="40" fill="#E4DACB"/>
+            <ellipse cx="72" cy="66" rx="22" ry="7" fill="#E4DACB"/>
+            <circle cx="52" cy="108" r="4" fill="#C9CDD2"/><circle cx="88" cy="112" r="4" fill="#E0B348"/>
+            <text x="72" y="170" font-family="Menlo,monospace" font-size="9.5" letter-spacing="1.2" fill="#1E1A24" text-anchor="middle">FOUNTAIN — DIVE</text>
+          </g>
+
+          <!-- cart -->
+          <g transform="translate(526,52)">
+            <ellipse cx="76" cy="152" rx="66" ry="14" fill="#6E6478" opacity=".35"/>
+            <rect x="20" y="88" width="112" height="52" fill="#B4643C"/>
+            <rect x="20" y="88" width="112" height="12" fill="#D07E52"/>
+            <rect x="20" y="76" width="112" height="12" fill="#E4DACB"/>
+            <polygon points="10,60 142,60 130,76 22,76" fill="#D95F4C"/>
+            <polygon points="10,60 142,60 76,44" fill="#EE7A66"/>
+            <rect x="72" y="44" width="6" height="18" fill="#8A8F98"/>
+            <circle cx="44" cy="146" r="12" fill="#2A2530"/><circle cx="112" cy="146" r="12" fill="#2A2530"/>
+            <rect x="96" y="94" width="22" height="16" fill="#5E8C63"/>
+            <text x="76" y="180" font-family="Menlo,monospace" font-size="9.5" letter-spacing="1.2" fill="#1E1A24" text-anchor="middle">CART — THE TEN</text>
+          </g>
+
+          <!-- lamppost nest -->
+          <g transform="translate(700,20)">
+            <ellipse cx="46" cy="192" rx="26" ry="7" fill="#6E6478" opacity=".4"/>
+            <rect x="40" y="52" width="12" height="140" fill="#8A8F98"/>
+            <rect x="34" y="186" width="24" height="8" fill="#6E7480"/>
+            <ellipse cx="46" cy="46" rx="30" ry="12" fill="#8C6E4A"/>
+            <ellipse cx="46" cy="40" rx="22" ry="8" fill="#6B5136"/>
+            <circle cx="38" cy="38" r="5" fill="#E0B348"/><circle cx="52" cy="40" r="4.5" fill="#C9CDD2"/>
+            <circle cx="46" cy="34" r="4" fill="#5E8C63"/>
+            <text x="46" y="220" font-family="Menlo,monospace" font-size="9.5" letter-spacing="1.2" fill="#1E1A24" text-anchor="middle">NEST — BANK</text>
+          </g>
+
+          <!-- bench + tip jar -->
+          <g transform="translate(786,74)">
+            <ellipse cx="52" cy="140" rx="46" ry="10" fill="#6E6478" opacity=".35"/>
+            <rect x="12" y="98" width="80" height="10" fill="#8C6E4A"/>
+            <rect x="12" y="70" width="80" height="9" fill="#8C6E4A"/>
+            <rect x="14" y="108" width="8" height="28" fill="#6E6478"/>
+            <rect x="82" y="108" width="8" height="28" fill="#6E6478"/>
+            <rect x="40" y="78" width="24" height="20" fill="#7FC4D2" opacity=".8"/>
+            <rect x="40" y="78" width="24" height="6" fill="#C9CDD2" opacity=".9"/>
+            <circle cx="52" cy="90" r="4" fill="#E0B348"/>
+            <text x="52" y="168" font-family="Menlo,monospace" font-size="9.5" letter-spacing="1.2" fill="#1E1A24" text-anchor="middle">TIP JAR</text>
+          </g>
+        </svg>
+      </div>
+      <div class="exhibit-cap">Exhibit D — prop and NPC sheet. Human silhouettes change between states so intent is readable at distance without reading the marker.</div>
+    </div>
+  </section>
+
+  <section id="camera">
+    <h2><span class="sec">§6</span> Camera and composition</h2>
+    <div class="col">
+      <p>38° pitch, 25° yaw, 20° field of view on a long lens sitting far back — near
+      orthographic, so the block reads as a model on a table. The camera never rotates,
+      which means the player builds a stable mental map of the block within about a minute,
+      and every location becomes memorable by its position on screen.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate sky">
+        <svg viewBox="0 0 900 340" role="img" aria-label="Composition study showing camera framing, depth bands and the crow silhouette against the ground">
+          <defs>
+            <linearGradient id="skyg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#8FB4C4"/><stop offset="1" stop-color="#F2C879"/>
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="900" height="340" fill="url(#skyg)"/>
+          <!-- far band -->
+          <polygon points="0,150 900,120 900,168 0,196" fill="#BFA98A" opacity=".55"/>
+          <g opacity=".45">
+            <rect x="60" y="70" width="90" height="86" fill="#B4643C"/>
+            <rect x="180" y="46" width="120" height="108" fill="#8C6E4A"/>
+            <rect x="620" y="58" width="140" height="96" fill="#B4643C"/>
+            <rect x="790" y="80" width="90" height="72" fill="#8C6E4A"/>
+          </g>
+          <!-- mid ground -->
+          <polygon points="0,196 900,168 900,268 0,300" fill="#D8C6A8"/>
+          <polygon points="0,300 900,268 900,340 0,340" fill="#BFA98A"/>
+          <!-- shadows raking -->
+          <g fill="#6E6478" opacity=".38">
+            <polygon points="150,236 210,228 300,252 236,262"/>
+            <polygon points="470,214 520,208 600,230 546,238"/>
+            <polygon points="700,264 760,256 850,280 786,290"/>
+          </g>
+          <!-- props -->
+          <g>
+            <rect x="192" y="196" width="14" height="34" fill="#8C6E4A"/>
+            <ellipse cx="199" cy="188" rx="34" ry="18" fill="#7FA05C"/>
+            <ellipse cx="199" cy="182" rx="26" ry="12" fill="#8FB06A"/>
+            <rect x="500" y="188" width="10" height="30" fill="#8A8F98"/>
+            <ellipse cx="505" cy="184" rx="20" ry="8" fill="#8C6E4A"/>
+            <rect x="742" y="238" width="80" height="10" fill="#8C6E4A"/>
+            <rect x="746" y="248" width="7" height="18" fill="#6E6478"/>
+            <rect x="812" y="248" width="7" height="18" fill="#6E6478"/>
+          </g>
+          <!-- human -->
+          <g transform="translate(600,196) scale(.62)">
+            <rect x="26" y="24" width="28" height="26" fill="#E0B07A"/>
+            <rect x="20" y="52" width="40" height="60" fill="#3F5F8C"/>
+            <rect x="24" y="112" width="14" height="52" fill="#3A2E28"/>
+            <rect x="44" y="112" width="14" height="52" fill="#3A2E28"/>
+          </g>
+          <!-- crow, hero placement, lower-left third -->
+          <g transform="translate(300,214) scale(.66)">
+            <ellipse cx="105" cy="196" rx="66" ry="9" fill="#6E6478" opacity=".45"/>
+            <polygon points="26,120 12,104 8,140 34,144" fill="#0F0D14"/>
+            <polygon points="26,120 58,92 116,94 142,122 128,158 62,162" fill="#1E1A24"/>
+            <polygon points="58,92 116,94 142,122 96,116" fill="#3C3A63"/>
+            <polygon points="66,106 112,102 126,132 84,142" fill="#3C3A63"/>
+            <polygon points="120,110 132,78 162,72 182,90 176,116 146,124" fill="#1E1A24"/>
+            <polygon points="132,78 162,72 182,90 150,92" fill="#3C3A63"/>
+            <polygon points="176,96 226,102 174,116" fill="#2A2530"/>
+            <circle cx="162" cy="96" r="6.5" fill="#E8E2D2"/><circle cx="163" cy="96" r="3" fill="#0F0D14"/>
+            <g stroke="#2A2530" stroke-width="5" stroke-linecap="round"><path d="M 84 166 V 194"/><path d="M 106 168 V 194"/></g>
+          </g>
+          <!-- coin glints -->
+          <g fill="#E0B348">
+            <circle cx="430" cy="272" r="5"/><circle cx="662" cy="252" r="5"/><circle cx="150" cy="286" r="5"/>
+          </g>
+          <!-- framing annotations -->
+          <g stroke="#1E1A24" opacity=".22" stroke-dasharray="5 6">
+            <path d="M 300 0 V 340"/><path d="M 600 0 V 340"/><path d="M 0 113 H 900"/><path d="M 0 227 H 900"/>
+          </g>
+          <g font-family="Menlo,monospace" font-size="10" letter-spacing="1.4" fill="#1E1A24" opacity=".72">
+            <text x="14" y="140">FAR — FOGGED, DESATURATED, NO DETAIL</text>
+            <text x="14" y="218">PLAY PLANE — FULL SATURATION, ALL SHADOWS</text>
+            <text x="14" y="332">NEAR — SILHOUETTES ONLY, FADE IF OCCLUDING</text>
+          </g>
+        </svg>
+      </div>
+      <div class="exhibit-cap">Exhibit E — composition study. Three depth bands. The crow sits on a third-line, and the play plane is the only band that gets full saturation.</div>
+    </div>
+
+    <div class="col">
+      <h3>The sunset ramp</h3>
+      <p>Over a session the key light rotates about 20°, drops in elevation, and shifts from
+      <span class="mono">#FFD9A0</span> to <span class="mono">#FF9E5C</span> to
+      <span class="mono">#6E6AA8</span>, with the sky lerping toward Dusk and fog thickening.
+      Shadows get longer and more violet. Nothing else in the game communicates time, and
+      nothing else needs to.</p>
+    </div>
+  </section>
+
+  <section id="ui">
+    <h2><span class="sec">§7</span> Interface</h2>
+    <div class="col">
+      <p>The HUD borrows the block's own vocabulary — municipal enamel signage, the same
+      language as this document. It is a game about a city, so the interface is made of the
+      things a city puts on a pole.</p>
+      <ul>
+        <li><strong>Money counter</strong> — top left, enamel green plate, brass rule under
+          it, tabular numerals so the digits never jitter. It is the only element that
+          animates: a coin lands and the number rolls.</li>
+        <li><strong>Task list</strong> — top right, small, struck through when done. Never
+          more than five lines.</li>
+        <li><strong>Sun dial</strong> — a thin arc, bottom right, one dot travelling it.
+          No numbers. Time should be felt, not read.</li>
+        <li><strong>Context prompt</strong> — floats at the beak, names the verb and the
+          object: <span class="mono">TAKE — DOLLAR BILL</span>.</li>
+      </ul>
+      <p>Type in the build matches this page: a condensed grotesque in caps for labels,
+      monospace for numbers. No serif in-game — it would not hold at phone size.</p>
+    </div>
+
+    <div class="exhibit table-wrap">
+      <table>
+        <thead><tr><th>Element</th><th>Anchor</th><th>Colour</th><th>Rule</th></tr></thead>
+        <tbody>
+          <tr><td>Money counter</td><td class="k">top-left, safe-area</td><td class="k">#1F4D3D / #E0B348</td><td>Always visible. The only number that matters.</td></tr>
+          <tr><td>Task list</td><td class="k">top-right</td><td class="k">#1F4D3D / #E9E5DA</td><td>Collapses to a count on narrow portrait.</td></tr>
+          <tr><td>Sun dial</td><td class="k">bottom-right</td><td class="k">#E0B348 on rule</td><td>Hidden during the first 30 seconds.</td></tr>
+          <tr><td>Context prompt</td><td class="k">world-space, at beak</td><td class="k">#E8E2D2 on #0F0D14</td><td>One line. Verb, then noun.</td></tr>
+          <tr><td>Touch stick</td><td class="k">bottom-left, dynamic</td><td class="k">#E9E5DA 30% alpha</td><td>Spawns where the thumb lands, not fixed.</td></tr>
+          <tr><td>Touch buttons</td><td class="k">bottom-right stack</td><td class="k">#E9E5DA 30% alpha</td><td>Min 56pt targets, thumb-arc placement.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="exhibit-cap">Exhibit F — HUD inventory. Six elements total; anything a seventh would say can be said by the world instead.</div>
+  </section>
+
+  <section id="sound">
+    <h2><span class="sec">§8</span> Sound</h2>
+    <div class="col">
+      <p>Synthesised in the browser, no audio files — same argument as the geometry. A small
+      Web Audio graph gives us a caw, wingbeats, coin chimes pitched to a pentatonic scale
+      so that a good run is musical, footstep ticks, a water plop, and a distant traffic bed.</p>
+      <p>The caw is the signature and gets the most work: three formant-ish filtered noise
+      bursts with a pitch drop, slightly randomised each time so it never sounds sampled.
+      Coins rise in pitch as the total climbs toward twenty, which turns the counter into a
+      thing you hear.</p>
+    </div>
+  </section>
+
+  <section id="dd">
+    <h2><span class="sec">§9</span> Do / don't</h2>
+    <div class="exhibit dd">
+      <div class="do">
+        <h4>Do</h4>
+        <ul>
+          <li>Keep shade violet, always</li>
+          <li>Three tones per object, maximum</li>
+          <li>Flat shading on every material</li>
+          <li>Let the crow be the darkest thing on screen</li>
+          <li>Communicate state with posture first</li>
+          <li>Put a glint only on what can be taken</li>
+          <li>Silhouette-test everything at 200px</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Don't</h4>
+        <ul>
+          <li>Add textures, normal maps or gradients on geometry</li>
+          <li>Use neutral grey for shadow</li>
+          <li>Give humans faces or dialogue</li>
+          <li>Outline anything — depth does the separating</li>
+          <li>Use pure black or pure white anywhere</li>
+          <li>Let the camera rotate</li>
+          <li>Introduce a colour that is not in §2</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Small Change — art direction</span>
+    <span>Late Afternoon Municipal · v1.0</span>
+  </footer>
+
+</main>

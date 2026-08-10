@@ -1,0 +1,703 @@
+<title>Small Change — Game Design Brief</title>
+<style>
+  :root {
+    --paper:      #E9E5DA;
+    --paper-2:    #DFDACB;
+    --ink:        #141C18;
+    --ink-soft:   #3E4A44;
+    --nickel:     #8B948F;
+    --rule:       #C3BFB1;
+    --enamel:     #1F4D3D;
+    --enamel-2:   #17392E;
+    --brass:      #A87C22;
+    --brass-lit:  #C79A34;
+    --sheen:      #4B4B7A;
+    --band-text:  #EDEAE0;
+    --band-dim:   #9FB5AB;
+    --chip-bg:    #D7D2C2;
+    --shadow:     rgba(20,28,24,.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:     #131815;
+      --paper-2:   #1A211D;
+      --ink:       #E4E2D7;
+      --ink-soft:  #A3ADA6;
+      --nickel:    #7C857F;
+      --rule:      #2C3630;
+      --enamel:    #16332A;
+      --enamel-2:  #102520;
+      --brass:     #D2A644;
+      --brass-lit: #E0B85C;
+      --sheen:     #8A8AC4;
+      --band-text: #E4E2D7;
+      --band-dim:  #7E9A8D;
+      --chip-bg:   #212925;
+      --shadow:    rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:     #131815;
+    --paper-2:   #1A211D;
+    --ink:       #E4E2D7;
+    --ink-soft:  #A3ADA6;
+    --nickel:    #7C857F;
+    --rule:      #2C3630;
+    --enamel:    #16332A;
+    --enamel-2:  #102520;
+    --brass:     #D2A644;
+    --brass-lit: #E0B85C;
+    --sheen:     #8A8AC4;
+    --band-text: #E4E2D7;
+    --band-dim:  #7E9A8D;
+    --chip-bg:   #212925;
+    --shadow:    rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .display {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold",
+                 "Arial Narrow", "Helvetica Neue", sans-serif;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-wrap: balance;
+  }
+  .mono {
+    font-family: Menlo, ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: .82em;
+    letter-spacing: .01em;
+  }
+
+  /* ---- sign band ---- */
+  .band {
+    background: var(--enamel);
+    color: var(--band-text);
+    padding: 3.2rem 1.5rem 2.4rem;
+    border-bottom: 6px solid var(--brass);
+  }
+  .band-inner { max-width: 62rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1.1rem; }
+  .band .eyebrow {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .72rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--band-dim);
+  }
+  h1.title {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: clamp(3rem, 11vw, 6.5rem);
+    line-height: .86;
+    letter-spacing: .005em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  h1.title .thin { display: block; color: var(--brass-lit); }
+  .band .deck {
+    font-size: 1.12rem; max-width: 34rem; color: var(--band-text);
+    opacity: .88; margin: 0;
+  }
+  .facts {
+    display: flex; flex-wrap: wrap; gap: 0 2.2rem;
+    border-top: 1px solid rgba(159,181,171,.28);
+    padding-top: 1rem; margin-top: .4rem;
+  }
+  .facts div { display: flex; flex-direction: column; gap: .1rem; }
+  .facts dt {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .18em; text-transform: uppercase; color: var(--band-dim);
+  }
+  .facts dd { margin: 0; font-size: .95rem; }
+
+  /* ---- document body ---- */
+  main { max-width: 62rem; margin: 0 auto; padding: 0 1.5rem 6rem; }
+  .col { max-width: 38rem; }
+
+  section { padding-top: 3.4rem; }
+  section > * + * { margin-top: 1rem; }
+
+  h2 {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase;
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+    line-height: 1.05; letter-spacing: .015em;
+    margin: 0 0 .2rem; padding-bottom: .55rem;
+    border-bottom: 2px solid var(--ink);
+    display: flex; align-items: baseline; gap: .7rem;
+  }
+  h2 .sec {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .7rem; font-weight: 400; letter-spacing: .12em;
+    color: var(--brass); flex: none;
+  }
+  h3 {
+    font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    font-size: .95rem; margin: 1.8rem 0 .3rem; color: var(--ink);
+  }
+  p { margin: 0; }
+  section p + p { margin-top: .85rem; }
+  a { color: var(--brass); }
+
+  ul, ol { margin: .2rem 0; padding-left: 1.15rem; }
+  li { margin: .3rem 0; }
+  li::marker { color: var(--nickel); }
+
+  strong { font-weight: 700; }
+  em.term { font-style: normal; font-weight: 700; color: var(--sheen); }
+
+  /* ---- exhibits (break the column) ---- */
+  .exhibit { margin: 2rem 0 0; }
+  .exhibit-cap {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--nickel); margin-top: .6rem;
+  }
+  .plate {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    padding: 1.2rem;
+    overflow-x: auto;
+  }
+  .plate svg { display: block; width: 100%; height: auto; min-width: 30rem; }
+
+  /* ---- tables ---- */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--rule); background: var(--paper-2); }
+  table { border-collapse: collapse; width: 100%; min-width: 34rem; font-size: .92rem; }
+  th, td { text-align: left; padding: .6rem .85rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); background: var(--chip-bg); border-bottom: 2px solid var(--ink);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num { font-family: Menlo, ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.val { font-family: Menlo, ui-monospace, monospace; font-variant-numeric: tabular-nums; color: var(--brass); white-space: nowrap; }
+
+  /* ---- key caps ---- */
+  kbd {
+    font-family: Menlo, ui-monospace, monospace; font-size: .74rem;
+    background: var(--chip-bg); border: 1px solid var(--rule);
+    border-bottom-width: 2px; border-radius: 3px;
+    padding: .1rem .38rem; color: var(--ink); white-space: nowrap;
+  }
+
+  /* ---- callout ---- */
+  .note {
+    border-left: 4px solid var(--brass);
+    background: var(--paper-2);
+    padding: .9rem 1.1rem;
+    font-size: .95rem;
+  }
+  .note .lbl {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--brass); display: block; margin-bottom: .25rem;
+  }
+
+  /* ---- scope columns ---- */
+  .scope { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0; border: 1px solid var(--rule); }
+  .scope > div { padding: 1rem 1.15rem; border-right: 1px solid var(--rule); }
+  .scope > div:last-child { border-right: 0; }
+  .scope h4 {
+    font-family: Menlo, ui-monospace, monospace; font-weight: 400;
+    font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+    margin: 0 0 .5rem; color: var(--ink-soft);
+  }
+  .scope ul { padding-left: 1rem; font-size: .9rem; }
+  .scope.in  > div:first-child { background: var(--paper-2); }
+
+  /* ---- milestones ---- */
+  .miles { border-top: 2px solid var(--ink); }
+  .mile {
+    display: grid; grid-template-columns: 5.5rem 1fr; gap: 1.2rem;
+    padding: .85rem 0; border-bottom: 1px solid var(--rule); align-items: baseline;
+  }
+  .mile .m-id {
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; color: var(--brass); padding-top: .15rem;
+  }
+  .mile .m-body strong { display: block; font-family: "Avenir Next Condensed","Arial Narrow",sans-serif; text-transform: uppercase; letter-spacing: .04em; font-size: 1rem; }
+  .mile .m-body span { font-size: .9rem; color: var(--ink-soft); }
+
+  footer {
+    border-top: 2px solid var(--ink); margin-top: 4rem; padding-top: 1rem;
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--nickel);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+  }
+
+  @media (max-width: 40rem) {
+    body { font-size: 16px; }
+    .mile { grid-template-columns: 1fr; gap: .1rem; }
+    .plate svg { min-width: 26rem; }
+  }
+</style>
+
+<header class="band">
+  <div class="band-inner">
+    <div class="eyebrow">Game Design Brief &nbsp;·&nbsp; v1.0 &nbsp;·&nbsp; Single-player</div>
+    <h1 class="title">Small<br>Change<span class="thin">A crow's problem</span></h1>
+    <p class="deck">You were a person this morning. You are a crow now, and the terms are
+      non-negotiable: twenty dollars, in the nest, by sundown. Nobody said it had to be
+      earned honestly.</p>
+    <dl class="facts">
+      <div><dt>Prompt</dt><dd>Option A — crow, $20</dd></div>
+      <div><dt>Platform</dt><dd>Browser first, iOS via Capacitor</dd></div>
+      <div><dt>Camera</dt><dd>Fixed high-angle, side-on</dd></div>
+      <div><dt>Session</dt><dd>12–20 min</dd></div>
+      <div><dt>Fail state</dt><dd>None</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main>
+
+  <section id="premise">
+    <h2><span class="sec">§1</span> Why the crow</h2>
+    <div class="col">
+      <p>Both prompts are collect-a-thons, but they are not equally interesting collect-a-thons.
+      Forty french fries is forty identical pickups — the number goes up, and that is the
+      whole arc. Twenty dollars is a <em class="term">value ladder</em>: a penny and a
+      ten-dollar bill are both "money," but one is lying in a gutter and the other is
+      folded inside a hot dog vendor's apron.</p>
+
+      <p>That gap is the game. Every pickup becomes a risk-priced decision instead of a
+      pickup, and the player does the arithmetic themselves — <span class="mono">$14.75, need $5.25,
+      the tip jar has singles but the busker's case has a five</span>. The seagull version has
+      no arithmetic in it.</p>
+
+      <p>Crows also arrive with verbs already attached. They cache food, they steal, they
+      trade shiny objects with people who feed them, they mob animals larger than themselves,
+      and they are conspicuously smart in a way that reads as intent rather than instinct.
+      A seagull is a blunt instrument. A crow is a protagonist.</p>
+    </div>
+    <div class="note col">
+      <span class="lbl">The one-line pitch</span>
+      A fixed-camera mischief sandbox about a cursed office worker with wings, a hoarding
+      instinct, and until sundown to make rent on his own body.
+    </div>
+  </section>
+
+  <section id="loop">
+    <h2><span class="sec">§2</span> The core loop</h2>
+    <div class="col">
+      <p>One city block. One crow. One nest on top of the war memorial. Money only counts
+      when it is <strong>in the nest</strong>, and the crow can carry exactly one thing at a
+      time in its beak.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate">
+        <svg viewBox="0 0 900 210" role="img" aria-label="Diagram of the core gameplay loop: scout, take, run, bank, escalate">
+          <defs>
+            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+            </marker>
+          </defs>
+          <g fill="none" stroke="currentColor" stroke-width="1.6" opacity=".5" marker-end="url(#ar)">
+            <path d="M 148 78 L 212 78"/>
+            <path d="M 328 78 L 392 78"/>
+            <path d="M 508 78 L 572 78"/>
+            <path d="M 688 78 L 752 78"/>
+            <path d="M 800 118 C 800 178, 800 186, 700 186 L 130 186 C 60 186, 60 178, 60 122"/>
+          </g>
+          <g font-family="Menlo, monospace" font-size="11" letter-spacing="1.6" fill="currentColor">
+            <text x="20" y="30" opacity=".55">01</text>
+            <text x="200" y="30" opacity=".55">02</text>
+            <text x="380" y="30" opacity=".55">03</text>
+            <text x="560" y="30" opacity=".55">04</text>
+            <text x="740" y="30" opacity=".55">05</text>
+          </g>
+          <g font-family="'Avenir Next Condensed','Arial Narrow',sans-serif" font-weight="700" font-size="21" fill="currentColor" letter-spacing=".5">
+            <text x="20" y="60">SCOUT</text>
+            <text x="200" y="60">TAKE</text>
+            <text x="380" y="60">RUN</text>
+            <text x="560" y="60">BANK</text>
+            <text x="740" y="60">ESCALATE</text>
+          </g>
+          <g font-family="Charter, Georgia, serif" font-size="12.5" fill="currentColor" opacity=".72">
+            <text x="20" y="98">Perch high. Read</text><text x="20" y="115">the block. Spot</text><text x="20" y="132">who owns what.</text>
+            <text x="200" y="98">Grab one thing.</text><text x="200" y="115">Coins are free.</text><text x="200" y="132">Bills are owned.</text>
+            <text x="380" y="98">Owner notices.</text><text x="380" y="115">You are slow on</text><text x="380" y="132">the ground.</text>
+            <text x="560" y="98">Reach the nest.</text><text x="560" y="115">Nothing counts</text><text x="560" y="132">until it lands.</text>
+            <text x="740" y="98">Cheap targets</text><text x="740" y="115">dry up. Only the</text><text x="740" y="132">guarded ones left.</text>
+          </g>
+          <text x="452" y="205" font-family="Menlo, monospace" font-size="10" letter-spacing="2.4" fill="currentColor" opacity=".45" text-anchor="middle">REPEAT UNTIL $20.00 — OR UNTIL SUNDOWN</text>
+        </svg>
+      </div>
+      <div class="exhibit-cap">Exhibit A — the loop. Step 05 is the difficulty curve; it is produced by the level, not by a knob.</div>
+    </div>
+
+    <div class="col">
+      <h3>Why one item at a time</h3>
+      <p>The single-carry rule does an unreasonable amount of work. It turns every grab into a
+      commitment, it creates travel (the run home is where the game happens), it makes the
+      nest meaningful, and it means a chase has real stakes — get shooed and you drop what
+      you are holding, and it scatters.</p>
+
+      <h3>Why the difficulty curve is free</h3>
+      <p>The block holds roughly <strong>$26</strong> of reachable money. The player needs
+      twenty. The cheap, unguarded money is worth about $6 of that. So the last stretch is
+      always the guarded stretch, no matter which order the player works in, and no
+      difficulty tuning is required to make the endgame tense.</p>
+    </div>
+  </section>
+
+  <section id="economy">
+    <h2><span class="sec">§3</span> The money</h2>
+    <div class="col">
+      <p>Denominations are the difficulty system. Value scales with how protected a thing is,
+      and the crow's beak physically cannot solve the top of the table without a plan.</p>
+    </div>
+
+    <div class="exhibit table-wrap">
+      <table>
+        <thead>
+          <tr><th>Denomination</th><th>Value</th><th>Where it lives</th><th>What it costs you</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Penny</td><td class="val">$0.01</td><td>Gutters, cracks, under benches</td><td>Nothing. Bait for new players.</td></tr>
+          <tr><td>Nickel / dime</td><td class="val">$0.05 / $0.10</td><td>Pavement, planters, bus shelter</td><td>A short walk.</td></tr>
+          <tr><td>Quarter</td><td class="val">$0.25</td><td>Fountain floor, parking meter, laundromat vent</td><td>A dive; the fountain slows and soaks you.</td></tr>
+          <tr><td>Loose change pile</td><td class="val">$0.60–$1.40</td><td>Café tables, busker's case</td><td>Scatters if you are hit mid-carry.</td></tr>
+          <tr><td>Dollar bill</td><td class="val">$1.00</td><td>Tip jar, newsstand counter, stroller cup holder</td><td>An owner within ten feet.</td></tr>
+          <tr><td>Five</td><td class="val">$5.00</td><td>Busker's open case, café bill under a saltshaker</td><td>A weighted object to move first.</td></tr>
+          <tr><td>Ten</td><td class="val">$10.00</td><td>Hot dog vendor's apron, open purse on the bench</td><td>A full distraction setup. The set piece.</td></tr>
+          <tr><td>Shiny (not money)</td><td class="val">trade</td><td>Bottle caps, a ring, a marble, a key</td><td>Given to the kid on the bench → coins back.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="exhibit-cap">Exhibit B — the value ladder. Note the last row: the crow's real-world trading behavior is the game's only conversion mechanic.</div>
+
+    <div class="col">
+      <h3>The kid on the bench</h3>
+      <p>A child sits with a paper cup of coins and will trade. Bring her a shiny worthless
+      object and she puts a coin on the bench for you — escalating, so the fourth trade is
+      worth more than the first. She is the game's safety valve: a player who keeps blowing
+      the big scores can still grind their way to twenty, slowly, and never gets stuck.
+      She is also the emotional center, and the reason the ending has a second beat.</p>
+    </div>
+  </section>
+
+  <section id="verbs">
+    <h2><span class="sec">§4</span> Verbs and controls</h2>
+    <div class="col">
+      <p>Four verbs. That ceiling is set by the phone, not by the design — anything that
+      needs a fifth button on a touchscreen is out. Everything a crow does has to be
+      expressible as move, flap, beak, caw.</p>
+    </div>
+
+    <div class="exhibit table-wrap">
+      <table>
+        <thead>
+          <tr><th>Verb</th><th>Desktop</th><th>Touch</th><th>Does</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Move</strong></td>
+            <td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / arrows</td>
+            <td>Left thumb stick</td>
+            <td>Hop-walk on the ground. Deliberately unhurried — the crow is fast in the air and comic on foot.</td>
+          </tr>
+          <tr>
+            <td><strong>Flap</strong></td>
+            <td><kbd>Space</kbd> (hold)</td>
+            <td>Right button ①</td>
+            <td>Tap to hop a ledge. Hold to climb, with stamina; release to glide. Altitude is the resource — you spend it to get home.</td>
+          </tr>
+          <tr>
+            <td><strong>Beak</strong></td>
+            <td><kbd>J</kbd> / click</td>
+            <td>Right button ②</td>
+            <td>Grab, drop, deposit, tug, peck. Context-sensitive; the prompt names the target so it is never a guess.</td>
+          </tr>
+          <tr>
+            <td><strong>Caw</strong></td>
+            <td><kbd>K</kbd></td>
+            <td>Right button ③</td>
+            <td>Turns nearby heads toward the sound. The only tool for moving a human without touching them. Overuse makes a person suspicious rather than curious.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="exhibit-cap">Exhibit C — the full input surface. One stick, three buttons, no menus during play.</div>
+
+    <div class="col">
+      <div class="note">
+        <span class="lbl">Design rule</span>
+        Caw is the puzzle verb, not a joke button. If a set piece can only be solved by
+        walking into things, it is not finished.
+      </div>
+    </div>
+  </section>
+
+  <section id="threat">
+    <h2><span class="sec">§5</span> People</h2>
+    <div class="col">
+      <p>There is no combat and no damage. Humans are moving weather. Each one owns a
+      thing, watches a wedge of space in front of them, and escalates through three states.</p>
+
+      <ul>
+        <li><strong>Calm</strong> — walks a route or stands. Ignores a crow on the ground.</li>
+        <li><strong>Suspicious</strong> — you are inside their wedge and near their property.
+          They turn, they say something, a small marker appears over them. Two seconds of grace.</li>
+        <li><strong>Shooing</strong> — they come at you flapping a newspaper. Faster than you
+          on foot, useless once you are airborne. Catching you knocks whatever you are carrying
+          out of your beak, and the crow tumbles a few feet, feathers everywhere.</li>
+      </ul>
+
+      <p>They cool down and go back to what they were doing, and they put their property
+      back. Nothing is ever permanently lost — a botched heist costs time and dignity, which
+      in a game with a sunset timer is exactly enough.</p>
+
+      <h3>The cast</h3>
+      <ul>
+        <li><strong>The waiter</strong> — patrols Café Row, the block's most aggressive patroller. Owns the tip jar.</li>
+        <li><strong>The hot dog vendor</strong> — anchored to his cart, huge wedge, owns the ten. Leaves only for a genuinely good reason.</li>
+        <li><strong>The busker</strong> — eyes closed while playing. Opens them between songs. Owns the five in the case.</li>
+        <li><strong>The phone guy</strong> — obliviously walks a loop with an open bag. A moving pickup.</li>
+        <li><strong>Pigeons</strong> — not a threat. They mob any dropped food and will happily ruin your distraction if you are careless with a hot dog.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="block">
+    <h2><span class="sec">§6</span> The block</h2>
+    <div class="col">
+      <p>One continuous space, not levels. Three districts flow into each other so the
+      player is never loading, never choosing from a menu, and always able to see the next
+      interesting thing from where they are standing.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate">
+        <svg viewBox="0 0 900 420" role="img" aria-label="Plan view map of the city block showing Fountain Plaza, Cafe Row, and Cart Corner">
+          <g stroke="currentColor" fill="none" opacity=".25" stroke-width="1">
+            <rect x="24" y="24" width="852" height="372"/>
+          </g>
+          <!-- district washes -->
+          <rect x="24" y="24" width="330" height="372" fill="#4E9BB0" opacity=".10"/>
+          <rect x="354" y="24" width="250" height="372" fill="#C79A34" opacity=".13"/>
+          <rect x="604" y="24" width="272" height="372" fill="#B4643C" opacity=".13"/>
+          <g stroke="currentColor" opacity=".22" stroke-dasharray="4 5">
+            <path d="M 354 24 V 396"/><path d="M 604 24 V 396"/>
+          </g>
+
+          <!-- fountain -->
+          <circle cx="150" cy="196" r="62" fill="#4E9BB0" opacity=".38"/>
+          <circle cx="150" cy="196" r="62" fill="none" stroke="currentColor" opacity=".5" stroke-width="2"/>
+          <circle cx="150" cy="196" r="20" fill="none" stroke="currentColor" opacity=".5" stroke-width="2"/>
+          <!-- memorial + nest -->
+          <rect x="262" y="112" width="46" height="46" fill="none" stroke="currentColor" stroke-width="2" opacity=".7"/>
+          <circle cx="285" cy="135" r="10" fill="#C79A34"/>
+          <text x="285" y="102" font-family="Menlo, monospace" font-size="10" letter-spacing="1.4" fill="currentColor" text-anchor="middle" opacity=".8">NEST</text>
+          <!-- benches -->
+          <g fill="none" stroke="currentColor" stroke-width="2" opacity=".55">
+            <rect x="72" y="308" width="70" height="13"/><rect x="196" y="308" width="70" height="13"/>
+            <rect x="60" y="80" width="13" height="60"/>
+          </g>
+          <!-- cafe tables -->
+          <g opacity=".62">
+            <circle cx="420" cy="110" r="17" fill="none" stroke="currentColor" stroke-width="2"/>
+            <circle cx="500" cy="160" r="17" fill="none" stroke="currentColor" stroke-width="2"/>
+            <circle cx="418" cy="228" r="17" fill="none" stroke="currentColor" stroke-width="2"/>
+            <circle cx="516" cy="292" r="17" fill="none" stroke="currentColor" stroke-width="2"/>
+            <circle cx="432" cy="344" r="17" fill="none" stroke="currentColor" stroke-width="2"/>
+          </g>
+          <rect x="556" y="70" width="40" height="118" fill="currentColor" opacity=".18"/>
+          <text x="576" y="205" font-family="Menlo, monospace" font-size="9" fill="currentColor" text-anchor="middle" opacity=".6">CAFÉ</text>
+          <!-- cart corner -->
+          <rect x="676" y="120" width="86" height="48" fill="#B4643C" opacity=".5"/>
+          <rect x="676" y="120" width="86" height="48" fill="none" stroke="currentColor" stroke-width="2" opacity=".7"/>
+          <text x="719" y="150" font-family="Menlo, monospace" font-size="9" fill="currentColor" text-anchor="middle" opacity=".85">CART</text>
+          <rect x="800" y="238" width="50" height="60" fill="none" stroke="currentColor" stroke-width="2" opacity=".5"/>
+          <text x="825" y="316" font-family="Menlo, monospace" font-size="8" fill="currentColor" text-anchor="middle" opacity=".55">BINS</text>
+          <rect x="648" y="300" width="96" height="16" fill="none" stroke="currentColor" stroke-width="2" opacity=".5"/>
+          <text x="696" y="334" font-family="Menlo, monospace" font-size="8" fill="currentColor" text-anchor="middle" opacity=".55">NEWSSTAND</text>
+          <!-- scaffolding -->
+          <g stroke="currentColor" stroke-width="2" opacity=".45">
+            <path d="M 640 44 H 856"/><path d="M 640 44 V 92"/><path d="M 856 44 V 92"/><path d="M 640 92 H 856"/>
+            <path d="M 700 44 V 92"/><path d="M 760 44 V 92"/><path d="M 820 44 V 92"/>
+          </g>
+          <text x="748" y="34" font-family="Menlo, monospace" font-size="9" letter-spacing="1.2" fill="currentColor" text-anchor="middle" opacity=".6">SCAFFOLDING — HIGH ROUTE</text>
+
+          <!-- district labels -->
+          <g font-family="'Avenir Next Condensed','Arial Narrow',sans-serif" font-weight="700" font-size="19" letter-spacing="1.4" fill="currentColor" opacity=".8">
+            <text x="44" y="380">FOUNTAIN PLAZA</text>
+            <text x="374" y="380">CAFÉ ROW</text>
+            <text x="624" y="380">CART CORNER</text>
+          </g>
+          <g font-family="Menlo, monospace" font-size="9.5" fill="currentColor" opacity=".55">
+            <text x="44" y="58">tutorial · free coins · water</text>
+            <text x="374" y="58">patrols · tip jar · tables</text>
+            <text x="624" y="58">the ten · verticality</text>
+          </g>
+        </svg>
+      </div>
+      <div class="exhibit-cap">Exhibit D — plan view. Money density falls left to right; guard density rises. The nest sits deliberately at the seam, so every run home crosses traffic.</div>
+    </div>
+
+    <div class="col">
+      <h3>Reading the map</h3>
+      <p><strong>Fountain Plaza</strong> teaches by being safe. Coins are visible from the
+      spawn point, the fountain teaches diving, the memorial teaches climbing and doubles as
+      the nest. Nobody chases you here.</p>
+      <p><strong>Café Row</strong> introduces ownership. Tables have things on them and the
+      waiter has opinions. It is a corridor, so escapes have to go vertical.</p>
+      <p><strong>Cart Corner</strong> is the endgame. Scaffolding gives an aerial route that
+      the vendor cannot follow, and the ten dollars sits under the one man on the block who
+      never stops watching.</p>
+    </div>
+  </section>
+
+  <section id="structure">
+    <h2><span class="sec">§7</span> Shape of a session</h2>
+    <div class="col">
+      <p>There is no story mode and there are no levels. There is a block, a sunset, and a
+      short list of things a crow could try — the Untitled Goose Game arrangement, because it
+      is the correct one for a sandbox with four verbs.</p>
+
+      <h3>The list</h3>
+      <p>A handful of tasks sit in the corner of the screen. They are suggestions, not
+      requirements; the money is what matters, and the list exists to point at set pieces the
+      player might not have noticed. Sample: <span class="mono">Rob the tip jar · Dive for
+      the wishing coins · Trade something shiny · Make the vendor leave his cart · Get the
+      ten · Take a hat</span>.</p>
+
+      <h3>Sundown</h3>
+      <p>A real-time clock runs the light from mid-afternoon gold to low orange to blue dusk
+      over about eighteen minutes. It is not a fail timer — reaching dusk without twenty
+      dollars just means the light is beautiful and the crow is still a crow, and the player
+      can keep going. It closes out the session with a rank instead of a loss.</p>
+
+      <div class="note">
+        <span class="lbl">Ending</span>
+        Drop the coin that crosses $20 into the nest and the transformation starts — and the
+        first thing the newly human player sees is the kid on the bench, still holding out a
+        bottle cap for a bird that is no longer there. That is the whole story. It does not
+        need a cutscene.
+      </div>
+    </div>
+  </section>
+
+  <section id="camera">
+    <h2><span class="sec">§8</span> Camera</h2>
+    <div class="col">
+      <p>Fixed high-angle, slightly side-on, never rotates. Roughly 38° of pitch and 25° of
+      yaw off the world axis, on a near-orthographic lens — long focal length, so the block
+      reads as a diorama and parallel lines stay parallel.</p>
+
+      <p>It follows the crow with a soft dead zone and a lag of about a fifth of a second,
+      and it eases up and out when the crow gains altitude so that climbing literally shows
+      you more of the board. That is the one concession: the angle is fixed, the distance
+      is not, because a flying character on a locked-distance camera either flies off screen
+      or never gets to feel like it is flying.</p>
+
+      <p>Anything between the camera and the crow — an awning, a truck — fades to a
+      silhouette rather than being clipped away, which keeps the diorama intact.</p>
+    </div>
+  </section>
+
+  <section id="tech">
+    <h2><span class="sec">§9</span> Build and the iOS path</h2>
+    <div class="col">
+      <p>WebGL through three.js, no engine, no asset pipeline. Every model in the game is
+      generated from primitives in code, which means the whole build is a few hundred
+      kilobytes, loads instantly, has nothing to 404, and can be recolored globally by
+      editing one palette file.</p>
+
+      <h3>What makes it portable on day one</h3>
+      <ul>
+        <li><strong>Touch is not a retrofit.</strong> The input layer is written as one
+          abstract state object; keyboard and the on-screen stick both write into it, and the
+          game never asks which one is active.</li>
+        <li><strong>Portrait and landscape both work.</strong> Layout is driven by safe-area
+          insets from the start, so a notch changes nothing.</li>
+        <li><strong>Fixed-step simulation at 60 Hz</strong> with a decoupled render,
+          so a 120 Hz iPad and a throttled phone produce identical physics.</li>
+        <li><strong>No network, no storage beyond localStorage, no third-party scripts</strong>
+          — which is also what makes App Store review boring, and boring is the goal.</li>
+        <li><strong>Capacitor wrap</strong> is then genuinely a config file and an Xcode
+          build: <span class="mono">npx cap add ios</span> over the existing
+          <span class="mono">dist/</span>.</li>
+      </ul>
+
+      <h3>Performance budget</h3>
+      <p>Under 150 draw calls, a single directional light with one shadow map, no
+      post-processing beyond a cheap grade. Target 60 fps on an iPhone 12; the block is
+      small enough that this is not ambitious.</p>
+    </div>
+  </section>
+
+  <section id="scope">
+    <h2><span class="sec">§10</span> Scope</h2>
+    <div class="exhibit scope in">
+      <div>
+        <h4>In — v1</h4>
+        <ul>
+          <li>Full block, three districts</li>
+          <li>Crow: walk, flap, glide, perch, carry, drop</li>
+          <li>Money economy and the nest</li>
+          <li>Five human archetypes with the three-state brain</li>
+          <li>Trading with the kid</li>
+          <li>Task list, sunset clock, ending</li>
+          <li>Keyboard + full touch</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Out — deliberately</h4>
+        <ul>
+          <li>Multiplayer of any kind</li>
+          <li>Dialogue, cutscenes, voice</li>
+          <li>Save slots — a session is one sitting</li>
+          <li>Combat, damage, death</li>
+          <li>Procedural generation — the block is authored</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Later — if it earns it</h4>
+        <ul>
+          <li>Night block, second sandbox</li>
+          <li>Nest decoration from hoarded shinies</li>
+          <li>Speedrun mode against the clock</li>
+          <li>Haptics and Game Center ranks</li>
+        </ul>
+      </div>
+    </div>
+    <div class="exhibit-cap">Exhibit E — scope. The middle column is the one that keeps the first column shippable.</div>
+  </section>
+
+  <section id="plan">
+    <h2><span class="sec">§11</span> Build order</h2>
+    <div class="col">
+      <p>Ordered so that the thing most likely to be wrong — how it feels to be the crow —
+      is playable first and everything else is hung off a verified core.</p>
+    </div>
+    <div class="exhibit miles">
+      <div class="mile"><div class="m-id">M1</div><div class="m-body"><strong>Feel</strong><span>Renderer, fixed camera, crow locomotion and flight. Grey box, no art. The only question: is flying fun on its own?</span></div></div>
+      <div class="mile"><div class="m-id">M2</div><div class="m-body"><strong>Objects</strong><span>Carry, drop, deposit. The nest counts money. This is the loop closing.</span></div></div>
+      <div class="mile"><div class="m-id">M3</div><div class="m-body"><strong>The block</strong><span>Authored geometry, three districts, collision, the money layout from §3.</span></div></div>
+      <div class="mile"><div class="m-id">M4</div><div class="m-body"><strong>People</strong><span>Three-state brain, vision wedges, shooing, caw response. The game gets a pulse here.</span></div></div>
+      <div class="mile"><div class="m-id">M5</div><div class="m-body"><strong>Dress</strong><span>Palette, flat-shaded materials, sunset light rig, shadows, ambient life.</span></div></div>
+      <div class="mile"><div class="m-id">M6</div><div class="m-body"><strong>Frame</strong><span>HUD, task list, touch controls, title, ending, rank.</span></div></div>
+      <div class="mile"><div class="m-id">M7</div><div class="m-body"><strong>Port</strong><span>Capacitor config, safe areas, device pass, build docs.</span></div></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Small Change — design brief</span>
+    <span>Option A · crow · $20.00</span>
+  </footer>
+
+</main>
