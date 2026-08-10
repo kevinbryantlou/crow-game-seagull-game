@@ -164,7 +164,7 @@ class Game {
         this.audio.coin(this.total / GOAL);
         if (p.value > 0 && !this._taughtNest) {
           this._taughtNest = true;
-          this.hud.toast('Take it to your nest, on the memorial', 2.8);
+          this.hud.toast('Take it to your nest', 2.6);
         } else if (p.kind === 'shiny' && !this._taughtTrade) {
           this._taughtTrade = true;
           this.hud.toast('The kid on the bench will trade for that', 2.8);
