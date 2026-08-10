@@ -41,6 +41,7 @@ export class Crow {
     this._idleTick = 2 + Math.random() * 3;
     this._headTick = 0;
     this._stepTimer = 0;
+    this._beatT = 0;
     this._bob = 0;
 
     this.root = new THREE.Group();
@@ -182,9 +183,12 @@ export class Crow {
       if (this.vel.y < FLAP_MAX_RISE) this.vel.y += FLAP_ACCEL * dt;
       this.grounded = false;
       this._flapping = 1;
-      if (this._flapPhase % (Math.PI * 2) < 0.2 && wasGrounded) audio.wingbeat();
+      // One beat per wing cycle, not one per takeoff.
+      this._beatT -= dt;
+      if (this._beatT <= 0) { audio.wingbeat(); this._beatT = 0.36; }
     } else {
       this._flapping = Math.max(0, this._flapping - dt * 3);
+      this._beatT = 0;
     }
 
     if (!this.grounded) {

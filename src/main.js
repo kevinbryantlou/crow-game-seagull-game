@@ -88,9 +88,7 @@ class Game {
       document.getElementById('title').classList.add('hidden');
       this.running = true;
       this._last = performance.now();
-      setTimeout(() => {
-        if (this.running) this.hud.toast(this.input.hasTouch ? 'Find the shine' : 'Find the shine', 2.2);
-      }, 900);
+      setTimeout(() => { if (this.running) this.hud.toast('Find the shine', 2.2); }, 900);
     };
     document.getElementById('start').addEventListener('click', start);
     document.getElementById('again').addEventListener('click', () => location.reload());
@@ -377,4 +375,14 @@ class Game {
   };
 }
 
-new Game();
+// A thrown error during construction would otherwise leave a black screen with
+// the reason only in the console — which is no use at all on a phone.
+try {
+  new Game();
+} catch (err) {
+  console.error(err);
+  const el = document.getElementById('loading');
+  el.classList.remove('hidden');
+  el.style.cssText += 'flex-direction:column;gap:12px;padding:24px;text-align:center;color:#d95f4c';
+  el.textContent = `Could not start: ${err.message}`;
+}

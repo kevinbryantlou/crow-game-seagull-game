@@ -1,0 +1,22 @@
+{
+  "appId": "com.beacon2.smallchange",
+  "appName": "Small Change",
+  "webDir": "dist",
+  "backgroundColor": "#16332aff",
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": false,
+    "backgroundColor": "#16332aff",
+    "preferredContentMode": "mobile"
+  },
+  "server": {
+    "iosScheme": "capacitor"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "backgroundColor": "#16332aff",
+      "showSpinner": false
+    }
+  }
+}

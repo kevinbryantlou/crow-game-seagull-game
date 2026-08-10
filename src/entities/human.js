@@ -35,6 +35,8 @@ export class Human {
     this.root = new THREE.Group();
     this._build();
     this.root.position.copy(this.pos);
+    // The kid never runs her movement code, so her facing has to be applied here.
+    this.root.rotation.y = this.heading;
   }
 
   _build() {

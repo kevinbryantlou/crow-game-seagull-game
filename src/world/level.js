@@ -494,7 +494,9 @@ function pickupPlacements({ FOUNTAIN, CART, CASE, tableTops }) {
   // — Cart Corner: the endgame —
   add('bill1', 1.00, 11.2, 2.28, 6.7, { owner: 'newsagent' });
   add('bill5', 5.00, CART.x + 1.05, 2.12, CART.z + 0.1, { owner: 'vendor', label: 'CASH BOX' });
-  add('bill10', 10.00, CART.x - 1.9, 1.15, CART.z + 1.0, { owner: 'vendor', label: 'APRON', apron: true });
+  // Hanging on the front of the cart, not worn — the vendor walks away during
+  // the pigeon distraction, and the ten has to stay put when he does.
+  add('bill10', 10.00, CART.x - 1.2, 1.18, CART.z + 0.94, { owner: 'vendor', label: 'APRON POCKET' });
 
   // — Shinies: worthless, tradeable —
   add('shiny', 0, -24.5, 0.07, 2.5, { shinyKind: 'cap' });
