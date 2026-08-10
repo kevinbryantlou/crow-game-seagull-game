@@ -1,0 +1,368 @@
+/**
+ * The crow.
+ *
+ * A wedge with a hinge in it. The head is ~30% oversized and the beak is
+ * unreasonably large because the beak is the cursor — every interaction happens
+ * at its tip. Animation is procedural on a rig of nested groups; there are no
+ * skeletons and no imported clips. See docs/style-guide.html §4.
+ */
+
+import * as THREE from 'three';
+import { PAL } from '../render/palette.js';
+import { box, cyl, cone, ico, at, group, mat } from '../render/shapes.js';
+
+const GRAVITY = 19.0;
+const WALK_SPEED = 3.4;
+const AIR_SPEED = 7.2;
+const FLAP_ACCEL = 27.0;
+const FLAP_MAX_RISE = 6.4;
+const GLIDE_GRAVITY = 6.2;
+const STAMINA_MAX = 1.0;
+const STAMINA_DRAIN = 0.42;   // per second of flapping
+const STAMINA_REGEN = 0.62;   // per second on the ground
+const RADIUS = 0.34;
+
+export class Crow {
+  constructor(stage) {
+    this.stage = stage;
+    this.pos = new THREE.Vector3(-24, 0, 6);
+    this.vel = new THREE.Vector3();
+    this.heading = 0;
+    this.grounded = true;
+    this.stamina = STAMINA_MAX;
+    this.inWater = false;
+    this.carried = null;
+    this.stunned = 0;
+    this.wet = 0;
+
+    this._walkPhase = 0;
+    this._flapPhase = 0;
+    this._flapping = 0;
+    this._idleTick = 2 + Math.random() * 3;
+    this._headTick = 0;
+    this._stepTimer = 0;
+    this._bob = 0;
+
+    this.root = new THREE.Group();
+    this._build();
+    this.root.position.copy(this.pos);
+  }
+
+  _build() {
+    // body pivot — everything that bobs hangs off this
+    this.body = new THREE.Group();
+    this.root.add(this.body);
+
+    const torso = ico(0.26, 0, PAL.feather, { up: PAL.featherSheen, down: PAL.featherShade });
+    torso.scale.set(1.65, 1.0, 1.0);
+    torso.position.y = 0.30;
+    this.body.add(torso);
+
+    const chest = ico(0.19, 0, PAL.feather, { up: PAL.featherSheen, down: PAL.featherShade });
+    chest.scale.set(1.1, 1.0, 1.0);
+    chest.position.set(0.16, 0.30, 0);
+    this.body.add(chest);
+
+    // tail — a flattened wedge pointing back
+    const tail = cone(0.17, 0.44, 4, PAL.feather, { up: PAL.featherSheen, down: PAL.featherShade });
+    tail.rotation.z = Math.PI / 2 + 0.22;
+    tail.scale.set(1, 1, 0.42);
+    tail.position.set(-0.52, 0.30, 0);
+    this.body.add(tail);
+    this.tail = tail;
+
+    // head on a neck pivot, so it can counter-bob and tick independently
+    this.neck = new THREE.Group();
+    this.neck.position.set(0.30, 0.42, 0);
+    this.body.add(this.neck);
+
+    const head = ico(0.165, 0, PAL.feather, { up: PAL.featherSheen, down: PAL.featherShade });
+    head.scale.set(1.15, 1.05, 1.0);
+    this.neck.add(head);
+
+    const beak = cone(0.072, 0.30, 4, PAL.beak, { up: PAL.beak, down: PAL.featherShade });
+    beak.rotation.z = -Math.PI / 2;
+    beak.position.set(0.26, -0.015, 0);
+    this.neck.add(beak);
+    this.beak = beak;
+
+    // The one bright value on the bird.
+    for (const s of [-1, 1]) {
+      const white = ico(0.052, 0, PAL.eye, { shadow: false });
+      white.position.set(0.10, 0.045, s * 0.115);
+      this.neck.add(white);
+      const pupil = ico(0.028, 0, PAL.featherShade, { shadow: false });
+      pupil.position.set(0.135, 0.045, s * 0.128);
+      this.neck.add(pupil);
+    }
+
+    // wings, pivoting at the shoulder
+    this.wings = [];
+    for (const s of [-1, 1]) {
+      const pivot = new THREE.Group();
+      pivot.position.set(-0.02, 0.36, s * 0.16);
+      const wing = box(0.52, 0.055, 0.30, PAL.feather, { up: PAL.featherSheen, down: PAL.featherShade });
+      wing.position.set(-0.06, 0, s * 0.17);
+      pivot.add(wing);
+      const tip = box(0.28, 0.045, 0.20, PAL.featherShade, { up: PAL.featherSheen, down: PAL.featherShade });
+      tip.position.set(-0.28, -0.01, s * 0.30);
+      pivot.add(tip);
+      pivot.userData.side = s;
+      this.body.add(pivot);
+      this.wings.push(pivot);
+    }
+
+    // legs
+    this.legs = [];
+    for (const s of [-1, 1]) {
+      const pivot = new THREE.Group();
+      pivot.position.set(-0.04, 0.19, s * 0.09);
+      const shin = cyl(0.026, 0.026, 0.20, 5, PAL.beak, { shadow: false });
+      shin.position.y = -0.10;
+      pivot.add(shin);
+      const foot = box(0.15, 0.03, 0.10, PAL.beak, { shadow: false });
+      foot.position.set(0.03, -0.20, 0);
+      pivot.add(foot);
+      this.body.add(pivot);
+      this.legs.push(pivot);
+    }
+
+    // where a carried item hangs
+    this.grip = new THREE.Group();
+    this.grip.position.set(0.42, -0.03, 0);
+    this.neck.add(this.grip);
+
+    this.root.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  }
+
+  get beakWorld() {
+    const v = new THREE.Vector3(0.44, 0, 0);
+    this.neck.localToWorld(v);
+    return v;
+  }
+
+  /** Knocked out of the air by a human. Drops whatever is in the beak. */
+  fumble(fromX, fromZ) {
+    const dx = this.pos.x - fromX, dz = this.pos.z - fromZ;
+    const d = Math.hypot(dx, dz) || 1;
+    this.vel.set((dx / d) * 6.5, 5.0, (dz / d) * 6.5);
+    this.grounded = false;
+    this.stunned = 0.75;
+  }
+
+  update(dt, input, world, audio) {
+    const wasGrounded = this.grounded;
+
+    if (this.stunned > 0) this.stunned -= dt;
+    const canControl = this.stunned <= 0;
+
+    // ── horizontal intent, in camera space ──────────────────────────────────
+    const { forward, right } = this.stage.basis();
+    const wish = new THREE.Vector3();
+    if (canControl) {
+      wish.addScaledVector(right, input.move.x);
+      wish.addScaledVector(forward, -input.move.y);
+      if (wish.lengthSq() > 1) wish.normalize();
+    }
+
+    // Water is thick: the fountain slows you and soaks you.
+    const wetPenalty = this.inWater ? 0.45 : (this.wet > 0 ? 0.82 : 1);
+    const targetSpeed = (this.grounded ? WALK_SPEED : AIR_SPEED) * wetPenalty;
+    const accel = this.grounded ? 26 : 13;
+
+    const desiredX = wish.x * targetSpeed;
+    const desiredZ = wish.z * targetSpeed;
+    this.vel.x += (desiredX - this.vel.x) * Math.min(1, accel * dt);
+    this.vel.z += (desiredZ - this.vel.z) * Math.min(1, accel * dt);
+
+    // ── flap / glide ────────────────────────────────────────────────────────
+    const wantFlap = canControl && input.flap;
+    if (wantFlap && this.stamina > 0.02 && !this.inWater) {
+      this.stamina = Math.max(0, this.stamina - STAMINA_DRAIN * dt);
+      if (this.vel.y < FLAP_MAX_RISE) this.vel.y += FLAP_ACCEL * dt;
+      this.grounded = false;
+      this._flapping = 1;
+      if (this._flapPhase % (Math.PI * 2) < 0.2 && wasGrounded) audio.wingbeat();
+    } else {
+      this._flapping = Math.max(0, this._flapping - dt * 3);
+    }
+
+    if (!this.grounded) {
+      // Gliding — holding no flap while moving forward and falling slowly.
+      const gliding = !wantFlap && this.vel.y < 0.5 && wish.lengthSq() > 0.1;
+      this.vel.y -= (gliding ? GLIDE_GRAVITY : GRAVITY) * dt;
+      if (this.vel.y < -14) this.vel.y = -14;
+    }
+
+    if (this.grounded) {
+      this.stamina = Math.min(STAMINA_MAX, this.stamina + STAMINA_REGEN * dt);
+    }
+
+    // ── integrate + collide ─────────────────────────────────────────────────
+    this._move(dt, world);
+
+    // ── water ───────────────────────────────────────────────────────────────
+    const f = world.fountain;
+    const inRing = Math.hypot(this.pos.x - f.x, this.pos.z - f.z) < f.r - 0.7;
+    const nowInWater = inRing && this.pos.y < f.rim - 0.05;
+    if (nowInWater && !this.inWater) audio.plop();
+    this.inWater = nowInWater;
+    if (nowInWater) {
+      this.wet = 3.0;
+      // Buoyancy, so you bob rather than sink and get stuck.
+      if (this.pos.y < f.rim - 0.34) this.vel.y += 26 * dt;
+    }
+    if (this.wet > 0) this.wet -= dt;
+
+    // ── facing ──────────────────────────────────────────────────────────────
+    const speed2 = Math.hypot(this.vel.x, this.vel.z);
+    if (speed2 > 0.35) {
+      const want = Math.atan2(-this.vel.z, this.vel.x);
+      let d = want - this.heading;
+      while (d > Math.PI) d -= Math.PI * 2;
+      while (d < -Math.PI) d += Math.PI * 2;
+      this.heading += d * Math.min(1, 13 * dt);
+    }
+    this.root.rotation.y = this.heading;
+    this.root.position.copy(this.pos);
+
+    this._animate(dt, speed2, audio);
+
+    if (!wasGrounded && this.grounded && this.vel.y <= 0) audio.step();
+  }
+
+  _move(dt, world) {
+    const p = this.pos;
+    const cols = world.colliders;
+
+    // X then Z then Y, resolved separately — cheap, stable, and good enough for
+    // a block made entirely of axis-aligned boxes.
+    p.x += this.vel.x * dt;
+    for (const c of cols) {
+      if (p.y >= c.top - 0.02 || p.y + 0.5 <= c.bottom) continue;
+      if (p.x + RADIUS > c.minX && p.x - RADIUS < c.maxX && p.z + RADIUS > c.minZ && p.z - RADIUS < c.maxZ) {
+        p.x = this.vel.x > 0 ? c.minX - RADIUS : c.maxX + RADIUS;
+        this.vel.x = 0;
+      }
+    }
+
+    p.z += this.vel.z * dt;
+    for (const c of cols) {
+      if (p.y >= c.top - 0.02 || p.y + 0.5 <= c.bottom) continue;
+      if (p.x + RADIUS > c.minX && p.x - RADIUS < c.maxX && p.z + RADIUS > c.minZ && p.z - RADIUS < c.maxZ) {
+        p.z = this.vel.z > 0 ? c.minZ - RADIUS : c.maxZ + RADIUS;
+        this.vel.z = 0;
+      }
+    }
+
+    const prevY = p.y;
+    p.y += this.vel.y * dt;
+    this.grounded = false;
+
+    let floor = 0;
+    for (const c of cols) {
+      if (!c.perch) continue;
+      if (p.x + RADIUS * 0.7 > c.minX && p.x - RADIUS * 0.7 < c.maxX &&
+          p.z + RADIUS * 0.7 > c.minZ && p.z - RADIUS * 0.7 < c.maxZ) {
+        // Land only when falling onto it from above.
+        if (prevY >= c.top - 0.06 && c.top > floor) floor = c.top;
+        // Head bonk on an underside.
+        if (this.vel.y > 0 && prevY + 0.42 <= c.bottom && p.y + 0.42 > c.bottom) {
+          p.y = c.bottom - 0.42;
+          this.vel.y = 0;
+        }
+      }
+    }
+
+    if (p.y <= floor) {
+      p.y = floor;
+      if (this.vel.y < 0) this.vel.y = 0;
+      this.grounded = true;
+    }
+
+    // The fountain floor is below its rim.
+    const f = world.fountain;
+    if (Math.hypot(p.x - f.x, p.z - f.z) < f.r - 0.7 && p.y < f.floor) {
+      p.y = f.floor;
+      if (this.vel.y < 0) this.vel.y = 0;
+      this.grounded = true;
+    }
+  }
+
+  _animate(dt, speed2, audio) {
+    const moving = this.grounded && speed2 > 0.4;
+
+    // Walk: legs alternate, body bobs, head counter-bobs so it stays level.
+    // The head staying still while the body moves is the entire read.
+    if (moving) {
+      this._walkPhase += dt * speed2 * 3.1;
+      this._stepTimer -= dt;
+      if (this._stepTimer <= 0) {
+        this._stepTimer = Math.max(0.16, 1.2 / Math.max(1, speed2));
+        audio.step();
+      }
+    } else {
+      this._walkPhase += dt * 1.2;
+    }
+
+    const bobT = moving ? Math.sin(this._walkPhase * 2) * 0.035 : Math.sin(this._walkPhase) * 0.012;
+    this._bob += (bobT - this._bob) * Math.min(1, 16 * dt);
+    this.body.position.y = this._bob;
+    this.neck.position.y = 0.42 - this._bob * 0.85;
+
+    // Forward tilt: indignant on the ground, nose-up on the downstroke.
+    const tiltTarget = this.grounded
+      ? (moving ? 0.16 : 0.06)
+      : THREE.MathUtils.clamp(-this.vel.y * 0.045, -0.35, 0.45);
+    this.body.rotation.z += (tiltTarget - this.body.rotation.z) * Math.min(1, 9 * dt);
+
+    for (let i = 0; i < 2; i++) {
+      const leg = this.legs[i];
+      if (this.grounded) {
+        const ph = this._walkPhase + i * Math.PI;
+        leg.rotation.z = moving ? Math.sin(ph) * 0.65 : 0;
+        leg.position.y = 0.19 + (moving ? Math.max(0, Math.cos(ph)) * 0.05 : 0);
+      } else {
+        // Tucked in flight.
+        leg.rotation.z += (1.15 - leg.rotation.z) * Math.min(1, 10 * dt);
+      }
+    }
+
+    // Wings: fast attack, slow release when flapping; held flat when gliding.
+    if (this._flapping > 0.02) this._flapPhase += dt * 17;
+    const gliding = !this.grounded && this._flapping <= 0.02;
+    for (const w of this.wings) {
+      const s = w.userData.side;
+      let target;
+      if (this._flapping > 0.02) {
+        const raw = Math.sin(this._flapPhase);
+        target = (raw > 0 ? raw * 1.15 : raw * 0.55) * this._flapping;
+      } else if (gliding) {
+        target = 0.18;
+      } else {
+        target = -0.06 + Math.sin(this._walkPhase * 0.7) * 0.02;
+      }
+      w.rotation.x += (target * -s - w.rotation.x) * Math.min(1, 22 * dt);
+      w.rotation.y += ((gliding ? -0.12 : 0) - w.rotation.y) * Math.min(1, 8 * dt);
+    }
+
+    this.tail.rotation.z = Math.PI / 2 + 0.22 - (this.grounded ? 0 : 0.25);
+
+    // Idle head tick. This one beat does more for making the bird feel alive
+    // than everything else put together.
+    this._idleTick -= dt;
+    if (this._idleTick <= 0 && this.grounded && !moving) {
+      this._idleTick = 1.6 + Math.random() * 3.4;
+      this._headTick = (Math.random() < 0.5 ? -1 : 1) * (0.4 + Math.random() * 0.5);
+    }
+    this._headTick *= Math.max(0, 1 - dt * 7);
+    this.neck.rotation.y = this._headTick;
+    this.neck.rotation.z = this._headTick * 0.25;
+
+    // Carried item swings with a lag spring.
+    if (this.carried) {
+      const g = this.grip;
+      g.rotation.z += (-this.body.rotation.z * 0.7 - g.rotation.z) * Math.min(1, 10 * dt);
+    }
+  }
+}

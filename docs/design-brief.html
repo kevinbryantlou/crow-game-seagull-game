@@ -1,5 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
 <title>Small Change — Game Design Brief</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <style>
+  html { -webkit-text-size-adjust: 100%; }
   :root {
     --paper:      #E9E5DA;
     --paper-2:    #DFDACB;
@@ -243,6 +251,8 @@
     .plate svg { min-width: 26rem; }
   }
 </style>
+</head>
+<body>
 
 <header class="band">
   <div class="band-inner">
@@ -347,10 +357,24 @@
       you are holding, and it scatters.</p>
 
       <h3>Why the difficulty curve is free</h3>
-      <p>The block holds roughly <strong>$26</strong> of reachable money. The player needs
-      twenty. The cheap, unguarded money is worth about $6 of that. So the last stretch is
-      always the guarded stretch, no matter which order the player works in, and no
-      difficulty tuning is required to make the endgame tense.</p>
+      <p>The block holds <strong>$33.95</strong> of reachable money against a $20 target. That
+      sounds generous until you look at where it is: exactly <strong>$0.75</strong> can be
+      pocketed without crossing anybody — ten pennies, five nickels, four dimes, lying in the
+      open. Another $1.50 is at the bottom of the fountain. Everything else, all
+      <strong>$31.70</strong> of it, belongs to someone.</p>
+
+      <p>So the endgame is always the guarded stretch, in every possible order of play, and
+      no difficulty tuning is needed to produce that. What the slack buys is
+      <em class="term">choice</em>: you can blow the tip jar entirely, never touch the
+      busker, and still make rent off the cart — but you cannot make rent off the floor.</p>
+
+      <div class="note">
+        <span class="lbl">Verified, not asserted</span>
+        These figures are asserted by <span class="mono">scripts/smoke.mjs</span>, which builds
+        the real level and fails the run if unguarded money alone could ever reach $20. The
+        numbers on this page and the numbers in the build cannot drift apart without the
+        test going red.
+      </div>
     </div>
   </section>
 
@@ -701,3 +725,6 @@
   </footer>
 
 </main>
+
+</body>
+</html>

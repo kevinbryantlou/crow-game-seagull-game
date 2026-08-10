@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1f4d3d">
+<meta name="description" content="Small Change — a crow, a city block, and twenty dollars before sundown.">
+<title>Small Change</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f4d3d'/%3E%3Cpath d='M7 20l5-6h9l4 3-4 3z' fill='%231e1a24'/%3E%3Ccircle cx='19' cy='15' r='1.6' fill='%23e8e2d2'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --enamel: #1f4d3d;
+    --enamel-d: #143026;
+    --brass: #e0b348;
+    --brass-d: #a87c22;
+    --paper: #e9e5da;
+    --ink: #0f0d14;
+    --red: #d95f4c;
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-l: env(safe-area-inset-left, 0px);
+    --safe-r: env(safe-area-inset-right, 0px);
+    --display: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", "Helvetica Neue", sans-serif;
+    --mono: Menlo, ui-monospace, "SF Mono", Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0; padding: 0; height: 100%; overflow: hidden;
+    background: #12100f; color: var(--paper);
+    font-family: var(--display);
+    overscroll-behavior: none; touch-action: none;
+    -webkit-user-select: none; user-select: none;
+  }
+
+  canvas { display: block; width: 100%; height: 100%; }
+
+  #hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+
+  /* ── money counter ─────────────────────────────────────────────────────── */
+  #money {
+    position: absolute;
+    top: calc(var(--safe-t) + 14px); left: calc(var(--safe-l) + 14px);
+    background: var(--enamel); border-bottom: 3px solid var(--brass);
+    padding: 8px 14px 7px; min-width: 148px;
+    box-shadow: 0 3px 0 rgba(0,0,0,.22);
+  }
+  #money .lbl {
+    font-family: var(--mono); font-size: 9px; letter-spacing: .2em;
+    text-transform: uppercase; color: #9fb5ab; display: block; margin-bottom: 1px;
+  }
+  #money .amt {
+    font-family: var(--mono); font-variant-numeric: tabular-nums;
+    font-size: 27px; font-weight: 700; color: var(--brass); line-height: 1.05;
+    display: block; transition: transform .12s ease;
+  }
+  #money .amt.pop { transform: scale(1.16); }
+  #money .goal {
+    font-family: var(--mono); font-size: 10px; color: #9fb5ab; letter-spacing: .08em;
+  }
+  #bar { height: 4px; background: rgba(255,255,255,.14); margin-top: 6px; }
+  #bar i { display: block; height: 100%; width: 0%; background: var(--brass); transition: width .3s ease; }
+
+  /* ── carrying ──────────────────────────────────────────────────────────── */
+  #carry {
+    position: absolute; top: calc(var(--safe-t) + 116px); left: calc(var(--safe-l) + 14px);
+    background: rgba(15,13,20,.82); border-left: 3px solid var(--brass);
+    padding: 5px 11px; font-family: var(--mono); font-size: 10.5px;
+    letter-spacing: .12em; text-transform: uppercase; opacity: 0;
+    transition: opacity .18s ease;
+  }
+  #carry.on { opacity: 1; }
+
+  /* ── task list ─────────────────────────────────────────────────────────── */
+  #tasks {
+    position: absolute; top: calc(var(--safe-t) + 14px); right: calc(var(--safe-r) + 14px);
+    background: rgba(31,77,61,.92); border-bottom: 3px solid var(--brass);
+    padding: 9px 13px 10px; max-width: 250px; box-shadow: 0 3px 0 rgba(0,0,0,.22);
+  }
+  #tasks h2 {
+    font-family: var(--mono); font-size: 9px; letter-spacing: .2em;
+    text-transform: uppercase; color: #9fb5ab; margin: 0 0 6px; font-weight: 400;
+  }
+  #tasks ul { margin: 0; padding: 0; list-style: none; }
+  #tasks li {
+    font-size: 13px; letter-spacing: .02em; line-height: 1.34; margin: 3px 0;
+    color: var(--paper); display: flex; gap: 7px; align-items: baseline;
+  }
+  #tasks li::before { content: "□"; color: var(--brass); font-family: var(--mono); font-size: 11px; }
+  #tasks li.done { color: #7e9a8d; text-decoration: line-through; }
+  #tasks li.done::before { content: "▣"; }
+
+  /* ── sun dial ──────────────────────────────────────────────────────────── */
+  #sun {
+    position: absolute; bottom: calc(var(--safe-b) + 16px); right: calc(var(--safe-r) + 16px);
+    width: 108px; height: 58px; opacity: 0; transition: opacity .8s ease;
+  }
+  #sun.on { opacity: .9; }
+
+  /* ── stamina ───────────────────────────────────────────────────────────── */
+  #stam {
+    position: absolute; bottom: calc(var(--safe-b) + 18px); left: 50%;
+    transform: translateX(-50%); width: 128px; height: 4px;
+    background: rgba(15,13,20,.5); opacity: 0; transition: opacity .3s ease;
+  }
+  #stam.on { opacity: 1; }
+  #stam i { display: block; height: 100%; width: 100%; background: var(--paper); }
+  #stam.low i { background: var(--red); }
+
+  /* ── beak prompt ───────────────────────────────────────────────────────── */
+  #prompt {
+    position: absolute; transform: translate(-50%, -100%);
+    background: rgba(15,13,20,.86); color: #e8e2d2;
+    padding: 4px 9px; font-family: var(--mono); font-size: 10.5px;
+    letter-spacing: .1em; text-transform: uppercase; white-space: nowrap;
+    display: none; border-bottom: 2px solid var(--brass);
+  }
+  #prompt.on { display: block; }
+  #prompt b { color: var(--brass); font-weight: 700; }
+
+  /* ── toast ─────────────────────────────────────────────────────────────── */
+  #toast {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    font-size: 30px; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--paper); text-shadow: 0 3px 0 rgba(15,13,20,.6);
+    opacity: 0; transition: opacity .3s ease, transform .3s ease; text-align: center;
+  }
+  #toast.on { opacity: 1; transform: translate(-50%,-64%); }
+
+  /* ── touch controls ────────────────────────────────────────────────────── */
+  #touch { position: fixed; inset: 0; z-index: 20; display: none; }
+  body.touch #touch { display: block; }
+  #stick {
+    position: absolute; width: 118px; height: 118px; margin: -59px 0 0 -59px;
+    border: 2px solid rgba(233,229,218,.30); border-radius: 50%;
+    opacity: 0; transition: opacity .14s ease; pointer-events: none;
+  }
+  #stick.on { opacity: 1; }
+  #stick-knob {
+    position: absolute; top: 50%; left: 50%; width: 50px; height: 50px;
+    margin: -25px 0 0 -25px; border-radius: 50%;
+    background: rgba(233,229,218,.32); border: 2px solid rgba(233,229,218,.5);
+  }
+  #buttons {
+    position: absolute; right: calc(var(--safe-r) + 20px);
+    bottom: calc(var(--safe-b) + 26px);
+    display: grid; grid-template-columns: repeat(2, auto); gap: 12px;
+    align-items: end; justify-items: center;
+  }
+  .btn {
+    width: 68px; height: 68px; border-radius: 50%;
+    background: rgba(233,229,218,.16); border: 2px solid rgba(233,229,218,.42);
+    color: var(--paper); font-family: var(--mono); font-size: 10px;
+    letter-spacing: .1em; display: flex; align-items: center; justify-content: center;
+    text-transform: uppercase; transition: transform .08s ease, background .08s ease;
+  }
+  .btn.down { transform: scale(.92); background: rgba(233,229,218,.34); }
+  #btn-flap { width: 84px; height: 84px; grid-column: 2; grid-row: 1 / span 2; font-size: 12px; }
+  #btn-beak { grid-column: 1; grid-row: 1; }
+  #btn-caw  { grid-column: 1; grid-row: 2; }
+
+  /* ── overlays ──────────────────────────────────────────────────────────── */
+  .screen {
+    position: fixed; inset: 0; z-index: 40;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: calc(var(--safe-t) + 24px) 24px calc(var(--safe-b) + 24px);
+    text-align: center; background: #16332a;
+  }
+  .screen.hidden { display: none; }
+  #title { background: linear-gradient(#1f4d3d 0%, #16332a 55%, #0f2820 100%); }
+  .title-h {
+    font-size: clamp(58px, 17vw, 132px); line-height: .84; margin: 0;
+    text-transform: uppercase; font-weight: 700; letter-spacing: .01em; color: var(--paper);
+  }
+  .title-h span { display: block; color: var(--brass); }
+  .title-sub {
+    font-family: Charter, Georgia, serif; font-size: 16px; line-height: 1.6;
+    max-width: 32rem; color: #cfe0d8; margin: 22px 0 0;
+  }
+  .keys {
+    display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: center;
+    margin: 30px 0 0; font-family: var(--mono); font-size: 11px;
+    letter-spacing: .1em; text-transform: uppercase; color: #9fb5ab;
+  }
+  .keys b { color: var(--paper); font-weight: 700; }
+  .start {
+    margin-top: 34px; pointer-events: auto; cursor: pointer;
+    background: var(--brass); color: #14261f; border: 0;
+    font-family: var(--display); font-weight: 700; font-size: 20px;
+    text-transform: uppercase; letter-spacing: .1em;
+    padding: 15px 44px; border-bottom: 4px solid var(--brass-d);
+    transition: transform .1s ease;
+  }
+  .start:hover { transform: translateY(-2px); }
+  .start:active { transform: translateY(1px); border-bottom-width: 2px; }
+  .start:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
+  .fine {
+    margin-top: 26px; font-family: var(--mono); font-size: 9.5px;
+    letter-spacing: .16em; text-transform: uppercase; color: #6f8c80;
+  }
+
+  #ending .title-h { font-size: clamp(42px, 11vw, 88px); }
+  #rank {
+    font-family: var(--mono); font-size: 13px; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--brass); margin-top: 18px;
+  }
+  #ending-body {
+    font-family: Charter, Georgia, serif; font-size: 17px; line-height: 1.65;
+    max-width: 30rem; color: #d8e4de; margin: 18px 0 0;
+  }
+
+  #loading {
+    position: fixed; inset: 0; z-index: 50; background: #16332a;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .22em;
+    text-transform: uppercase; color: #7e9a8d;
+  }
+  #loading.hidden { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: .01ms !important; }
+  }
+  @media (max-width: 560px) {
+    #tasks { max-width: 168px; padding: 7px 10px 8px; }
+    #tasks li { font-size: 11.5px; }
+    #money { min-width: 124px; padding: 6px 11px 5px; }
+    #money .amt { font-size: 22px; }
+    #sun { width: 84px; height: 46px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<div id="hud">
+  <div id="money">
+    <span class="lbl">In the nest</span>
+    <span class="amt" id="amt">$0.00</span>
+    <span class="goal">of $20.00</span>
+    <div id="bar"><i id="bar-fill"></i></div>
+  </div>
+
+  <div id="carry"></div>
+
+  <div id="tasks">
+    <h2>Things a crow could try</h2>
+    <ul id="task-list"></ul>
+  </div>
+
+  <svg id="sun" viewBox="0 0 108 58" aria-hidden="true">
+    <path d="M8 52 A 46 46 0 0 1 100 52" fill="none" stroke="rgba(233,229,218,.3)" stroke-width="2"/>
+    <circle id="sun-dot" cx="8" cy="52" r="5" fill="#e0b348"/>
+  </svg>
+
+  <div id="stam"><i id="stam-fill"></i></div>
+  <div id="prompt"></div>
+  <div id="toast"></div>
+</div>
+
+<div id="touch">
+  <div id="stick"><div id="stick-knob"></div></div>
+  <div id="buttons">
+    <div class="btn" id="btn-flap">Fly</div>
+    <div class="btn" id="btn-beak">Beak</div>
+    <div class="btn" id="btn-caw">Caw</div>
+  </div>
+</div>
+
+<div class="screen" id="title">
+  <h1 class="title-h">Small<span>Change</span></h1>
+  <p class="title-sub">
+    You were a person this morning. You are a crow now, and the terms are
+    non-negotiable: <b>twenty dollars</b>, in your nest, by sundown.
+    Nobody said it had to be earned honestly.
+  </p>
+  <div class="keys">
+    <span><b>WASD</b> Move</span>
+    <span><b>Space</b> Fly (hold)</span>
+    <span><b>J</b> Beak</span>
+    <span><b>K</b> Caw</span>
+  </div>
+  <button class="start" id="start">Begin</button>
+  <p class="fine">Money only counts once it is in the nest · One thing in the beak at a time</p>
+</div>
+
+<div class="screen hidden" id="ending">
+  <h1 class="title-h" id="ending-title">Twenty<span>Dollars</span></h1>
+  <div id="rank"></div>
+  <p id="ending-body"></p>
+  <button class="start" id="again">Again</button>
+</div>
+
+<div id="loading">Building the block…</div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
