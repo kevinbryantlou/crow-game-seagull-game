@@ -651,6 +651,40 @@
       the wishing coins · Trade something shiny · Make the vendor leave his cart · Get the
       ten · Take a hat</span>.</p>
 
+      <h3>Ranks</h3>
+      <p>The first version graded on the clock alone, with thresholds guessed before
+      anyone had played. The first competent playtest run came in at
+      <span class="mono">2m 07s</span> — so "under five minutes" was not a distinction,
+      it was the default, and every informed run collected the top title.</p>
+
+      <p>The clock is now tuned to that data, and more importantly the title mostly
+      describes <em class="term">how</em> rather than how fast. A twelve-minute run in
+      which you were never once caught is a better story than a quick clumsy one, and it
+      used to score worse. Each title answers a different question, so replaying
+      differently earns a different name instead of a higher number.</p>
+
+      <div class="exhibit table-wrap">
+        <table>
+          <thead><tr><th>Rank</th><th>Earned by</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Model Citizen</strong></td><td>Never once shooed. The rarest, and the only one that ignores the clock entirely.</td></tr>
+            <tr><td><strong>Corvid Prodigy</strong></td><td>Home inside 2:30.</td></tr>
+            <tr><td><strong>Career Criminal</strong></td><td>Never traded with the kid — every cent of it stolen.</td></tr>
+            <tr><td><strong>Thorough Bird</strong></td><td>Everything on the list ticked off.</td></tr>
+            <tr><td><strong>Accomplished Thief</strong></td><td>Home inside 5:30.</td></tr>
+            <tr><td><strong>Persistent Bird</strong></td><td>Caught six times or more, and got there anyway.</td></tr>
+            <tr><td><strong>Bird About Town</strong></td><td>Got the money. Took a while. No notes.</td></tr>
+            <tr><td><strong>Still A Crow</strong></td><td>Dusk arrived first.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="exhibit-cap">Exhibit F — ranks, evaluated top to bottom; first match wins. Defined in <span class="mono">src/ui/rank.js</span> and unit tested, including a check that no rank is shadowed by an earlier one.</div>
+
+      <p>The eyebrow under the headline reads
+      <span class="mono">TITLE · TIME · NEVER CAUGHT</span> — the catch count is there
+      because it explains the title and tells you what to do differently. The amount is
+      not repeated there; it is already the headline.</p>
+
       <h3>Sundown</h3>
       <p>A real-time clock runs the light from mid-afternoon gold to low orange to blue dusk
       over about eighteen minutes. It is not a fail timer — reaching dusk without twenty

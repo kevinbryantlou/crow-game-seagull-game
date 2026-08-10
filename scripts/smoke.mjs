@@ -98,6 +98,46 @@ for (let i = 0; i < 2066; i++) drift += 0.01;
 check('a sum of 2066 pennies still reads correctly',
   say(drift) === 'twenty dollars, sixty-six cents', `(got "${say(drift)}")`);
 
+console.log('\nranks');
+const { rankFor, formatRankLine, RANKS, UNFINISHED } = await import('../src/ui/rank.js');
+const run = (o) => ({ won: true, elapsed: 400, caught: 3, traded: true, tasksDone: 2, totalTasks: 5, ...o });
+
+for (const [label, state, expected] of [
+  ['never caught beats everything', run({ caught: 0, elapsed: 900 }), 'Model Citizen'],
+  ['a genuinely fast run',          run({ elapsed: 120 }),            'Corvid Prodigy'],
+  ['2m07s (the real playtest run)', run({ elapsed: 127 }),            'Corvid Prodigy'],
+  ['all theft, no trading',         run({ traded: false }),           'Career Criminal'],
+  ['cleared the list',              run({ tasksDone: 5 }),            'Thorough Bird'],
+  ['a solid time',                  run({ elapsed: 300 }),            'Accomplished Thief'],
+  ['took a beating',                run({ elapsed: 600, caught: 7 }), 'Persistent Bird'],
+  ['got there eventually',          run({ elapsed: 600 }),            'Bird About Town'],
+  ['ran out of light',              run({ won: false, caught: 0 }),   UNFINISHED],
+]) {
+  check(`${label} → ${expected}`, rankFor(state) === expected, `(got ${rankFor(state)})`);
+}
+
+// The old ladder handed the top rank to any informed run; the new one must not.
+check('a middling 4-minute run is no longer a prodigy',
+  rankFor(run({ elapsed: 240 })) !== 'Corvid Prodigy', `(got ${rankFor(run({ elapsed: 240 }))})`);
+check('every rank is reachable — none is shadowed by an earlier test',
+  RANKS.every((r) => RANKS.findIndex((x) => x.title === r.title) ===
+    RANKS.findIndex((x) => x.test({
+      won: true, elapsed: 400, caught: 3, traded: true, tasksDone: 2, totalTasks: 5,
+      ...(r.title === 'Model Citizen' ? { caught: 0 } : {}),
+      ...(r.title === 'Corvid Prodigy' ? { elapsed: 100 } : {}),
+      ...(r.title === 'Career Criminal' ? { traded: false } : {}),
+      ...(r.title === 'Thorough Bird' ? { tasksDone: 5 } : {}),
+      ...(r.title === 'Accomplished Thief' ? { elapsed: 300 } : {}),
+      ...(r.title === 'Persistent Bird' ? { elapsed: 600, caught: 7 } : {}),
+      ...(r.title === 'Bird About Town' ? { elapsed: 600 } : {}),
+    }))));
+check('the eyebrow names the catch count, not the money',
+  formatRankLine(run({ elapsed: 127, caught: 0 })) === 'Model Citizen · 2m 07s · never caught',
+  `(got "${formatRankLine(run({ elapsed: 127, caught: 0 }))}")`);
+check('being caught is counted in the eyebrow',
+  formatRankLine(run({ elapsed: 127, caught: 3 })).endsWith('caught ×3'),
+  `(got "${formatRankLine(run({ elapsed: 127, caught: 3 }))}")`);
+
 console.log('\nlevel-design rules');
 
 // Nothing may be built inside the fountain basin. A bench spawned in the water

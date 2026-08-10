@@ -10,6 +10,7 @@ import { Stage } from './render/stage.js';
 import { Input } from './core/input.js';
 import { Audio } from './core/audio.js';
 import { Hud, setEndingTitle } from './ui/hud.js';
+import { formatRankLine } from './ui/rank.js';
 import { buildLevel } from './world/level.js';
 import { Crow } from './entities/crow.js';
 import { Human, Pigeon } from './entities/human.js';
@@ -70,6 +71,7 @@ class Game {
     this.finished = false;
     this.tradeStep = 0;
     this.saltMoved = false;
+    this.caught = 0;
     this._taughtNest = false;
     this._taughtTrade = false;
     this._cawCooldown = 0;
@@ -271,6 +273,7 @@ class Game {
 
   /** A human caught the crow. Costs time and dignity — nothing is ever lost. */
   onShooed(human, crow) {
+    this.caught++;
     this.audio.fumble();
     if (crow.carried) {
       const p = crow.carried;
@@ -312,16 +315,17 @@ class Game {
     this.running = false;
     this.audio.transform();
 
-    const mins = Math.floor(this.elapsed / 60);
-    const secs = Math.floor(this.elapsed % 60);
-    const rank = won
-      ? (this.elapsed < 300 ? 'Corvid Prodigy' : this.elapsed < 600 ? 'Accomplished Thief' : 'Persistent Bird')
-      : 'Still A Crow';
 
     const title = document.getElementById('ending-title');
     const body = document.getElementById('ending-body');
-    document.getElementById('rank').textContent =
-      `${rank} · ${mins}m ${String(secs).padStart(2, '0')}s`;
+    document.getElementById('rank').textContent = formatRankLine({
+      won,
+      elapsed: this.elapsed,
+      caught: this.caught,
+      traded: this.tradeStep > 0,
+      tasksDone: this.tasks.filter((t) => t.done).length,
+      totalTasks: this.tasks.length,
+    });
 
     if (won) {
       setEndingTitle(this.total);
