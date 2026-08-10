@@ -14,6 +14,7 @@ const KEY_MAP = {
   Space: 'flap',
   KeyJ: 'beak', KeyE: 'beak', Enter: 'beak',
   KeyK: 'caw', KeyQ: 'caw',
+  KeyH: 'help', Slash: 'help',   // Slash covers "?" with or without shift
 };
 
 export class Input {
@@ -24,6 +25,7 @@ export class Input {
     /** edge-triggered, consumed by the game each tick */
     this.beakPressed = false;
     this.cawPressed = false;
+    this.helpPressed = false;
     this.anyPressed = false;
 
     this.hasTouch = false;
@@ -50,6 +52,7 @@ export class Input {
       if (!this._keys.has(a)) {
         if (a === 'beak') this.beakPressed = true;
         if (a === 'caw') this.cawPressed = true;
+        if (a === 'help') this.helpPressed = true;
         this.anyPressed = true;
       }
       this._keys.add(a);
@@ -159,6 +162,7 @@ export class Input {
   flush() {
     this.beakPressed = false;
     this.cawPressed = false;
+    this.helpPressed = false;
     this.anyPressed = false;
   }
 }

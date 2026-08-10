@@ -442,7 +442,7 @@
           </tr>
           <tr>
             <td><strong>Beak</strong></td>
-            <td><kbd>J</kbd> / click</td>
+            <td><kbd>J</kbd> / <kbd>E</kbd> / <kbd>Enter</kbd></td>
             <td>Right button ②</td>
             <td>Grab, drop, deposit, tug, peck. Context-sensitive; the prompt names the target so it is never a guess.</td>
           </tr>
@@ -463,6 +463,21 @@
         Caw is the puzzle verb, not a joke button. If a set piece can only be solved by
         walking into things, it is not finished.
       </div>
+
+      <h3>Finding the controls again</h3>
+      <p>A player who forgets which key takes a thing should never have to restart to find
+      out, and a game with no fail state has no business owning a pause menu. So the scheme
+      is taught in two places, neither of which stops play:</p>
+      <ul>
+        <li><strong>The beak prompt carries its own key.</strong> It already floats at the
+          beak naming the verb and the object; it now reads
+          <span class="mono">[J] TAKE — DOLLAR BILL</span>. The control is taught at the
+          exact moment it is relevant, and costs no screen space at all.</li>
+        <li><strong>A legend, bottom left.</strong> Open at the start, collapses itself to a
+          <span class="mono">[H] CONTROLS</span> pill after twenty-five seconds, and toggles
+          on <kbd>H</kbd> or <kbd>?</kbd> forever after. Hidden on touch, where the buttons
+          are already on screen and labelled.</li>
+      </ul>
     </div>
   </section>
 
@@ -582,6 +597,35 @@
       <p><strong>Cart Corner</strong> is the endgame. Scaffolding gives an aerial route that
       the vendor cannot follow, and the ten dollars sits under the one man on the block who
       never stops watching.</p>
+
+      <h3>Rules any future block must obey</h3>
+      <p>These are not style preferences. They are asserted by
+      <span class="mono">scripts/smoke.mjs</span> against the built level, so a new block
+      cannot ship having quietly broken one.</p>
+
+      <ul>
+        <li><strong>A nest's landing surface is at least twice the nest.</strong> Banking
+          happens under pressure — it is the moment a chase resolves. The last obstacle
+          between a player and their money must never be a pixel-accurate landing on a
+          plinth the size of the nest itself. The nest can stay small; the roof it sits on
+          cannot.</li>
+        <li><strong>No two takeable things within one beak-length.</strong> The beak grabs
+          whatever is nearest, so two pickups closer than about 1.2 units are not two
+          targets — they are one ambiguous target, and the player experiences it as the
+          controls failing. Loose change of the same denomination is exempt; it is meant to
+          read as a single heap.</li>
+        <li><strong>Nothing is built inside the fountain,</strong> or inside any other
+          volume the player is meant to move through.</li>
+        <li><strong>No pickup sits inside solid geometry.</strong> An object embedded in a
+          collider cannot be reached at all, and nothing on screen says so.</li>
+      </ul>
+
+      <div class="note">
+        <span class="lbl">Where these came from</span>
+        Every one of these was a real defect found in playtest, not a precaution. The first
+        cost a run: a panicked landing during a chase missed a 2.0-unit plinth by a few
+        pixels and fell off the ledge.
+      </div>
     </div>
   </section>
 

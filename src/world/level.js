@@ -14,6 +14,25 @@ import { box, cyl, cone, ico, plane, at, group, mat, tint } from '../render/shap
 
 export const BOUNDS = { minX: -31, maxX: 31, minZ: -15, maxZ: 15 };
 
+/**
+ * Level-design invariants. These are asserted by scripts/smoke.mjs against the
+ * built level, so a future block cannot quietly break them.
+ */
+export const RULES = {
+  /**
+   * The surface you land on to reach a nest must be at least twice the nest's
+   * own footprint in each dimension. Banking happens under pressure — the last
+   * thing between a player and their money should never be pixel-accurate
+   * landing on a plinth the size of the nest.
+   */
+  nestPlatformRatio: 2,
+  /**
+   * Two takeable things closer than this are one ambiguous target, because the
+   * beak grabs the nearest. Keep pickups further apart than the beak's reach.
+   */
+  minPickupSeparation: 1.2,
+};
+
 export function buildLevel() {
   const root = new THREE.Group();
   const colliders = [];
@@ -26,6 +45,7 @@ export function buildLevel() {
       minX: x - w / 2, maxX: x + w / 2,
       minZ: z - d / 2, maxZ: z + d / 2,
       top, bottom, perch: opts.perch !== false,
+      tag: opts.tag || null,
     });
   };
 
@@ -145,7 +165,7 @@ export function buildLevel() {
     for (let i = 0; i < N; i++) {
       const a = (i / N) * Math.PI * 2;
       solid(FOUNTAIN.x + Math.cos(a) * (FOUNTAIN.r - 0.28), FOUNTAIN.z + Math.sin(a) * (FOUNTAIN.r - 0.28),
-        1.6, 1.6, FOUNTAIN.rim);
+        1.6, 1.6, FOUNTAIN.rim, 0, { tag: 'fountain-rim' });
     }
     perches.push({ x: FOUNTAIN.x, y: FOUNTAIN.rim + 2.3, z: FOUNTAIN.z });
     g.userData.water = water;
@@ -159,7 +179,9 @@ export function buildLevel() {
     g.add(at(box(3.6, 0.5, 3.6, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }), 0, 0.25, 0));
     g.add(at(box(2.8, 0.45, 2.8, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }), 0, 0.72, 0));
     g.add(at(box(2.0, 3.6, 2.0, PAL.stone, { up: PAL.stone, down: PAL.shade }), 0, 2.75, 0));
-    g.add(at(box(2.4, 0.4, 2.4, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }), 0, 4.75, 0));
+    // The cap is a wide cornice, not a plinth the size of the nest. Landing on
+    // it while being chased has to be forgiving — see NEST_PLATFORM_RULE.
+    g.add(at(box(3.4, 0.4, 3.4, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }), 0, 4.75, 0));
     // A plaque nobody reads.
     g.add(at(box(1.1, 0.7, 0.06, PAL.steelDark, { shadow: false }), 0, 2.6, 1.02));
 
@@ -183,7 +205,8 @@ export function buildLevel() {
     root.userData.nestGroup = nest;
 
     solid(NEST.x, NEST.z, 3.6, 3.6, 0.5);
-    solid(NEST.x, NEST.z, 2.0, 2.0, 4.95);
+    solid(NEST.x, NEST.z, 2.0, 2.0, 4.55);            // the shaft
+    solid(NEST.x, NEST.z, 3.4, 3.4, 4.95, 4.55);      // the cornice you land on
     perches.push({ x: NEST.x, y: NEST.y, z: NEST.z });
   }
 
@@ -266,7 +289,7 @@ export function buildLevel() {
   addLamp(9, -8);
   addLamp(24, 6);
   const kidBench = addBench(-17.5, 9.5);
-  addBench(-26, -2, Math.PI / 2);
+  addBench(-29, 2.5, Math.PI / 2);   // clear of the fountain and of the loose change
   addBench(0, 12.2);
   const purseBench = addBench(-4.5, -10.5);
 
@@ -369,12 +392,6 @@ export function buildLevel() {
       w.position.set(s * 1.1, 0.42, 0.86);
       g.add(w);
     }
-    // Cash box on the shelf.
-    const cashbox = box(0.5, 0.26, 0.36, PAL.steelDark, { up: PAL.steel, down: PAL.shade });
-    cashbox.position.set(1.05, 1.95, 0.1);
-    g.add(cashbox);
-    g.userData.cashbox = cashbox;
-
     g.position.set(CART.x, 0, CART.z);
     root.add(g);
     solid(CART.x, CART.z, 3.3, 1.7, 1.82);
@@ -386,8 +403,16 @@ export function buildLevel() {
   {
     const g = new THREE.Group();
     g.add(at(box(3.4, 2.2, 1.8, PAL.bark, { up: PAL.barkShade, down: PAL.shade }), 0, 1.1, 0));
-    g.add(at(box(3.8, 0.16, 2.6, PAL.cloth[4], { up: PAL.clothLit[4], down: PAL.shade }), 0, 2.3, 0.4));
+    // The canopy sits high enough to leave headroom over the counter. At its
+    // old height its collider band swallowed the counter top, so anything
+    // resting there could not be reached at all.
+    g.add(at(box(3.8, 0.16, 2.6, PAL.cloth[4], { up: PAL.clothLit[4], down: PAL.shade }), 0, 3.05, 0.4));
+    for (const px of [-1.7, 1.7]) {
+      g.add(at(cyl(0.06, 0.06, 1.4, 5, PAL.steel, { up: PAL.steel, down: PAL.steelDark }), px, 2.32, 1.6));
+    }
     g.add(at(box(3.0, 0.1, 0.7, PAL.barkShade, { up: PAL.bark }), 0, 1.35, -1.0));
+    // The till, moved off the hot dog cart.
+    g.add(at(box(0.52, 0.26, 0.38, PAL.steelDark, { up: PAL.steel, down: PAL.shade }), 1.0, 2.33, 0.55));
     for (let i = 0; i < 5; i++) {
       const mag = box(0.42, 0.03, 0.58, PAL.cloth[i % 5], { shadow: false });
       mag.position.set(-1.2 + i * 0.6, 1.42, -1.0);
@@ -398,8 +423,8 @@ export function buildLevel() {
     g.rotation.y = Math.PI;
     root.add(g);
     solid(11, 7.5, 3.4, 1.8, 2.2);
-    solid(11, 6.5, 3.8, 2.6, 2.46, 2.2);
-    perches.push({ x: 11, y: 2.46, z: 6.9 });
+    solid(11, 6.5, 3.8, 2.6, 3.13, 2.97);
+    perches.push({ x: 11, y: 3.13, z: 6.9 });
   }
 
   // Bins
@@ -461,6 +486,8 @@ export function buildLevel() {
     root, colliders, occluders, perches,
     fountain: FOUNTAIN,
     nest: NEST,
+    nestPlatform: 3.4,     // the cornice you land on
+    nestFootprint: 1.5,    // the twig ring itself
     cart: CART,
     cafeTables: tableTops,
     saltshaker,
@@ -516,19 +543,23 @@ function pickupPlacements({ FOUNTAIN, CART, CASE, tableTops }) {
 
   // — Busker —
   add('bill5', 5.00, CASE.x + 0.3, 0.20, CASE.z + 0.05, { owner: 'busker' });
-  add('quarter', 0.25, CASE.x - 0.35, 0.20, CASE.z + 0.1, { owner: 'busker' });
-  add('quarter', 0.25, CASE.x - 0.1, 0.20, CASE.z - 0.12, { owner: 'busker' });
+  add('quarter', 0.25, CASE.x - 1.9, 0.06, CASE.z + 0.8, { owner: 'busker' });
+  add('quarter', 0.25, CASE.x + 1.5, 0.06, CASE.z - 1.0, { owner: 'busker' });
 
   // — Cart Corner: the endgame —
-  add('bill1', 1.00, 11.2, 2.28, 6.7, { owner: 'newsagent' });
-  add('bill5', 5.00, CART.x + 1.05, 2.12, CART.z + 0.1, { owner: 'vendor', label: 'CASH BOX' });
-  // Hanging on the front of the cart, not worn — the vendor walks away during
+  // Three takeables within one beak-length of each other made the cart a lucky
+  // dip. The cart now tells one story — the ten, and the hot dog that gets you
+  // to it — and the cash moved to the newsstand, which gives the newsagent
+  // something worth guarding instead of a lone dollar.
+  add('bill1', 1.00, 11.6, 2.28, 6.7, { owner: 'newsagent' });
+  add('bill5', 5.00, 10.0, 2.50, 6.95, { owner: 'newsagent', label: 'CASH TIN' });
+  // Hanging on the far end of the cart, not worn — the vendor walks away during
   // the pigeon distraction, and the ten has to stay put when he does.
-  add('bill10', 10.00, CART.x - 1.2, 1.18, CART.z + 0.94, { owner: 'vendor', label: 'APRON POCKET' });
+  add('bill10', 10.00, CART.x + 1.15, 1.18, CART.z + 0.94, { owner: 'vendor', label: 'APRON POCKET' });
 
   // — Shinies: worthless, tradeable —
-  add('shiny', 0, -24.5, 0.07, 2.5, { shinyKind: 'cap' });
-  add('shiny', 0, FOUNTAIN.x + 2.6, FOUNTAIN.rim - 0.28, FOUNTAIN.z - 2.2, { inWater: true, shinyKind: 'ring' });
+  add('shiny', 0, -27.5, 0.07, 3.5, { shinyKind: 'cap' });
+  add('shiny', 0, FOUNTAIN.x - 1.5, FOUNTAIN.rim - 0.28, FOUNTAIN.z + 1.8, { inWater: true, shinyKind: 'ring' });
   add('shiny', 0, tableTops[1].x + 0.2, tableTops[1].y + 0.04, tableTops[1].z - 0.15, { shinyKind: 'marble' });
   add('shiny', 0, 26.0, 0.07, 7.4, { shinyKind: 'key' });
 

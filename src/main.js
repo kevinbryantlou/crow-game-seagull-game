@@ -88,6 +88,7 @@ class Game {
       document.getElementById('title').classList.add('hidden');
       this.running = true;
       this._last = performance.now();
+      this.hud.beginControlsCountdown(25);
       setTimeout(() => { if (this.running) this.hud.toast('Find the shine', 2.2); }, 900);
     };
     document.getElementById('start').addEventListener('click', start);
@@ -108,7 +109,9 @@ class Game {
     // Holding something: nest first, then the kid, then just put it down.
     if (this.crow.carried) {
       const n = this.world.nest;
-      if (Math.hypot(this.crow.pos.x - n.x, this.crow.pos.z - n.z) < 1.7 && this.crow.pos.y > n.y - 1.2) {
+      // Covers the whole cornice including its corners, so anywhere you can
+      // land is somewhere you can stash.
+      if (Math.hypot(this.crow.pos.x - n.x, this.crow.pos.z - n.z) < 2.45 && this.crow.pos.y > n.y - 1.2) {
         return this.crow.carried.value > 0
           ? { verb: 'STASH', noun: this.crow.carried.label, kind: 'bank' }
           : { verb: 'STASH', noun: this.crow.carried.label, kind: 'bank' };
@@ -315,6 +318,7 @@ class Game {
     this.input.sample();
     if (this.input.beakPressed) this._doAction(this._bestAction());
     if (this.input.cawPressed) this._caw();
+    if (this.input.helpPressed) this.hud.toggleControls();
 
     this.crow.update(dt, this.input, this.world, this.audio);
 
@@ -366,7 +370,7 @@ class Game {
     if (this.running) {
       const a = this._bestAction();
       this.stage.project(this.crow.beakWorld, this._screen);
-      this.hud.setPrompt(a, this._screen);
+      this.hud.setPrompt(a, this._screen, !this.input.hasTouch);
     } else {
       this.hud.setPrompt(null, null);
     }

@@ -32,7 +32,7 @@ globalThis.document = {
 globalThis.window = globalThis;
 // Node 26 ships a read-only `navigator`; nothing under test reads it, so leave it.
 
-const { buildLevel } = await import('../src/world/level.js');
+const { buildLevel, RULES } = await import('../src/world/level.js');
 const { Crow } = await import('../src/entities/crow.js');
 const { Human, Pigeon } = await import('../src/entities/human.js');
 const { Pickup } = await import('../src/world/pickups.js');
@@ -72,6 +72,24 @@ const meshCount = countMeshes(world.root);
 check('no mesh renders black from a missing color attribute',
   blackMeshes.length === 0, `(${blackMeshes.length} of ${meshCount} meshes)`);
 
+console.log('\nlevel-design rules');
+
+// Nothing may be built inside the fountain basin. A bench spawned in the water
+// once, and it was only caught because a human happened to fly over it.
+const F = world.fountain;
+const inFountain = world.colliders.filter((c) => {
+  if (c.tag === 'fountain-rim') return false;
+  const cx = Math.max(c.minX, Math.min(F.x, c.maxX));
+  const cz = Math.max(c.minZ, Math.min(F.z, c.maxZ));
+  return Math.hypot(cx - F.x, cz - F.z) < F.r - 0.8;
+});
+check('nothing is built inside the fountain', inFountain.length === 0,
+  `(${inFountain.length} collider(s) overlap the basin)`);
+
+check(`nest landing surface is at least ${RULES.nestPlatformRatio}x the nest`,
+  world.nestPlatform >= world.nestFootprint * RULES.nestPlatformRatio,
+  `(platform ${world.nestPlatform} vs nest ${world.nestFootprint})`);
+
 console.log('\npickups');
 const pickups = world.pickups.map((s) => new Pickup(s));
 check('all pickups construct', pickups.length === world.pickups.length, `(${pickups.length})`);
@@ -85,6 +103,34 @@ check('the hot dog exists on the cart', pickups.some((p) => p.kind === 'hotdog' 
 const labelled = pickups.filter((p) => p.customLabel);
 check('custom labels survive construction', labelled.length === 3,
   `(${labelled.map((p) => p.label).join(', ')})`);
+
+// Two takeables inside one beak-length are one ambiguous target — the cart had
+// three, which made grabbing the thing you actually wanted a lucky dip.
+const tooClose = [];
+for (let i = 0; i < pickups.length; i++) {
+  for (let j = i + 1; j < pickups.length; j++) {
+    const a = pickups[i].home, b = pickups[j].home;
+    const d = a.distanceTo(b);
+    // Loose change piles and scattered coins are meant to read as one heap.
+    const heap = pickups[i].kind === pickups[j].kind
+      && ['penny', 'nickel', 'dime', 'quarter', 'bill1'].includes(pickups[i].kind);
+    if (d < RULES.minPickupSeparation && !heap) {
+      tooClose.push(`${pickups[i].label}/${pickups[j].label} ${d.toFixed(2)}`);
+    }
+  }
+}
+check('no two distinct pickups sit within one beak-length', tooClose.length === 0,
+  `(${tooClose.join('; ')})`);
+
+// A pickup inside a collider's blocking volume cannot be reached at all.
+const buried = pickups.filter((p) => world.colliders.some((c) => {
+  if (c.tag === 'fountain-rim') return false;
+  return p.home.x > c.minX && p.home.x < c.maxX
+      && p.home.z > c.minZ && p.home.z < c.maxZ
+      && p.home.y > c.bottom + 0.02 && p.home.y < c.top - 0.02;
+}));
+check('no pickup is buried inside solid geometry', buried.length === 0,
+  `(${buried.map((p) => p.label).join(', ')})`);
 
 const money = pickups.reduce((a, p) => a + p.value, 0);
 const free = pickups.filter((p) => !p.owner && !p.inWater && p.value > 0)

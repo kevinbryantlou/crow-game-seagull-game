@@ -25,6 +25,28 @@ export class Hud {
     this._taskEls = new Map();
     this._toastT = 0;
     this._projected = { x: 0, y: 0, visible: false };
+
+    // Controls legend: open at the start, collapses itself once the player has
+    // had time to read it, and is always one key away after that. No modal and
+    // no pause — this is a game with no fail state, it should not stop.
+    this.controls = $('controls');
+    this.controlsToggle = $('controls-toggle');
+    this._controlsT = 0;
+    this.controlsToggle.addEventListener('click', () => this.toggleControls());
+  }
+
+  toggleControls(force) {
+    const collapsed = force === undefined
+      ? !this.controls.classList.contains('collapsed')
+      : !force;
+    this.controls.classList.toggle('collapsed', collapsed);
+    this.controlsToggle.setAttribute('aria-expanded', String(!collapsed));
+    this._controlsT = 0;   // an explicit choice is not overridden by the timer
+  }
+
+  /** Start the auto-collapse countdown when play actually begins. */
+  beginControlsCountdown(seconds = 25) {
+    this._controlsT = seconds;
   }
 
   setMoney(total) {
@@ -59,13 +81,18 @@ export class Hud {
     }
   }
 
-  /** @param {{verb:string,noun:string}|null} action */
-  setPrompt(action, screen) {
+  /**
+   * The prompt carries the key that performs it, so the primary verb is taught
+   * exactly where and when it is needed rather than in a menu.
+   * @param {{verb:string,noun:string}|null} action
+   */
+  setPrompt(action, screen, showKey = false) {
     if (!action || !screen || !screen.visible) {
       this.prompt.classList.remove('on');
       return;
     }
-    this.prompt.innerHTML = `<b>${action.verb}</b> — ${action.noun}`;
+    const key = showKey && action.kind ? '<kbd>J</kbd>' : '';
+    this.prompt.innerHTML = `${key}<b>${action.verb}</b> — ${action.noun}`;
     this.prompt.style.left = `${screen.x}px`;
     this.prompt.style.top = `${screen.y - 14}px`;
     this.prompt.classList.add('on');
@@ -96,6 +123,13 @@ export class Hud {
     if (this._toastT > 0) {
       this._toastT -= dt;
       if (this._toastT <= 0) this.toastEl.classList.remove('on');
+    }
+    if (this._controlsT > 0) {
+      this._controlsT -= dt;
+      if (this._controlsT <= 0) {
+        this.controls.classList.add('collapsed');
+        this.controlsToggle.setAttribute('aria-expanded', 'false');
+      }
     }
   }
 }
