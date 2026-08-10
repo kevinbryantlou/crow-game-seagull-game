@@ -168,7 +168,9 @@
   /* ── toast ─────────────────────────────────────────────────────────────── */
   #toast {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-    font-size: 30px; letter-spacing: .04em; text-transform: uppercase;
+    font-size: clamp(20px, 3.4vw, 30px); line-height: 1.15;
+    max-width: min(88vw, 30rem); text-wrap: balance;
+    letter-spacing: .04em; text-transform: uppercase;
     color: var(--paper); text-shadow: 0 3px 0 rgba(15,13,20,.6);
     opacity: 0; transition: opacity .3s ease, transform .3s ease; text-align: center;
   }

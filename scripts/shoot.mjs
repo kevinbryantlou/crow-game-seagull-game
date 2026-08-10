@@ -119,6 +119,24 @@ await look('07-cart', 15, 2.0, -2.0);
 await look('08-nest', -12.5, 5.0, -6.5);
 await look('09-kid', -17.5, 0, 11.5);
 
+// Functional check: the two teaching beats fire at the moment each applies.
+const teach = await page.evaluate(() => {
+  const g = window.__game;
+  const toast = () => document.getElementById('toast').textContent;
+  const coin = g.pickups.find((p) => p.value > 0 && p.state === 'world' && !p.pinned);
+  g._doAction({ kind: 'take', pickup: coin });
+  const onMoney = toast();
+  g.crow.carried = null; coin.state = 'world';
+  const shiny = g.pickups.find((p) => p.kind === 'shiny' && p.state === 'world');
+  g._doAction({ kind: 'take', pickup: shiny });
+  const onShiny = toast();
+  g.crow.carried = null; shiny.state = 'world';
+  return { onMoney, onShiny };
+});
+console.log('  teach:', JSON.stringify(teach));
+if (!/nest/i.test(teach.onMoney)) errors.push(`no nest hint on first money: "${teach.onMoney}"`);
+if (!/trade/i.test(teach.onShiny)) errors.push(`no trade hint on first shiny: "${teach.onShiny}"`);
+
 // Functional check: trading a shiny must put the reward straight in the beak,
 // never on the ground where scenery can hide it.
 const trade = await page.evaluate(() => {

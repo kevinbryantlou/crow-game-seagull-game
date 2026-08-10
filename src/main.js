@@ -63,6 +63,8 @@ class Game {
     this.finished = false;
     this.tradeStep = 0;
     this.saltMoved = false;
+    this._taughtNest = false;
+    this._taughtTrade = false;
     this._cawCooldown = 0;
     this._screen = { x: 0, y: 0, visible: false };
     this._acc = 0;
@@ -89,7 +91,7 @@ class Game {
       this.running = true;
       this._last = performance.now();
       this.hud.beginControlsCountdown(10);
-      setTimeout(() => { if (this.running) this.hud.toast('Find the shine', 2.2); }, 900);
+      setTimeout(() => { if (this.running) this.hud.toast('Collect money', 2.2); }, 900);
     };
     document.getElementById('start').addEventListener('click', start);
     document.getElementById('again').addEventListener('click', () => location.reload());
@@ -160,7 +162,15 @@ class Game {
         p.setCarried(this.crow.grip);
         this.crow.carried = p;
         this.audio.coin(this.total / GOAL);
-        if (p.kind === 'hotdog') this.hud.toast('A hot dog', 1.3);
+        if (p.value > 0 && !this._taughtNest) {
+          this._taughtNest = true;
+          this.hud.toast('Take it to your nest, on the memorial', 2.8);
+        } else if (p.kind === 'shiny' && !this._taughtTrade) {
+          this._taughtTrade = true;
+          this.hud.toast('The kid on the bench will trade for that', 2.8);
+        } else if (p.kind === 'hotdog') {
+          this.hud.toast('A hot dog', 1.3);
+        }
         break;
       }
       case 'drop': {
