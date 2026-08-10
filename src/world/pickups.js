@@ -18,6 +18,48 @@ export const KIND_LABEL = {
 
 const SHINY_LABEL = { cap: 'BOTTLE CAP', ring: 'A RING', marble: 'A MARBLE', key: 'A KEY' };
 
+/**
+ * The glint texture: a soft radial falloff with a faint four-point star.
+ * A hard-edged quad reads as a scrap of paper lying on the pavement rather
+ * than as light, which is the opposite of the signal we want.
+ */
+let _glintTex = null;
+function glintTexture() {
+  if (_glintTex) return _glintTex;
+  const S = 64;
+  const cvs = document.createElement('canvas');
+  cvs.width = cvs.height = S;
+  const c = cvs.getContext('2d');
+
+  const grad = c.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+  grad.addColorStop(0.00, 'rgba(255,246,220,1)');
+  grad.addColorStop(0.18, 'rgba(240,201,116,0.62)');
+  grad.addColorStop(0.55, 'rgba(224,179,72,0.16)');
+  grad.addColorStop(1.00, 'rgba(224,179,72,0)');
+  c.fillStyle = grad;
+  c.fillRect(0, 0, S, S);
+
+  // Star spikes, drawn as fading strokes so they never show a hard end.
+  const spike = c.createLinearGradient(0, 0, S, 0);
+  spike.addColorStop(0, 'rgba(255,246,220,0)');
+  spike.addColorStop(0.5, 'rgba(255,246,220,0.55)');
+  spike.addColorStop(1, 'rgba(255,246,220,0)');
+  c.strokeStyle = spike;
+  c.lineWidth = 1.5;
+  c.beginPath();
+  c.moveTo(2, S / 2); c.lineTo(S - 2, S / 2);
+  c.stroke();
+  c.save();
+  c.translate(S / 2, S / 2); c.rotate(Math.PI / 2); c.translate(-S / 2, -S / 2);
+  c.beginPath();
+  c.moveTo(2, S / 2); c.lineTo(S - 2, S / 2);
+  c.stroke();
+  c.restore();
+
+  _glintTex = new THREE.CanvasTexture(cvs);
+  return _glintTex;
+}
+
 function coinMesh(r, h, color) {
   const m = cyl(r, r, h, 10, color, { up: color, down: PAL.shade });
   m.rotation.x = Math.PI / 2;
@@ -130,16 +172,18 @@ export class Pickup {
     this.root.add(this.mesh);
     this.root.position.copy(this.pos);
 
-    // The glint — the game's only "you can take this" signal.
-    if (spec.kind !== 'hotdog') {
-      const g = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.17, 0.17),
-        new THREE.MeshBasicMaterial({
-          color: PAL.goldLit, transparent: true, opacity: 0.55,
-          depthWrite: false, blending: THREE.AdditiveBlending,
-        }),
-      );
-      g.position.y = 0.14;
+    // The glint — the game's only "you can take this" signal. It goes on
+    // everything takeable without exception, including the hot dog: it is not
+    // money, but it is the key to the whole of Cart Corner, and a player who
+    // cannot see that it is an object cannot find the puzzle.
+    {
+      // A Sprite, so it always faces the camera without any per-frame work.
+      const g = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: glintTexture(), transparent: true, opacity: 0.85,
+        depthWrite: false, blending: THREE.AdditiveBlending,
+      }));
+      g.scale.setScalar(0.34);
+      g.position.y = 0.15;
       this.glint = g;
       this.root.add(g);
     }
@@ -180,9 +224,10 @@ export class Pickup {
 
     this._spin += dt * 1.6;
     if (this.glint) {
-      this.glint.position.y = 0.13 + Math.sin(this._spin * 1.7) * 0.03;
-      this.glint.material.opacity = 0.34 + Math.abs(Math.sin(this._spin * 1.3)) * 0.34;
-      if (camera) this.glint.quaternion.copy(camera.quaternion);
+      const pulse = Math.abs(Math.sin(this._spin * 1.3));
+      this.glint.position.y = 0.14 + Math.sin(this._spin * 1.7) * 0.03;
+      this.glint.material.opacity = 0.5 + pulse * 0.42;
+      this.glint.scale.setScalar(0.30 + pulse * 0.07);
     }
     if (this.kind !== 'coins' && this.kind !== 'hotdog') {
       this.mesh.rotation.y = this._spin * 0.55;

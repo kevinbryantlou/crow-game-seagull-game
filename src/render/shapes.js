@@ -66,13 +66,17 @@ export function tint(geometry, base, up = null, down = null, upThresh = 0.35, do
 function finish(geo, colors, opts) {
   const { up, down, shadow = true, receive = true, transparent, opacity, side } = opts;
   let material;
+  let geometry = geo;
   if (up != null || down != null) {
-    tint(geo, colors, up, down);
+    // tint() returns a non-indexed CLONE for indexed inputs, so the result has
+    // to replace the original. Dropping it leaves a mesh with vertexColors on
+    // and no color attribute, which the shader reads as pure black.
+    geometry = tint(geo, colors, up, down);
     material = mat(0xffffff, { vertexColors: true, transparent, opacity, side });
   } else {
     material = mat(colors, { transparent, opacity, side });
   }
-  const m = new THREE.Mesh(geo, material);
+  const m = new THREE.Mesh(geometry, material);
   m.castShadow = shadow;
   m.receiveShadow = receive;
   return m;

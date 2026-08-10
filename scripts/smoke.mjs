@@ -12,10 +12,16 @@
 import * as THREE from 'three';
 
 // ── minimal DOM, for the one place we build a canvas texture ────────────────
+const fakeGradient = { addColorStop() {} };
 class FakeCtx {
-  clearRect() {} strokeText() {} fillText() {}
+  clearRect() {} strokeText() {} fillText() {} fillRect() {}
+  beginPath() {} moveTo() {} lineTo() {} stroke() {}
+  save() {} restore() {} translate() {} rotate() {}
+  createRadialGradient() { return fakeGradient; }
+  createLinearGradient() { return fakeGradient; }
   set font(_) {} set textAlign(_) {} set textBaseline(_) {}
   set lineWidth(_) {} set strokeStyle(_) {} set fillStyle(_) {}
+  set globalCompositeOperation(_) {}
 }
 globalThis.document = {
   createElement: (tag) => {
@@ -48,10 +54,34 @@ check('every collider is finite', world.colliders.every(
 check('nest group exists', !!world.root.userData.nestGroup);
 check('fountain water exists', !!world.root.userData.fountainWater);
 
+// A mesh whose material has vertexColors on but whose geometry carries no
+// `color` attribute renders pure black. This is invisible to any test that
+// does not look at the actual buffers, and it silently ate most of the block.
+const blackMeshes = [];
+const countMeshes = (rootObj) => {
+  let n = 0;
+  rootObj.traverse((o) => {
+    if (!o.isMesh) return;
+    n++;
+    const m = Array.isArray(o.material) ? o.material[0] : o.material;
+    if (m && m.vertexColors && !o.geometry.attributes.color) blackMeshes.push(o);
+  });
+  return n;
+};
+const meshCount = countMeshes(world.root);
+check('no mesh renders black from a missing color attribute',
+  blackMeshes.length === 0, `(${blackMeshes.length} of ${meshCount} meshes)`);
+
 console.log('\npickups');
 const pickups = world.pickups.map((s) => new Pickup(s));
 check('all pickups construct', pickups.length === world.pickups.length, `(${pickups.length})`);
 check('every pickup has a label', pickups.every((p) => typeof p.label === 'string' && p.label.length));
+// The style guide's rule: a thing you can take is the only thing that glints.
+// The hot dog is not money but it is takeable, and it is the key to Cart
+// Corner — without a glint the player cannot tell the puzzle is there.
+check('every takeable pickup carries a glint', pickups.every((p) => !!p.glint),
+  `(missing: ${pickups.filter((p) => !p.glint).map((p) => p.kind).join(', ') || 'none'})`);
+check('the hot dog exists on the cart', pickups.some((p) => p.kind === 'hotdog' && p.glint));
 const labelled = pickups.filter((p) => p.customLabel);
 check('custom labels survive construction', labelled.length === 3,
   `(${labelled.map((p) => p.label).join(', ')})`);

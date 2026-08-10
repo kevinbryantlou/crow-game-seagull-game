@@ -86,20 +86,48 @@ export function buildLevel() {
   const FOUNTAIN = { x: -22, z: 0, r: 5.2, rim: 0.62, floor: 0.06 };
   {
     const g = new THREE.Group();
-    const basin = cyl(FOUNTAIN.r, FOUNTAIN.r + 0.3, FOUNTAIN.rim, 16, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
-    basin.position.y = FOUNTAIN.rim / 2;
-    g.add(basin);
-    const inner = cyl(FOUNTAIN.r - 0.55, FOUNTAIN.r - 0.55, FOUNTAIN.rim, 16, PAL.stoneMid, { shadow: false });
-    inner.position.y = FOUNTAIN.rim / 2 + 0.02;
-    inner.material = mat(PAL.stoneMid);
-    g.add(inner);
+    // The basin has to be genuinely hollow — a solid cylinder would cap the
+    // interior and hide both the water and the coins the player dives for.
+    const R = FOUNTAIN.r, RI = FOUNTAIN.r - 0.6, SEG = 20;
 
-    const water = new THREE.Mesh(
-      new THREE.CircleGeometry(FOUNTAIN.r - 0.6, 24).rotateX(-Math.PI / 2),
-      new THREE.MeshLambertMaterial({ color: PAL.water, transparent: true, opacity: 0.86, flatShading: true }),
+    const wall = new THREE.Mesh(
+      new THREE.CylinderGeometry(R + 0.3, R + 0.3, FOUNTAIN.rim, SEG, 1, true),
+      mat(PAL.stoneMid, { side: THREE.DoubleSide }),
     );
-    water.position.y = FOUNTAIN.rim - 0.12;
-    water.receiveShadow = true;
+    wall.position.y = FOUNTAIN.rim / 2;
+    wall.castShadow = true; wall.receiveShadow = true;
+    g.add(wall);
+
+    const innerWall = new THREE.Mesh(
+      new THREE.CylinderGeometry(RI, RI, FOUNTAIN.rim, SEG, 1, true),
+      mat(PAL.pavingMid, { side: THREE.DoubleSide }),
+    );
+    innerWall.position.y = FOUNTAIN.rim / 2;
+    innerWall.receiveShadow = true;
+    g.add(innerWall);
+
+    const rimTop = new THREE.Mesh(
+      new THREE.RingGeometry(RI, R + 0.3, SEG).rotateX(-Math.PI / 2),
+      mat(PAL.stone),
+    );
+    rimTop.position.y = FOUNTAIN.rim;
+    rimTop.receiveShadow = true;
+    g.add(rimTop);
+
+    const basinFloor = new THREE.Mesh(
+      new THREE.CircleGeometry(RI, SEG).rotateX(-Math.PI / 2),
+      mat(PAL.stoneMid),
+    );
+    basinFloor.position.y = FOUNTAIN.floor;
+    basinFloor.receiveShadow = true;
+    g.add(basinFloor);
+
+    // Sits well below the rim, so the coins on the floor read through it.
+    const water = new THREE.Mesh(
+      new THREE.CircleGeometry(RI - 0.03, SEG).rotateX(-Math.PI / 2),
+      new THREE.MeshLambertMaterial({ color: PAL.water, transparent: true, opacity: 0.62, flatShading: true }),
+    );
+    water.position.y = FOUNTAIN.rim - 0.20;
     g.add(water);
 
     const pedestal = cyl(0.5, 0.85, 1.9, 8, PAL.stone, { up: PAL.stone, down: PAL.shade });

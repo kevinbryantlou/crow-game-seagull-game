@@ -7,3 +7,6 @@ dist/
 ios/App/Pods/
 ios/App/App/public/
 .env
+
+shots/
+dist/
