@@ -39,6 +39,68 @@ function stutter(s) {
 }
 const STUTTER_FOR = 0.30;
 
+/**
+ * PROTOTYPE — tier 2. Not a decision, not committed.
+ *
+ * The pool texture: one soft radial falloff, generated once into a canvas at
+ * boot and shared by every pool. Same technique as the pickup glint, which has
+ * shipped since the beginning — which is the point. It is the honest version of
+ * "pre-baked light textures": precomputed, no asset, no UVs, no per-light
+ * shader work.
+ */
+/**
+ * Two falloff profiles, because a lamppost and a stall are not the same light.
+ *
+ * Colour first: additive blending raises all three channels, so a warm *white*
+ * core can only ever trend grey. The first pass used rgba(255,238,196) — blue at
+ * 77% of red — and measured R−B of +2 inside the pool against +3 on bare paving:
+ * 40% brighter and not one bit warmer, with saturation *dropping* from 32% to
+ * 26%. Sodium wants blue nearer 30% of red, and a lower alpha, so the light adds
+ * hue instead of washing it out.
+ *
+ * Then shape. A bulb 4.6 m up a pole is a point source: hot core, long falloff.
+ * A bulb under a stall canopy is an area source a metre wide, and giving it the
+ * lamppost's spike is what made the stands read as cheap — a bright dot with a
+ * halo rather than a lit counter. The stall profile is a plateau: nearly flat
+ * out to 45% of the radius, then a soft shoulder.
+ */
+const PROFILES = {
+  lamp: [
+    [0.00, '255,200,110', 0.50],
+    [0.32, '246,178,84', 0.36],
+    [0.68, '220,150,58', 0.13],
+    [1.00, '205,138,52', 0],
+  ],
+  stall: [
+    [0.00, '255,204,124', 0.34],
+    [0.45, '250,192,106', 0.30],
+    [0.74, '226,164,76', 0.12],
+    [1.00, '210,150,66', 0],
+  ],
+};
+
+const _poolTex = {};
+function poolTexture(profile = 'lamp') {
+  if (_poolTex[profile]) return _poolTex[profile];
+  const S = 128;
+  const cvs = document.createElement('canvas');
+  cvs.width = cvs.height = S;
+  const c = cvs.getContext('2d');
+  const g = c.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+  for (const [stop, rgb, a] of PROFILES[profile]) g.addColorStop(stop, `rgba(${rgb},${a})`);
+  c.fillStyle = g;
+  c.fillRect(0, 0, S, S);
+  const tex = new THREE.CanvasTexture(cvs);
+  // Without this the gradient is treated as linear data while the renderer
+  // outputs sRGB, so an amber authored as (255,206,120) reaches the screen as
+  // roughly (255,234,183) — a near-white cream. That, not the hex values, is
+  // why the first pass measured a pool 40% brighter and 0% warmer, and no
+  // amount of retinting the stops would have fixed it.
+  tex.colorSpace = THREE.SRGBColorSpace;
+  _poolTex[profile] = tex;
+  return tex;
+}
+
 export class NightLights {
   /** @param {number} trigger time-of-day at which the block starts coming on */
   constructor(trigger = 0.72) {
@@ -75,6 +137,43 @@ export class NightLights {
     return item;
   }
 
+  /**
+   * PROTOTYPE — tier 2. A pool of light on the paving.
+   *
+   * A flat additive quad, no depth write, unlit and unfogged: it is light, not
+   * geometry that light falls on. It sits at y=0.05 to clear the paving slabs
+   * at 0.012, and because the crow stands on top of it and writes depth, the
+   * bird stays a silhouette in the pool rather than being lit by it — which is
+   * the whole reason this technique survives "the crow is the darkest thing on
+   * screen" where a real point light would not.
+   */
+  addPool(parent, x, z, radius, opts = {}) {
+    const material = new THREE.MeshBasicMaterial({
+      map: poolTexture(opts.profile ?? 'lamp'),
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      fog: false,
+    });
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(radius * 2, radius * 2), material);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set(x, 0.05, z);
+    mesh.renderOrder = 2;
+    parent.add(mesh);
+
+    const item = {
+      material, pool: true,
+      peak: opts.peak ?? 0.34,
+      delay: opts.delay ?? 0,
+      warm: opts.warm ?? 2.4,
+      flicker: opts.flicker ?? false,
+      level: 0,
+    };
+    this.items.push(item);
+    return item;
+  }
+
   /** Level 0..1 for one light, `s` seconds after the block started coming on. */
   static levelAt(item, s) {
     const own = s - item.delay;
@@ -97,7 +196,8 @@ export class NightLights {
       const level = NightLights.levelAt(item, this.since);
       if (level === item.level) continue;
       item.level = level;
-      item.material.emissiveIntensity = level * item.peak;
+      if (item.pool) item.material.opacity = level * item.peak;
+      else item.material.emissiveIntensity = level * item.peak;
     }
   }
 }
