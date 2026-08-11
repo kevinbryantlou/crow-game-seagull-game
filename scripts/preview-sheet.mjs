@@ -24,8 +24,9 @@ const CANDIDATES = [
   {
     id: 'B', file: 'preview-b-memorial.png', name: 'The memorial',
     pos: '-14.5, 0, -3.5',
-    good: 'Shows the nest on the plinth, which is what the tagline is about.',
+    good: 'Shows the nest on the plinth, which is what the tagline is about, and the fountain edge gives the left side a curve to sit the wordmark against. Kevin flagged this as the one to come back to.',
     bad: 'Busy. The dark red backdrop building is heavy and pulls the eye off the plaza.',
+    runnerUp: true,
   },
   {
     id: 'C', file: 'preview-c-cafe.png', name: 'Café row',
@@ -75,11 +76,11 @@ const dataUri = (file, width) => {
 const cards = CANDIDATES.map((c) => {
   const uri = dataUri(c.file, 620);
   return `
-      <figure class="cand${c.pick ? ' pick' : ''}" id="cand-${c.id}">
+      <figure class="cand${c.pick ? ' pick' : ''}${c.runnerUp ? ' runner' : ''}" id="cand-${c.id}">
         <figcaption>
           <span class="tag">${c.id}</span>
           <h3>${c.name}</h3>
-          ${c.pick ? '<span class="chip">Shipping</span>' : ''}
+          ${c.pick ? '<span class="chip">Shipping</span>' : ''}${c.runnerUp ? '<span class="chip alt">Runner-up</span>' : ''}
           <span class="pos">crow at ${c.pos}</span>
         </figcaption>
         <div class="shots">
@@ -164,6 +165,8 @@ const html = `<!DOCTYPE html>
     padding: 1.1rem;
   }
   .cand.pick { border-color: var(--brass); border-width: 2px; }
+  .cand.runner { border-color: var(--nickel); border-width: 2px; border-style: dashed; }
+  .chip.alt { background: var(--nickel); color: var(--paper-2); }
   figcaption { display: flex; align-items: baseline; gap: .7rem; flex-wrap: wrap; margin-bottom: .9rem; }
   .tag {
     font-family: Menlo, monospace; font-size: .72rem; font-weight: 700;
@@ -259,6 +262,14 @@ ${cards}
     question mark over his head — meaning he has just noticed a bird next to his cart. That
     is the entire game in one image: a small thief, a person about to object, and something
     worth stealing between them. The fountain shots are prettier and say nothing.
+  </div>
+
+  <div class="note">
+    <span class="lbl">Keep B in the drawer</span>
+    The memorial shot is the strongest of the scenery framings and the obvious second
+    choice — it is the only one besides F that has a subject, and its subject is the nest
+    itself. If the card is ever rotated, or a second one is needed for a different
+    surface, start here rather than re-deriving from scratch.
   </div>
 
   <div class="note">

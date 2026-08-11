@@ -17,6 +17,9 @@ npm run shoot      # headless Chrome: real WebGL, screenshots to shots/, functio
 npm run build      # → dist/, relative base, for Capacitor
 npm run build:web  # → dist/, absolute base, for the beacon2 subpath deploy
 npm run check      # smoke + build
+npm run preview    # render link-preview card candidates → shots/
+npm run preview:sheet  # build docs/preview-candidates.html from them
+npm run serve:static   # Vercel-style static server (no trailing-slash redirect)
 ```
 
 Deploying the public snapshot:
@@ -85,6 +88,19 @@ That's why `words.js` and `rank.js` are separate from `hud.js`.
   computed against an identity transform and the results are silently wrong.
 - **The camera never rotates**, so occlusion is a fixed property of position and
   can be tested. It is: see "no pickup is hidden from the fixed camera".
+- **`npm run preview` renders the link-preview card, not a dev server.** Vite's
+  usual meaning of that script name does not apply here; use `serve:static` to
+  serve a build.
+- **Static assets go in `public/`, never in the deploy directory.** `build:web`
+  wipes `../beacon2/small-change-crow-game/` entirely, so anything hand-placed
+  there vanishes on the next deploy. Vite copies `public/` to the root of
+  `dist/`, which is how `preview.png` survives.
+- **`og:image` and `og:url` must be absolute.** A relative `og:image` produces no
+  card at all, silently — nothing errors and nothing renders.
+- **Verify deploys by content, not by bundle hash.** The HTML shell and the JS
+  bundle version independently; a copy or meta-tag change ships with an
+  identical bundle hash, so hash comparison reports a false match. Fetch the
+  page and grep for the actual string.
 - **Relative asset paths break at a URL with no trailing slash.** `vite.config.js`
   sets `base: './'` for Capacitor, but a page served at `/thing` (not `/thing/`)
   resolves `./assets/…` against the *parent* directory and 404s the bundle — the
@@ -122,6 +138,15 @@ screen, nothing is outlined.
 They are also deployed to the **password-gated** `/research/` area of the sibling
 `beacon2` repo — *not* `/notes`, which is public despite the name. After editing a
 doc, copy it to `../beacon2/research/small-change-*.html` and commit both repos.
+
+## Brand surfaces
+
+The hosted page carries Open Graph and Twitter card metadata plus a 1200×630
+image at `/small-change-crow-game/preview.png`, rendered from the real game by
+`scripts/preview.mjs` (HUD hidden, crow parked, wordmark overlaid). Six framings
+were compared in `docs/preview-candidates.html`; Cart Corner ships, the memorial
+is the runner-up. The card's strapline and the `og:description` are written as a
+pair — same deadpan register, no repeated words between them.
 
 ## Test hooks
 

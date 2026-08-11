@@ -17,10 +17,38 @@ npm run dev        # http://localhost:5173
 ```
 
 ```bash
-npm run build      # → dist/
-npm run preview    # serve the build
-npm run smoke      # headless simulation test
-npm run check      # smoke + build, the pre-commit gate
+npm run build        # → dist/ with relative paths, for Capacitor
+npm run build:web    # → dist/ with an absolute base, for the hosted subpath
+npm run smoke        # headless simulation + level invariants + unit tests
+npm run shoot        # headless Chrome: real WebGL, screenshots, functional checks
+npm run check        # smoke + build, the pre-commit gate
+npm run serve:static # Vercel-style static server, for verifying a deploy
+```
+
+`shoot` needs a server running — `npm run dev`, or `npm run serve:static <dir>`
+against a built deploy.
+
+## The link preview card
+
+Pasting the hosted URL produces a proper card rather than a bare link. The image
+is rendered from the running game, not mocked up:
+
+```bash
+npm run dev
+npm run preview        # → shots/*.png, six candidate framings
+npm run preview:sheet  # → docs/preview-candidates.html, a contact sheet
+```
+
+Pick one, copy it to `public/preview.png`, rebuild. It lives in `public/`
+because Vite copies that directory to the root of `dist/` — the deploy directory
+is wiped on every `build:web`, so nothing can be placed there by hand. The Open
+Graph tags in `index.html` use an absolute URL; a relative `og:image` silently
+produces no card at all.
+
+To try a different strapline without editing the script:
+
+```bash
+ONLY=preview-f-cart node scripts/preview.mjs http://localhost:5173/ "another line"
 ```
 
 ## Controls
