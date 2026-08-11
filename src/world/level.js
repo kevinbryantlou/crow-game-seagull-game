@@ -62,6 +62,20 @@ export const RULES = {
   duskMedianFloor: 48,
   duskShadowFloor: 24,
   /**
+   * How long the day lasts, in seconds.
+   *
+   * It was 18 minutes, which was nine times a competent run — the real playtest
+   * time is 2m07s and the rank ladder's fast cutoff is 2m30s. The consequence
+   * was not just slack pacing: the light did not visibly change until 10m48s
+   * and the lamps did not catch until 12m58s, so nobody who played well ever
+   * saw dusk at all, and the sunset the game is named around never happened.
+   *
+   * At 8 minutes the lamps catch at 5m46s, just past the 5m30s
+   * Accomplished Thief cutoff. Finish well and daylight is the reward; take
+   * your time and the sunset is.
+   */
+  sessionSeconds: 8 * 60,
+  /**
    * Time of day at which the street lights catch. Before the shadows go long
    * enough to be a navigation problem, not after — light that arrives once the
    * player is lost reads as a fix, light that arrives just before reads as a

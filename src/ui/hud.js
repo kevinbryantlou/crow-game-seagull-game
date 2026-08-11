@@ -47,7 +47,8 @@ export function setEndingTitle(total) {
 }
 
 export class Hud {
-  constructor(goal) {
+  constructor(goal, sessionSeconds) {
+    this.sessionSeconds = sessionSeconds;
     this.goal = goal;
     this.amt = $('amt');
     this.barFill = $('bar-fill');
@@ -196,9 +197,11 @@ export class Hud {
   }
 
   setTime(t) {
-    // Hidden for the first 30 seconds of an 18-minute session — let the player
-    // look at the block before being handed a clock.
-    this.sun.classList.toggle('on', t > 30 / (18 * 60));
+    // Hidden for the first 30 seconds — let the player look at the block before
+    // being handed a clock. Thirty *seconds*, not a fraction of a hardcoded
+    // session: this was `30 / (18 * 60)` and would have silently become
+    // thirteen seconds when the day was shortened to eight minutes.
+    this.sun.classList.toggle('on', t * this.sessionSeconds > 30);
     const a = Math.PI - t * Math.PI;
     this.sunDot.setAttribute('cx', (54 + Math.cos(a) * 46).toFixed(1));
     this.sunDot.setAttribute('cy', (52 - Math.sin(a) * 46).toFixed(1));

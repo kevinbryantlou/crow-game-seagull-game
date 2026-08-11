@@ -17,8 +17,8 @@
  *    for the skyline and useless for a staggered lamp, so anything that needs
  *    its own schedule gets its own clone, and everything that comes up together
  *    shares exactly one.
- * 2. The ramp is driven in *seconds*, not in time-of-day. Six seconds is 0.0056
- *    of an eighteen-minute day and 0.1 of a sixty-second test day; a schedule
+ * 2. The ramp is driven in *seconds*, not in time-of-day. Six seconds is ~1%
+ *    of a full-length day and 0.1 of a sixty-second test day; a schedule
  *    written in `t` would flicker for a tenth of a second in one and six
  *    seconds in the other.
  */

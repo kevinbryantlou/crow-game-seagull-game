@@ -424,6 +424,48 @@ console.log('\nlights at dusk');
   const output = (i) => (i.pool ? i.material.opacity : i.material.emissiveIntensity);
   const pools = night.items.filter((i) => i.pool);
 
+  /**
+   * The sunset has to actually happen inside a session someone will play.
+   *
+   * At 18 minutes it did not: the light held steady until 10m48s and the lamps
+   * caught at 12m58s, while the real playtest run is 2m07s and the rank ladder's
+   * fast cutoff is 2m30s. Every hour of lighting work was unreachable in normal
+   * play and no test noticed, because each half was individually correct — the
+   * lamps fired at the right *fraction* of a day nobody was still playing.
+   *
+   * Probe the ladder for its fast threshold rather than hardcoding it, so this
+   * stays true if the ranks are retuned.
+   */
+  const clean = (elapsed) => rankFor({ won: true, elapsed, caught: 1, traded: true, tasksDone: 1, totalTasks: 5 });
+  const cutoff = (title) => {
+    for (let e = 10; e < 3600; e += 5) if (clean(e) !== title) return e;
+    return Infinity;
+  };
+  const fast = cutoff('Corvid Prodigy');            // 150s — a speedrun
+  const solid = (() => { let e = fast; while (e < 3600 && clean(e) === 'Accomplished Thief') e += 5; return e; })();
+  const lampsAt = RULES.lampsOnAt * RULES.sessionSeconds;
+
+  check('a fast run is rewarded with daylight — the lamps catch after it ends',
+    lampsAt > fast, `(lamps ${Math.round(lampsAt)}s vs fast cutoff ${fast}s)`);
+
+  /**
+   * The upper bound is the one that matters, and the first version of this
+   * check did not have it — it passed happily at eighteen minutes, which is the
+   * exact bug it was written for. Guarding only against a day that is too short
+   * misses the failure that actually shipped: lamps firing so late that no real
+   * run reaches them. 1.5x the ladder's "did fine" time is the outer edge of a
+   * session someone actually plays.
+   */
+  check('a normal run reaches the sunset — the lamps are not stranded past it',
+    lampsAt < solid * 1.5,
+    `(lamps ${Math.round(lampsAt)}s vs 1.5x the ${solid}s solid-run mark)`);
+
+  check('there is enough lit dusk left to be worth building',
+    RULES.sessionSeconds - lampsAt > 90,
+    `(only ${Math.round(RULES.sessionSeconds - lampsAt)}s of dusk)`);
+  check('the slowest rank is still winnable inside the session',
+    RULES.sessionSeconds > solid, `(session ${RULES.sessionSeconds}s vs ${solid}s)`);
+
   check('the street lights catch at the documented hour',
     night.trigger === RULES.lampsOnAt, `(${night.trigger} vs RULES ${RULES.lampsOnAt})`);
   check('the block registers night lights', night.items.length >= 8, `(${night.items.length})`);

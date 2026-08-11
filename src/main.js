@@ -11,7 +11,7 @@ import { Input } from './core/input.js';
 import { Audio } from './core/audio.js';
 import { Hud, setEndingTitle } from './ui/hud.js';
 import { formatRankLine } from './ui/rank.js';
-import { buildLevel } from './world/level.js';
+import { buildLevel, RULES } from './world/level.js';
 import { Crow } from './entities/crow.js';
 import { Human, Pigeon } from './entities/human.js';
 import { Pickup } from './world/pickups.js';
@@ -32,18 +32,18 @@ const TEST_TRADE_PAYOUT = null;
 
 // Test hook: shorten the day. The whole light rig, the sun dial and the
 // out-of-time ending are all driven by elapsed/SESSION_SECONDS, so setting this
-// to 60 runs a full dawn-to-dusk in a minute. Null means the real 18 minutes.
+// to 60 runs a full dawn-to-dusk in a minute. Null means the real day length.
 // Carries the same three tripwires as the payout cheat above.
 const TEST_SESSION_SECONDS = null;
 
-const SESSION_SECONDS = TEST_SESSION_SECONDS ?? 18 * 60;
+const SESSION_SECONDS = TEST_SESSION_SECONDS ?? RULES.sessionSeconds;
 
 class Game {
   constructor() {
     this.stage = new Stage(document.getElementById('c'));
     this.input = new Input();
     this.audio = new Audio();
-    this.hud = new Hud(GOAL);
+    this.hud = new Hud(GOAL, SESSION_SECONDS);
 
     this.world = buildLevel();
     this.stage.scene.add(this.world.root);
@@ -78,7 +78,7 @@ class Game {
     this.elapsed = 0;
     // Exposed because TEST_SESSION_SECONDS makes the day length a variable, and
     // a harness that wants "60% of the day" has to be able to ask rather than
-    // assume 18 minutes — scripts/shoot.mjs measured four identical frames
+    // assume a fixed length — scripts/shoot.mjs measured four identical frames
     // before this existed.
     this.sessionSeconds = SESSION_SECONDS;
     this.running = false;
@@ -467,7 +467,7 @@ class Game {
     this.stage.follow(this.crow.pos, dt);
     this.stage.setTimeOfDay(t);
     // Driven in real seconds, not in `t`: the catch-and-warm schedule has to
-    // look the same on an 18-minute day and a 60-second test one.
+    // look the same on a full-length day and a 60-second test one.
     this.world.nightLights.update(t, dt);
 
     // Fountain surface: a slow shimmer, no normal maps.

@@ -99,13 +99,23 @@ That's why `words.js` and `rank.js` are separate from `hud.js`.
   schedule, so `nightlights.js` always clones. Smoke asserts the cache was not
   poisoned.
 - **A harness must ask the game how long the day is.** `shoot.mjs` hardcoded
-  18 minutes to compute "60% of the day" and silently measured four identical
+  a fixed 18 minutes to compute "60% of the day" and silently measured four identical
   frames at `t=1` while `TEST_SESSION_SECONDS` was 60. `game.sessionSeconds`
   exists for this.
 - **Shade is the hemisphere light's *sky* colour, not its ground colour.**
   `fill.color` lights up-facing surfaces, and the paving is nothing but those;
   `groundColor` only touches down-facing faces the paving does not have. That is
   why the shadows read rust for months while the palette said violet.
+- **A guard that only checks one direction will pass the bug it was written for.**
+  The day was 18 minutes, so the lamps caught at 12m58s against a 2m07s
+  competent run and nobody ever saw dusk. The first assertions written for it
+  bounded the day from *below* — "a fast run still finishes in daylight" — and
+  passed happily at 18 minutes. Run a new check against the broken value before
+  trusting it; `smoke.mjs` now bounds the lamp trigger from both sides.
+- **Fractions of a hardcoded session length rot silently.** `hud.js` revealed
+  the sun dial at `t > 30 / (18 * 60)`, which is only 30 seconds while the day
+  is 18 minutes — it became 13 when the day became 8. Compare in seconds
+  (`t * sessionSeconds > 30`), not in fractions of a constant.
 - **Assert tuning *ratios*, not just outcomes.** Flapping in water sat at 62% of
   full power, i.e. 16.7 m/s² against gravity's 19 — net downward. The only thing
   lifting the crow was the buoyancy impulse, so escaping the fountain depended on
