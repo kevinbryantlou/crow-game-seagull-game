@@ -8,7 +8,8 @@
     "preview": "vite preview --port 4173",
     "smoke": "node scripts/smoke.mjs",
     "check": "node scripts/smoke.mjs && vite build",
-    "shoot": "node scripts/shoot.mjs"
+    "shoot": "node scripts/shoot.mjs",
+    "build:web": "vite build --base=/small-change-crow-game/"
   },
   "keywords": [],
   "author": "",

@@ -11,11 +11,22 @@ identical pickups.
 ## Commands
 
 ```bash
-npm run dev      # http://localhost:5173
-npm run smoke    # headless sim + level invariants + unit tests (no browser)
-npm run shoot    # headless Chrome: real WebGL, screenshots to shots/, functional checks
-npm run build    # → dist/
-npm run check    # smoke + build
+npm run dev        # http://localhost:5173
+npm run smoke      # headless sim + level invariants + unit tests (no browser)
+npm run shoot      # headless Chrome: real WebGL, screenshots to shots/, functional checks
+npm run build      # → dist/, relative base, for Capacitor
+npm run build:web  # → dist/, absolute base, for the beacon2 subpath deploy
+npm run check      # smoke + build
+```
+
+Deploying the public snapshot:
+
+```bash
+npm run build:web
+rm -rf ../beacon2/small-change-crow-game && mkdir -p ../beacon2/small-change-crow-game
+cp -R dist/. ../beacon2/small-change-crow-game/
+node scripts/serve-static.mjs ../beacon2 4181          # Vercel-style, no redirect
+node scripts/shoot.mjs http://localhost:4181/small-change-crow-game    # no slash!
 ```
 
 `shoot` needs `dev` running in another shell.
@@ -74,6 +85,14 @@ That's why `words.js` and `rank.js` are separate from `hud.js`.
   computed against an identity transform and the results are silently wrong.
 - **The camera never rotates**, so occlusion is a fixed property of position and
   can be tested. It is: see "no pickup is hidden from the fixed camera".
+- **Relative asset paths break at a URL with no trailing slash.** `vite.config.js`
+  sets `base: './'` for Capacitor, but a page served at `/thing` (not `/thing/`)
+  resolves `./assets/…` against the *parent* directory and 404s the bundle — the
+  page then hangs forever on "Building the block…". Deploy to a subpath with
+  `npm run build:web`, which sets an absolute base. **Always test the no-slash
+  form**: `python -m http.server` hides this bug by 301-redirecting to the slash
+  version, which is why `scripts/serve-static.mjs` exists — it serves
+  `dir/index.html` in place like Vercel does.
 
 ## Level-design rules (asserted, not aspirational)
 
