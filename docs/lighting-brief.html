@@ -234,14 +234,15 @@
 
 <header class="band">
   <div class="band-inner">
-    <div class="eyebrow">Design exploration &nbsp;·&nbsp; v0.1 &nbsp;·&nbsp; Nothing implemented</div>
+    <div class="eyebrow">Design exploration &nbsp;·&nbsp; v0.2 &nbsp;·&nbsp; Tiers 0 and 1 shipped</div>
     <h1 class="title">Lighting<br>At Dusk<span class="thin">Making the last third playable</span></h1>
-    <p class="deck">From about 70% of the day the block stops being readable. This is a
-      brief, not a patch: what the darkness actually measures, what the style guide will and
-      will not allow us to do about it, four techniques costed against each other, and a
-      tiered plan with a stopping rule at every tier.</p>
+    <p class="deck">From about 70% of the day the block stopped being readable. What the
+      darkness measured, what the style guide would and would not allow, four techniques
+      costed against each other, and a tiered plan with a stopping rule at every tier.
+      <strong>Tiers 0 and 1 are now in the game</strong> — §6 records what each one actually
+      bought.</p>
     <dl class="facts">
-      <div><dt>Status</dt><dd>For review — no code written</dd></div>
+      <div><dt>Status</dt><dd>Tiers 0+1 shipped; 2+3 open</dd></div>
       <div><dt>Trigger</dt><dd>Playtest, 2026-08-10</dd></div>
       <div><dt>Current rig</dt><dd>2 lights, 362 meshes, 22 materials</dd></div>
       <div><dt>Budget</dt><dd>~155 kB gzip, 60 Hz on a phone</dd></div>
@@ -759,12 +760,16 @@
           from 0.55. Re-measure. This is the safety net that guarantees the game is playable
           even if every other tier is cut, and it must land first so the later tiers are tuned
           against a floor rather than against a hole.</p>
-          <div class="note stop">
-            <span class="lbl">Stop if</span>
-            The median clears 55 and the block reads as <em>evening</em> rather than <em>fog</em>.
-            It probably will not — raising ambient light with no sources tends to look like
-            grey wash, and it cannot make the crow's silhouette read against dark paving. But
-            it is four numbers and it should be tried before anything expensive.
+          <div class="note">
+            <span class="lbl">Shipped — and it was more than four numbers</span>
+            A fifth stop at <span class="mono">t=0.93</span>, and <span class="mono">amb</span>
+            lifted from 0.62/0.55 to 1.05/1.40 across the last two stops. It carried the
+            median from 19 to 53 on its own, which is most of the navigability problem.
+            <br><br>
+            It also turned out to be where the violet question lived. <span class="mono">fill</span>
+            is now its own column in <span class="mono">SKY_RAMP</span> rather than a copy of
+            the horizon glow — see §8, which was written as an aside and turned out to be the
+            load-bearing part of the tier.
           </div>
         </div>
       </div>
@@ -781,10 +786,19 @@
           dark block with forty warm points in it is a <em>city at night</em>, where a dark
           block with none is a <em>bug</em>. It is also the cheapest tier by a distance and the
           one I would ship first if only one shipped.</p>
-          <div class="note stop">
-            <span class="lbl">Stop if</span>
-            You can tell where you are from the lit points alone. You will not be able to see
-            the paving, but you may not need to.
+          <div class="note">
+            <span class="lbl">Shipped</span>
+            Eleven registered lights in <span class="mono">render/nightlights.js</span>: four
+            staggered lampposts, the skyline on one shared material, the café windows and
+            door, a new clip-on lamp over the newsstand counter, the cart griddle, three
+            scaffolding beads, and the fountain. All emissive, no lights added to the scene,
+            no measurable frame cost.
+            <br><br>
+            One number needed correcting by eye rather than by arithmetic: the fountain went
+            in at 0.22 of <span class="mono">waterLit</span> and read as a floodlit swimming
+            pool that outshone every glint in the plaza — the exact thing §8 says must not
+            happen. It is the largest emissive surface on the block by a wide margin. At 0.055
+            of the darker <span class="mono">water</span> it reads as a lit pool at night.
           </div>
         </div>
       </div>
@@ -898,16 +912,27 @@
     </div>
 
     <div class="note col">
-      <span class="lbl">Unrelated but adjacent — worth resolving first</span>
+      <span class="lbl">Resolved — and it was not unrelated at all</span>
       The losing ending says <em>"the shadows have gone violet all the way across the plaza."</em>
       They do not: from <span class="mono">t≈0.8</span> they read rust-red, because
       <span class="mono">setTimeOfDay</span> copies the sky's low colour into the hemisphere
       fill (<span class="mono">this.fill.color.copy(low)</span>) while
       <span class="mono">groundColor</span> stays at <span class="mono">PAL.shade</span> and the
-      key goes to <span class="mono">0xff7a48</span>. Either the copy is wrong or the rig is —
-      and since <em>shade is violet, never grey</em> is a non-negotiable, it is probably the
-      rig. This wants deciding <strong>before</strong> lamps are added, because every amber pool
-      is tuned against whatever colour the shade actually is.
+      key goes to <span class="mono">0xff7a48</span>. The rig was wrong, and the mechanism is worth
+      stating: <span class="mono">fill.color</span> is the hemisphere light's <em>sky</em>
+      colour, so it lights every <strong>up-facing</strong> surface the key does not reach —
+      and the paving is nothing but up-facing surfaces. The violet
+      <span class="mono">groundColor</span> only ever touched down-facing faces the paving does
+      not have, so the comment "the ground-bounce colour IS the shadow colour" described an
+      intent the code did not implement.
+      <br><br>
+      Using the horizon glow was also wrong physically: flat ground in shadow at sunset is lit
+      by the sky dome overhead, not by the orange band at the horizon.
+      <span class="mono">fill</span> is now its own ramp column, warm at midday and swinging
+      violet as the sun drops. Shipped, and asserted both in
+      <span class="mono">smoke.mjs</span> (blue beats red in the dusk fill colour) and in
+      <span class="mono">shoot.mjs</span> (blue beats red in the actual rendered frame). The
+      losing ending's line about violet shadows is now true.
     </div>
   </section>
 
@@ -940,19 +965,20 @@
     <h2><span class="sec">§10</span> What I would want decided</h2>
     <div class="col">
       <ol>
-        <li><strong>Violet or rust?</strong> The §8 callout. Everything downstream is tuned
-          against the answer, so it goes first.</li>
+        <li><s><strong>Violet or rust?</strong></s> <strong>Settled: violet.</strong> Three
+          reasons rather than one — the style guide says so, the physics says so, and warm
+          lamps need cool shade or the whole night is a single hue. See §8.</li>
         <li><strong>Does the crow get lit at the cart?</strong> A rule against a good image.
           Only matters if Tier 3 happens.</li>
-        <li><strong>How far do we take the night?</strong> There is a version of this where
+        <li><strong>How far do we take the night?</strong> Deferred until Tiers 0 and 1 have
+          been played. There is a version of this where
           <span class="mono">t=0.95</span> is genuinely dark and the game becomes a different
           game for ninety seconds — glints, pools, and a bird you track by its contact shadow.
           It is a better ending than "it got hard to see". It is also a bigger change than the
           note asked for, and it makes the last stretch harder rather than easier.</li>
-        <li><strong>Is 18 minutes still right?</strong> Sidebar, but the last 30% of the
-          session is currently the least playable 30%. Lighting it is one answer; the other is
-          that the ramp spends too much of the day in the dark. Worth a look at the curve
-          rather than only at the lights.</li>
+        <li><s><strong>Is 18 minutes still right?</strong></s> Parked — the curve is fine
+          for now, revisit later. Lighting the back third turned out to be the whole
+          answer.</li>
       </ol>
     </div>
   </section>
@@ -961,7 +987,7 @@
 
 <footer>
   <span>Small Change — lighting at dusk</span>
-  <span>v0.1 · exploration · nothing implemented</span>
+  <span>v0.2 · tiers 0+1 shipped · tiers 2+3 open</span>
 </footer>
 
 </body>

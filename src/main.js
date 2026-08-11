@@ -34,7 +34,7 @@ const TEST_TRADE_PAYOUT = null;
 // out-of-time ending are all driven by elapsed/SESSION_SECONDS, so setting this
 // to 60 runs a full dawn-to-dusk in a minute. Null means the real 18 minutes.
 // Carries the same three tripwires as the payout cheat above.
-const TEST_SESSION_SECONDS = null;
+const TEST_SESSION_SECONDS = 60;
 
 const SESSION_SECONDS = TEST_SESSION_SECONDS ?? 18 * 60;
 
@@ -76,6 +76,11 @@ class Game {
     this.total = 0;
     this.banked = 0;
     this.elapsed = 0;
+    // Exposed because TEST_SESSION_SECONDS makes the day length a variable, and
+    // a harness that wants "60% of the day" has to be able to ask rather than
+    // assume 18 minutes — scripts/shoot.mjs measured four identical frames
+    // before this existed.
+    this.sessionSeconds = SESSION_SECONDS;
     this.running = false;
     this.finished = false;
     this.tradeStep = 0;
@@ -461,6 +466,9 @@ class Game {
     const t = Math.min(1, this.elapsed / SESSION_SECONDS);
     this.stage.follow(this.crow.pos, dt);
     this.stage.setTimeOfDay(t);
+    // Driven in real seconds, not in `t`: the catch-and-warm schedule has to
+    // look the same on an 18-minute day and a 60-second test one.
+    this.world.nightLights.update(t, dt);
 
     // Fountain surface: a slow shimmer, no normal maps.
     const w = this.world.root.userData.fountainWater;

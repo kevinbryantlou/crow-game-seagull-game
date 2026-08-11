@@ -63,10 +63,30 @@ export const PAL = {
   keyDusk:      0x6e6aa8,
 };
 
-/** Sky gradient endpoints for the sunset ramp, in order. */
+/**
+ * Sky gradient endpoints for the sunset ramp, in order.
+ *
+ * `fill` is the hemisphere light's *sky* colour, which is what lights every
+ * up-facing surface not reached by the key — i.e. it is the colour of shade,
+ * and the paving is nothing but up-facing surfaces. It used to be set to `low`,
+ * the horizon glow, which is why the block's shadows went rust-red at dusk
+ * while the style guide and the losing ending both said violet. Shading it off
+ * `low` is also wrong physically: flat ground in shadow at sunset is lit by the
+ * sky dome overhead, not by the orange band at the horizon. It now runs warm at
+ * midday and swings violet as the sun drops, which is the real phenomenon, obeys
+ * *shade is violet, never grey*, and gives the amber street lighting something
+ * cool to read against instead of more orange.
+ *
+ * `amb` climbs through the back half of the day. That is not realism, it is the
+ * navigability floor from docs/lighting-brief.html §1 — the block's median
+ * luminance used to fall to 19/255 and the last third of the session was
+ * unplayable. `groundColor` stays PAL.shade throughout and only ever touches
+ * down-facing faces.
+ */
 export const SKY_RAMP = [
-  { t: 0.0,  high: 0x8fb4c4, low: 0xf2c879, key: PAL.keyAfternoon, keyI: 2.6, amb: 0.85, elev: 0.42 },
-  { t: 0.55, high: 0x7fa0bd, low: 0xf0a860, key: PAL.keyGolden,    keyI: 2.4, amb: 0.75, elev: 0.24 },
-  { t: 0.85, high: 0x5c6a94, low: 0xd8724e, key: 0xff7a48,         keyI: 1.7, amb: 0.62, elev: 0.12 },
-  { t: 1.0,  high: 0x3b4570, low: 0x8a5a72, key: PAL.keyDusk,      keyI: 0.9, amb: 0.55, elev: 0.06 },
+  { t: 0.0,  high: 0x8fb4c4, low: 0xf2c879, fill: 0xf2c879, key: PAL.keyAfternoon, keyI: 2.6, amb: 0.85, elev: 0.42 },
+  { t: 0.55, high: 0x7fa0bd, low: 0xf0a860, fill: 0xe8a877, key: PAL.keyGolden,    keyI: 2.4, amb: 0.82, elev: 0.24 },
+  { t: 0.85, high: 0x5c6a94, low: 0xd8724e, fill: 0xa98cb4, key: 0xff7a48,         keyI: 1.7, amb: 1.05, elev: 0.12 },
+  { t: 0.93, high: 0x46527e, low: 0xb0637a, fill: 0x9280b8, key: 0xb0729e,         keyI: 1.3, amb: 1.24, elev: 0.085 },
+  { t: 1.0,  high: 0x3b4570, low: 0x8a5a72, fill: 0x8676b4, key: PAL.keyDusk,      keyI: 0.9, amb: 1.40, elev: 0.06 },
 ];

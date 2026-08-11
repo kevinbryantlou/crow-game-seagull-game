@@ -291,6 +291,91 @@ if (trade && trade.value !== expected) errors.push(`first trade paid ${trade.val
 if (trade && !trade.parentedToBeak) errors.push('trade reward was not auto-equipped');
 if (trade && trade.strayOnGround) errors.push('trade reward was left on the ground');
 
+// ── dusk ─────────────────────────────────────────────────────────────────────
+/**
+ * The last third of the session used to be unplayable: the block's median
+ * luminance fell to 19/255 and its 5th percentile to 8. Nobody noticed until a
+ * playtest, because nothing measured it.
+ *
+ * Floors are 48 (median) and 24 (5th percentile) over the lower 58% of the
+ * frame, HUD hidden. docs/lighting-brief.html §1 proposed 55 and 35 before
+ * anything was built; those were revised down after looking at frames that hit
+ * 53 and 29 and are plainly navigable. Pushing the last few points would mean
+ * more ambient, and more ambient is how a sunset turns into grey wash.
+ */
+if (hasHandle) {
+  const DUSK_FLOOR = { p50: 48, p05: 24 };
+  await page.evaluate(() => {
+    document.getElementById('hud').style.display = 'none';
+    const badge = document.getElementById('testmode');
+    if (badge) badge.style.display = 'none';
+    window.__game.crow.pos.set(-19, 0, 3);
+  });
+
+  const measure = async (t, settle) => {
+    // Freeze the clock: a shortened test day would otherwise run out mid-sample
+    // and photograph the ending screen. `_frame` still drives the light rig.
+    await page.evaluate((tt) => {
+      const g = window.__game;
+      g.running = false;
+      g.finished = false;
+      g.elapsed = tt * g.sessionSeconds;
+    }, t);
+    await new Promise((r) => setTimeout(r, settle));
+    const b64 = await page.screenshot({ type: 'png', encoding: 'base64' });
+    return page.evaluate((url) => new Promise((res) => {
+      const img = new Image();
+      img.onload = () => {
+        const cv = document.createElement('canvas');
+        cv.width = img.width; cv.height = img.height;
+        const cx = cv.getContext('2d');
+        cx.drawImage(img, 0, 0);
+        const y0 = Math.floor(img.height * 0.42);   // below the skyline
+        const d = cx.getImageData(0, y0, img.width, img.height - y0).data;
+        const L = [];
+        let r = 0, g = 0, b = 0, n = 0;
+        for (let i = 0; i < d.length; i += 16) {
+          L.push(0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]);
+          r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
+        }
+        L.sort((x, y) => x - y);
+        res({
+          p05: Math.round(L[Math.floor(L.length * 0.05)]),
+          p50: Math.round(L[Math.floor(L.length * 0.5)]),
+          rgb: [Math.round(r / n), Math.round(g / n), Math.round(b / n)],
+        });
+      };
+      img.src = url;
+    }), `data:image/png;base64,${b64}`);
+  };
+
+  // First sample past the trigger waits out the catch-and-warm; the lamps stay
+  // lit after that, so the rest are quick.
+  const dusk = {};
+  for (const [t, settle] of [[0.60, 500], [0.75, 9000], [0.85, 700], [0.97, 700]]) {
+    const m = await measure(t, settle);
+    dusk[t] = m;
+    const key = `dusk-${String(Math.round(t * 100))}`;
+    await shoot(key);
+    console.log(`  ${key}: p05 ${m.p05}, p50 ${m.p50}, avg rgb ${m.rgb.join(',')}`);
+    if (m.p50 < DUSK_FLOOR.p50) errors.push(`${key}: median ${m.p50} below the ${DUSK_FLOOR.p50} floor`);
+    if (m.p05 < DUSK_FLOOR.p05) errors.push(`${key}: 5th pct ${m.p05} below the ${DUSK_FLOOR.p05} floor`);
+  }
+
+  // Shade is violet, never grey — and, since the fill was split off the horizon
+  // glow, never rust. At dusk the frame average must be blue-dominant.
+  const late = dusk[0.97].rgb;
+  if (late[2] <= late[0]) {
+    errors.push(`dusk reads warm, not violet: avg rgb ${late.join(',')} (blue must beat red)`);
+  }
+
+  await page.evaluate(() => {
+    document.getElementById('hud').style.display = '';
+    const g = window.__game;
+    g.elapsed = 0; g.running = true;
+  });
+}
+
 // Look at what the crow can see right now.
 const state = await page.evaluate(() => {
   const amt = document.getElementById('amt')?.textContent;

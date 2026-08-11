@@ -169,7 +169,8 @@ export class Stage {
     this.key.color.copy(lerpC(a.key, b.key));
     this.key.intensity = THREE.MathUtils.lerp(a.keyI, b.keyI, f);
     this.fill.intensity = THREE.MathUtils.lerp(a.amb, b.amb, f);
-    this.fill.color.copy(low);
+    // The colour of shade. Deliberately not `low` — see the note on SKY_RAMP.
+    this.fill.color.copy(lerpC(a.fill, b.fill));
 
     // Sun swings ~20° across the block and drops toward the horizon.
     const elev = THREE.MathUtils.lerp(a.elev, b.elev, f);

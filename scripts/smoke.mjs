@@ -411,6 +411,72 @@ const audio = new Proxy({}, { get: () => () => {} });
     `(${(hi - lo).toFixed(2)}m over ${bobs} bobs in 5s)`);
 }
 
+console.log('\nlights at dusk');
+{
+  const { NightLights } = await import('../src/render/nightlights.js');
+  const { PAL, SKY_RAMP } = await import('../src/render/palette.js');
+  const { mat } = await import('../src/render/shapes.js');
+  const night = world.nightLights;
+
+  check('the block registers night lights', night.items.length >= 8, `(${night.items.length})`);
+  check('nothing is emitting during the day',
+    night.items.every((i) => i.material.emissiveIntensity === 0));
+
+  /**
+   * The cache trap, asserted. `shapes.mat()` hands the same material to every
+   * mesh of a colour — 38 of them share `goldLit`. If a light were registered by
+   * mutating that material instead of a clone, every lamp bulb, every skyline
+   * window and anything else gold would come on as one object with one
+   * schedule, and there would be no way to stagger them.
+   */
+  // `emissiveIntensity` defaults to 1 on a fresh material; what makes one inert
+  // is a black `emissive`. Checking the intensity here would fail on a material
+  // nobody has touched.
+  const cached = mat(PAL.goldLit);
+  check('registering a light did not poison the shared material cache',
+    cached.emissive.getHex() === 0,
+    `(cached goldLit emissive #${cached.emissive.getHexString()})`);
+  check('every night light has its own material, none is the cached one',
+    night.items.every((i) => i.material !== cached));
+
+  // Before the trigger nothing is on, however long the frame.
+  night.update(0.5, 10);
+  check('nothing comes on before the trigger',
+    night.items.every((i) => i.material.emissiveIntensity === 0));
+
+  // A lamp that flickers must actually flicker: bright, dark, bright.
+  const lamp = night.items.find((i) => i.flicker && i.delay === 0);
+  const trace = [0.02, 0.10, 0.16, 0.24].map((s) => NightLights.levelAt(lamp, s));
+  check('a lamp catches with a stutter before it warms',
+    trace[0] > 0.5 && trace[1] < 0.1 && trace[2] > 0.5 && trace[3] < 0.1,
+    `(${trace.map((v) => v.toFixed(2)).join(', ')})`);
+
+  // And everything reaches full, in order, within a sensible wall-clock time.
+  const slowest = Math.max(...night.items.map((i) => i.delay + i.warm));
+  night.update(0.99, slowest + 1.5);
+  const short = night.items.filter((i) => i.material.emissiveIntensity < i.peak - 1e-6);
+  check(`every light reaches full by ${(slowest + 1.5).toFixed(1)}s after sundown`,
+    short.length === 0, `(${short.length} still ramping)`);
+
+  // Scrubbing time backwards re-arms the sequence rather than leaving the block
+  // lit in daylight — which is exactly what a debug session or a replay does.
+  night.update(0.1, 0.016);
+  check('winding the clock back turns the block off again',
+    night.items.every((i) => i.material.emissiveIntensity === 0));
+
+  /**
+   * Shade is violet, never grey — and after the fill colour was split off the
+   * horizon glow, never rust either. Checked as blue-beats-red on the colour
+   * that lights every up-facing surface the key does not reach.
+   */
+  const dusk = SKY_RAMP[SKY_RAMP.length - 1];
+  const fillB = dusk.fill & 0xff, fillR = (dusk.fill >> 16) & 0xff;
+  check('the colour of shade at dusk is violet, not rust',
+    fillB > fillR + 20, `(fill #${dusk.fill.toString(16)} — r${fillR} b${fillB})`);
+  check('the ramp lifts the ambient floor through the back half of the day',
+    dusk.amb > SKY_RAMP[0].amb, `(${dusk.amb} at dusk vs ${SKY_RAMP[0].amb} at noon)`);
+}
+
 console.log('\nwhere people stand');
 
 // A person standing inside a magazine rack is not a rendering bug, it is a

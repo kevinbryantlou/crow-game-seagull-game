@@ -61,6 +61,7 @@ src/
   render/palette.js    every colour in the game, single source of truth
   render/shapes.js     primitive kit + three-tone face tinting
   render/stage.js      renderer, fixed camera, sunset light rig, occlusion fade
+  render/nightlights.js  what comes on at dusk — emissive only, no scene lights
   world/level.js       the authored block: geometry, colliders, placements, RULES
   world/collide.js     the collider format, and going round things (pure, unit tested)
   world/pickups.js     the money
@@ -92,6 +93,19 @@ That's why `words.js` and `rank.js` are separate from `hud.js`.
   into the basin than the stone did. Rings are now a real collider shape
   (`world/collide.js`), resolved radially. Don't add a second one lightly, but
   don't fake the next one either.
+- **`mat()` caches by colour, so 38 meshes share one `goldLit` material.** Setting
+  `.emissive` on it lights four lamp bulbs and every skyline window at once.
+  That is useful for the skyline and fatal for anything wanting its own
+  schedule, so `nightlights.js` always clones. Smoke asserts the cache was not
+  poisoned.
+- **A harness must ask the game how long the day is.** `shoot.mjs` hardcoded
+  18 minutes to compute "60% of the day" and silently measured four identical
+  frames at `t=1` while `TEST_SESSION_SECONDS` was 60. `game.sessionSeconds`
+  exists for this.
+- **Shade is the hemisphere light's *sky* colour, not its ground colour.**
+  `fill.color` lights up-facing surfaces, and the paving is nothing but those;
+  `groundColor` only touches down-facing faces the paving does not have. That is
+  why the shadows read rust for months while the palette said violet.
 - **Assert tuning *ratios*, not just outcomes.** Flapping in water sat at 62% of
   full power, i.e. 16.7 m/s² against gravity's 19 — net downward. The only thing
   lifting the crow was the buoyancy impulse, so escaping the fountain depended on

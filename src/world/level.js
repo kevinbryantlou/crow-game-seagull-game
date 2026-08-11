@@ -11,6 +11,7 @@
 import * as THREE from 'three';
 import { PAL } from '../render/palette.js';
 import { box, cyl, cone, ico, plane, at, group, mat, tint } from '../render/shapes.js';
+import { NightLights } from '../render/nightlights.js';
 
 export const BOUNDS = { minX: -31, maxX: 31, minZ: -15, maxZ: 15 };
 
@@ -38,6 +39,10 @@ export function buildLevel() {
   const colliders = [];
   const occluders = [];
   const perches = [];
+  // The block comes on at 72% of the day — while there is still light, the way
+  // real streetlights do, and just before the shadows go long enough to be a
+  // navigation problem. See docs/lighting-brief.html §7.
+  const night = new NightLights(0.72);
 
   /** Axis-aligned solid. `top` is landable; `bottom` lets the crow fly underneath. */
   const solid = (x, z, w, d, top, bottom = 0, opts = {}) => {
@@ -92,6 +97,7 @@ export function buildLevel() {
     [10, 10, 20, PAL.bark], [22, 15, 24, PAL.stoneMid], [37, 12, 19, PAL.terracotta],
   ];
   let bx = -46;
+  const skylineLit = [];
   for (const [, w, h, c] of skyline) {
     const b = box(w, h, 12, c, { up: PAL.stone, down: PAL.shade, receive: false });
     b.position.set(bx + w / 2, h / 2, -24);
@@ -101,13 +107,20 @@ export function buildLevel() {
     for (let i = 0; i < cols; i++) {
       for (let j = 0; j < rows; j++) {
         if (Math.random() < 0.22) continue;
-        const win = box(1.5, 1.9, 0.2, Math.random() < 0.3 ? PAL.goldLit : PAL.shade, { shadow: false, receive: false });
+        const lit = Math.random() < 0.3;
+        const win = box(1.5, 1.9, 0.2, lit ? PAL.goldLit : PAL.shade, { shadow: false, receive: false });
         win.position.set(bx + 2 + i * 3, 2.4 + j * 3.4, -18.05);
         root.add(win);
+        if (lit) skylineLit.push(win);
       }
     }
     bx += w + 1.5;
   }
+  // The whole city coming up behind the block, on one material and one
+  // assignment. Slow and unstaggered: the foreground lamps are the event, and
+  // the skyline is the weather behind it. Randomised per session, so no two
+  // runs light the same windows.
+  night.add(skylineLit, PAL.goldLit, { peak: 0.75, warm: 6.0, delay: 0.2 });
   solid(0, -20, 120, 10, 24);
 
   // Invisible bounds so the crow cannot leave the block.
@@ -188,6 +201,14 @@ export function buildLevel() {
     perches.push({ x: FOUNTAIN.x, y: FOUNTAIN.rim + 2.3, z: FOUNTAIN.z });
     g.userData.water = water;
     root.userData.fountainWater = water;
+    // Lit from under the water, the way civic fountains are. Kept faint — the
+    // brief's rule is that nothing added may outshine a pickup glint — but it
+    // keeps the wishing coins readable after dark, and it makes the losing
+    // ending's promise about a fountain full of coins literally true.
+    // Very faint. It is by far the largest emissive surface on the block, and
+    // at 0.22 of waterLit it read as a floodlit swimming pool that outshone
+    // every glint in the plaza — the one thing the brief says must not happen.
+    night.add(water, PAL.water, { peak: 0.055, warm: 5.0, delay: 1.6 });
   }
 
   // ── the memorial, and the nest on top of it ───────────────────────────────
@@ -266,6 +287,7 @@ export function buildLevel() {
     return g;
   };
 
+  let lampIndex = 0;
   const addLamp = (x, z) => {
     const g = new THREE.Group();
     g.add(at(cyl(0.09, 0.13, 4.6, 6, PAL.steel, { up: PAL.steel, down: PAL.steelDark }), 0, 2.3, 0));
@@ -274,6 +296,10 @@ export function buildLevel() {
     const bulb = at(ico(0.22, 0, PAL.goldLit, { shadow: false }), 0, 4.52, 0);
     bulb.material = mat(PAL.goldLit);
     g.add(bulb);
+    // Each lamp on its own clone and its own clock. They catch a beat apart,
+    // which is the difference between a light switch and a street waking up.
+    night.add(bulb, PAL.goldLit, { peak: 1.0, delay: lampIndex * 0.45, warm: 1.6, flicker: true });
+    lampIndex++;
     g.position.set(x, 0, z);
     root.add(g);
     solid(x, z, 0.3, 0.3, 4.6);
@@ -323,11 +349,18 @@ export function buildLevel() {
     const door = box(1.6, 2.6, 0.2, PAL.barkShade, { shadow: false });
     door.position.set(-1, 1.3, 11.9);
     g.add(door);
+    const cafeWindows = [];
     for (const wx of [-6, 3.4, 6.4]) {
       const win = box(2.6, 1.9, 0.2, PAL.water, { shadow: false });
       win.position.set(wx, 2.1, 11.92);
       g.add(win);
+      cafeWindows.push(win);
     }
+    // The café is the near-side occluder, so its glow lands where the player's
+    // eye already is. Warm over the glass, and the doorway weaker than the
+    // windows — a lit room seen through a door is mostly doorframe.
+    night.add(cafeWindows, PAL.goldLit, { peak: 0.62, warm: 3.2, delay: 0.9 });
+    night.add(door, 0xd8a256, { peak: 0.30, warm: 3.6, delay: 1.4 });
     // Awning
     const awn = box(17, 0.22, 3.4, PAL.awning, { up: PAL.awningLit, down: PAL.awning });
     awn.position.set(0, 3.3, 10.2);
@@ -398,7 +431,11 @@ export function buildLevel() {
     const g = new THREE.Group();
     g.add(at(box(3.2, 1.3, 1.6, PAL.terracotta, { up: PAL.terracottaLit, down: PAL.shade }), 0, 1.05, 0));
     g.add(at(box(3.3, 0.14, 1.7, PAL.stone, { up: PAL.stone, down: PAL.shade }), 0, 1.75, 0));
-    g.add(at(box(1.0, 0.3, 0.8, PAL.steel, { up: PAL.steel, down: PAL.steelDark }), -0.9, 1.95, 0));
+    const griddle = at(box(1.0, 0.3, 0.8, PAL.steel, { up: PAL.steel, down: PAL.steelDark }), -0.9, 1.95, 0);
+    g.add(griddle);
+    // A hot plate, not a lamp — deep orange and dimmer than anything on a pole.
+    // Cart Corner is the endgame and the darkest district on the block.
+    night.add(griddle, 0xd8632c, { peak: 0.50, warm: 4.0, delay: 1.2 });
     // Parasol
     g.add(at(cyl(0.06, 0.06, 2.2, 6, PAL.steelDark), 0.4, 2.9, 0));
     const shade = cone(1.9, 0.7, 8, PAL.cloth[0], { up: PAL.clothLit[0], down: PAL.shade });
@@ -429,6 +466,12 @@ export function buildLevel() {
       g.add(at(cyl(0.06, 0.06, 1.4, 5, PAL.steel, { up: PAL.steel, down: PAL.steelDark }), px, 2.32, 2.3));
     }
     g.add(at(box(3.0, 0.1, 0.7, PAL.barkShade, { up: PAL.bark }), 0, 1.35, -1.0));
+    // A clip-on stall light over the display side, which is the side the camera
+    // sees and the side the money is on. There was no light source here at all.
+    const stallLamp = at(ico(0.13, 0, PAL.goldLit, { shadow: false }), 0, 2.42, -0.95);
+    stallLamp.material = mat(PAL.goldLit);
+    g.add(stallLamp);
+    night.add(stallLamp, PAL.goldLit, { peak: 0.95, warm: 1.4, delay: 1.9, flicker: true });
     // The till, moved off the hot dog cart.
     g.add(at(box(0.52, 0.26, 0.38, PAL.steelDark, { up: PAL.steel, down: PAL.shade }), 1.0, 2.33, -0.55));
     for (let i = 0; i < 5; i++) {
@@ -464,6 +507,7 @@ export function buildLevel() {
     const g = new THREE.Group();
     const X0 = 17.5, X1 = 29.5, Z0 = -12, Z1 = -8.5;
     const decks = [3.4, 6.6];
+    const beads = [];
     for (const zz of [Z0, Z1]) {
       for (let x = X0; x <= X1 + 0.01; x += 3) {
         g.add(at(cyl(0.09, 0.09, 8.6, 5, PAL.steel, { up: PAL.steel, down: PAL.steelDark }), x, 4.3, zz));
@@ -479,6 +523,15 @@ export function buildLevel() {
       const rail = box(X1 - X0 + 0.8, 0.08, 0.08, PAL.steel);
       rail.position.set((X0 + X1) / 2, y + 1.0, Z1 + 0.3);
       g.add(rail);
+      // Amber warning beads on the rail. Free character, and they mark the
+      // aerial route through the darkest corner of the block — building sites
+      // have exactly these.
+      for (const bxx of [X0 + 1.5, (X0 + X1) / 2, X1 - 1.5]) {
+        const bead = at(ico(0.09, 0, PAL.gold, { shadow: false }), bxx, y + 1.0, Z1 + 0.3);
+        bead.material = mat(PAL.gold);
+        g.add(bead);
+        beads.push(bead);
+      }
       solid((X0 + X1) / 2, (Z0 + Z1) / 2, X1 - X0 + 0.8, Z1 - Z0 + 0.6, y + 0.08, y - 0.1);
       perches.push({ x: (X0 + X1) / 2, y: y + 0.08, z: (Z0 + Z1) / 2 });
     }
@@ -489,6 +542,7 @@ export function buildLevel() {
     );
     net.position.set((X0 + X1) / 2, 4.3, Z0 - 0.1);
     g.add(net);
+    night.add(beads, PAL.gold, { peak: 0.80, warm: 0.9, delay: 2.4 });
     root.add(g);
   }
 
@@ -505,6 +559,7 @@ export function buildLevel() {
 
   return {
     root, colliders, occluders, perches,
+    nightLights: night,
     fountain: FOUNTAIN,
     nest: NEST,
     nestPlatform: 3.4,     // the cornice you land on
