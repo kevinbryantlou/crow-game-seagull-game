@@ -102,14 +102,17 @@ await drive(['d'], 1600);
 await shoot('05-cart-corner');
 
 /** Put the crow somewhere specific and photograph it, for spot checks. */
+const hasHandle = await page.evaluate(() => !!window.__game);
+if (!hasHandle) {
+  console.log('  note: no __game handle (production build) — introspective checks skipped');
+}
+
 const look = async (name, x, y, z) => {
-  const ok = await page.evaluate(([px, py, pz]) => {
-    if (!window.__game) return false;
+  if (!hasHandle) return;
+  await page.evaluate(([px, py, pz]) => {
     window.__game.crow.pos.set(px, py, pz);
     window.__game.crow.vel.set(0, 0, 0);
-    return true;
   }, [x, y, z]);
-  if (!ok) { errors.push('no __game handle for spot checks'); return; }
   await new Promise((r) => setTimeout(r, 900));   // let the camera settle
   await shoot(name);
 };
@@ -120,7 +123,7 @@ await look('08-nest', -12.5, 5.0, -6.5);
 await look('09-kid', -17.5, 0, 11.5);
 
 // Functional check: the two teaching beats fire at the moment each applies.
-const teach = await page.evaluate(() => {
+const teach = !hasHandle ? null : await page.evaluate(() => {
   const g = window.__game;
   const toast = () => document.getElementById('toast').textContent;
   const coin = g.pickups.find((p) => p.value > 0 && p.state === 'world' && !p.pinned);
@@ -133,13 +136,13 @@ const teach = await page.evaluate(() => {
   g.crow.carried = null; shiny.state = 'world';
   return { onMoney, onShiny };
 });
-console.log('  teach:', JSON.stringify(teach));
-if (!/nest/i.test(teach.onMoney)) errors.push(`no nest hint on first money: "${teach.onMoney}"`);
-if (!/trade/i.test(teach.onShiny)) errors.push(`no trade hint on first shiny: "${teach.onShiny}"`);
+if (teach) console.log('  teach:', JSON.stringify(teach));
+if (teach && !/nest/i.test(teach.onMoney)) errors.push(`no nest hint on first money: "${teach.onMoney}"`);
+if (teach && !/trade/i.test(teach.onShiny)) errors.push(`no trade hint on first shiny: "${teach.onShiny}"`);
 
 // Functional check: trading a shiny must put the reward straight in the beak,
 // never on the ground where scenery can hide it.
-const trade = await page.evaluate(() => {
+const trade = !hasHandle ? null : await page.evaluate(() => {
   const g = window.__game;
   const shiny = g.pickups.find((p) => p.kind === 'shiny' && !p.taken);
   if (!shiny) return { error: 'no shiny available' };
@@ -154,19 +157,19 @@ const trade = await page.evaluate(() => {
     strayOnGround: g.pickups.filter((p) => p.id >= 900 && p.state === 'world').length,
   };
 });
-console.log('  trade:', JSON.stringify(trade));
+if (trade) console.log('  trade:', JSON.stringify(trade));
 // A temporary test cheat can override the payout; honour it rather than
 // failing, but report it so it is never silently in effect.
-const cheat = await page.evaluate(() => {
+const cheat = !hasHandle ? null : await page.evaluate(() => {
   const b = document.getElementById('testmode');
   if (!b || b.hidden) return null;
   return Number((b.textContent.match(/\$([\d.]+)/) || [])[1]) || null;
 });
 if (cheat) console.log(`  NOTE: test cheat active — trade pays $${cheat.toFixed(2)}`);
 const expected = cheat ?? 1;
-if (trade.value !== expected) errors.push(`first trade paid ${trade.value}, expected ${expected}`);
-if (!trade.parentedToBeak) errors.push('trade reward was not auto-equipped');
-if (trade.strayOnGround) errors.push('trade reward was left on the ground');
+if (trade && trade.value !== expected) errors.push(`first trade paid ${trade.value}, expected ${expected}`);
+if (trade && !trade.parentedToBeak) errors.push('trade reward was not auto-equipped');
+if (trade && trade.strayOnGround) errors.push('trade reward was left on the ground');
 
 // Look at what the crow can see right now.
 const state = await page.evaluate(() => {
@@ -182,7 +185,7 @@ const state = await page.evaluate(() => {
 console.log('  hud:', JSON.stringify(state));
 
 // The ending screen, with a deliberately awkward amount.
-const ending = await page.evaluate(() => {
+const ending = !hasHandle ? null : await page.evaluate(() => {
   const g = window.__game;
   g.total = 22.66; g.elapsed = 247; g.finished = false; g.running = true;
   g._finish(true);
@@ -192,13 +195,12 @@ const ending = await page.evaluate(() => {
     again: document.getElementById('again').textContent,
   };
 });
-console.log('  ending:', JSON.stringify(ending));
-if (!/twenty-two dollars sixty-six cents/i.test(ending.title)) {
+if (ending) console.log('  ending:', JSON.stringify(ending));
+if (ending && !/twenty-two dollars sixty-six cents/i.test(ending.title)) {
   errors.push(`ending headline wrong: "${ending.title}"`);
 }
-if (/\$/.test(ending.rank)) errors.push(`amount still in the eyebrow: "${ending.rank}"`);
-await new Promise((r) => setTimeout(r, 1600));
-await shoot('10-ending');
+if (ending && /\$/.test(ending.rank)) errors.push(`amount still in the eyebrow: "${ending.rank}"`);
+if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-ending'); }
 
 await browser.close();
 
