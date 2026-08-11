@@ -5,11 +5,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --port 4173",
+    "preview": "node scripts/preview.mjs",
     "smoke": "node scripts/smoke.mjs",
     "check": "node scripts/smoke.mjs && vite build",
     "shoot": "node scripts/shoot.mjs",
-    "build:web": "vite build --base=/small-change-crow-game/"
+    "build:web": "vite build --base=/small-change-crow-game/",
+    "preview:sheet": "node scripts/preview-sheet.mjs"
   },
   "keywords": [],
   "author": "",

@@ -6,7 +6,27 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1f4d3d">
-<meta name="description" content="Small Change — a crow, a city block, and twenty dollars before sundown.">
+<meta name="description" content="You are a crow. Your goal is to collect a bunch of money.">
+
+<!-- Link preview. og:url and og:image must be absolute, so they name the
+     deployed location; a relative og:image silently produces no card at all.
+     preview.png lives in public/, which Vite copies to the root of dist/ — the
+     deploy directory itself is wiped by build:web, so nothing may be put there
+     by hand. Regenerate the image with `npm run preview`. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="beacon2">
+<meta property="og:url" content="https://beacon2.com/small-change-crow-game">
+<meta property="og:title" content="Small Change">
+<meta property="og:description" content="You are a crow. Your goal is to collect a bunch of money.">
+<meta property="og:image" content="https://beacon2.com/small-change-crow-game/preview.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A low-poly crow on sunlit paving beside a hot dog cart, watched by its suspicious vendor.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Small Change">
+<meta name="twitter:description" content="You are a crow. Your goal is to collect a bunch of money.">
+<meta name="twitter:image" content="https://beacon2.com/small-change-crow-game/preview.png">
 <title>Small Change</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f4d3d'/%3E%3Cpath d='M7 20l5-6h9l4 3-4 3z' fill='%231e1a24'/%3E%3Ccircle cx='19' cy='15' r='1.6' fill='%23e8e2d2'/%3E%3C/svg%3E">
 <style>
