@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<title>Small Change — Lighting at Dusk</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  html { -webkit-text-size-adjust: 100%; }
+  :root {
+    --paper:      #E9E5DA;
+    --paper-2:    #DFDACB;
+    --ink:        #141C18;
+    --ink-soft:   #3E4A44;
+    --nickel:     #8B948F;
+    --rule:       #C3BFB1;
+    --enamel:     #1F4D3D;
+    --brass:      #A87C22;
+    --brass-lit:  #C79A34;
+    --sheen:      #4B4B7A;
+    --band-text:  #EDEAE0;
+    --band-dim:   #9FB5AB;
+    --chip-bg:    #D7D2C2;
+    --lamp:       #C08A1E;
+    --lamp-soft:  rgba(224,179,72,.20);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:     #131815;
+      --paper-2:   #1A211D;
+      --ink:       #E4E2D7;
+      --ink-soft:  #A3ADA6;
+      --nickel:    #7C857F;
+      --rule:      #2C3630;
+      --enamel:    #16332A;
+      --brass:     #D2A644;
+      --brass-lit: #E0B85C;
+      --sheen:     #8A8AC4;
+      --band-text: #E4E2D7;
+      --band-dim:  #7E9A8D;
+      --chip-bg:   #212925;
+      --lamp:      #E0B348;
+      --lamp-soft: rgba(224,179,72,.16);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:     #131815;
+    --paper-2:   #1A211D;
+    --ink:       #E4E2D7;
+    --ink-soft:  #A3ADA6;
+    --nickel:    #7C857F;
+    --rule:      #2C3630;
+    --enamel:    #16332A;
+    --brass:     #D2A644;
+    --brass-lit: #E0B85C;
+    --sheen:     #8A8AC4;
+    --band-text: #E4E2D7;
+    --band-dim:  #7E9A8D;
+    --chip-bg:   #212925;
+    --lamp:      #E0B348;
+    --lamp-soft: rgba(224,179,72,.16);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono {
+    font-family: Menlo, ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: .82em;
+    letter-spacing: .01em;
+  }
+
+  /* ---- sign band ---- */
+  .band {
+    background: var(--enamel);
+    color: var(--band-text);
+    padding: 3.2rem 1.5rem 2.4rem;
+    border-bottom: 6px solid var(--brass);
+  }
+  .band-inner { max-width: 62rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1.1rem; }
+  .band .eyebrow {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .72rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--band-dim);
+  }
+  h1.title {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: clamp(2.6rem, 9.5vw, 5.6rem);
+    line-height: .88;
+    letter-spacing: .005em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  h1.title .thin { display: block; color: var(--brass-lit); }
+  .band .deck { font-size: 1.12rem; max-width: 36rem; opacity: .88; margin: 0; }
+  .facts {
+    display: flex; flex-wrap: wrap; gap: 0 2.2rem;
+    border-top: 1px solid rgba(159,181,171,.28);
+    padding-top: 1rem; margin-top: .4rem;
+  }
+  .facts div { display: flex; flex-direction: column; gap: .1rem; }
+  .facts dt {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .18em; text-transform: uppercase; color: var(--band-dim);
+  }
+  .facts dd { margin: 0; font-size: .95rem; }
+
+  /* ---- document body ---- */
+  main { max-width: 62rem; margin: 0 auto; padding: 0 1.5rem 6rem; }
+  .col { max-width: 38rem; }
+
+  section { padding-top: 3.4rem; }
+  section > * + * { margin-top: 1rem; }
+
+  h2 {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase;
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+    line-height: 1.05; letter-spacing: .015em;
+    margin: 0 0 .2rem; padding-bottom: .55rem;
+    border-bottom: 2px solid var(--ink);
+    display: flex; align-items: baseline; gap: .7rem;
+  }
+  h2 .sec {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .7rem; font-weight: 400; letter-spacing: .12em;
+    color: var(--brass); flex: none;
+  }
+  h3 {
+    font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    font-size: .95rem; margin: 1.8rem 0 .3rem;
+  }
+  p { margin: 0; }
+  section p + p { margin-top: .85rem; }
+  a { color: var(--brass); }
+
+  ul, ol { margin: .2rem 0; padding-left: 1.15rem; }
+  li { margin: .3rem 0; }
+  li::marker { color: var(--nickel); }
+  em.term { font-style: normal; font-weight: 700; color: var(--sheen); }
+
+  /* ---- exhibits ---- */
+  .exhibit { margin: 2rem 0 0; }
+  .exhibit-cap {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--nickel); margin-top: .6rem;
+  }
+  .plate { background: var(--paper-2); border: 1px solid var(--rule); padding: 1.2rem; overflow-x: auto; }
+  .plate svg { display: block; width: 100%; height: auto; min-width: 32rem; }
+
+  /* ---- tables ---- */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--rule); background: var(--paper-2); }
+  table { border-collapse: collapse; width: 100%; min-width: 40rem; font-size: .9rem; }
+  th, td { text-align: left; padding: .55rem .8rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .64rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); background: var(--chip-bg); border-bottom: 2px solid var(--ink);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num, td.val {
+    font-family: Menlo, ui-monospace, monospace;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  td.val { color: var(--brass); }
+  .yes { color: var(--brass); font-weight: 700; }
+  .no  { color: var(--nickel); }
+
+  /* ---- callout ---- */
+  .note {
+    border-left: 4px solid var(--brass);
+    background: var(--paper-2);
+    padding: .9rem 1.1rem;
+    font-size: .95rem;
+  }
+  .note .lbl {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--brass); display: block; margin-bottom: .25rem;
+  }
+  .note.stop { border-left-color: var(--sheen); }
+  .note.stop .lbl { color: var(--sheen); }
+
+  /* ---- tiers ---- */
+  .tiers { border-top: 2px solid var(--ink); margin-top: 1.4rem; }
+  .tier {
+    display: grid; grid-template-columns: 7rem 1fr; gap: 1.2rem;
+    padding: 1rem 0; border-bottom: 1px solid var(--rule); align-items: baseline;
+  }
+  .tier .t-id {
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; color: var(--brass); padding-top: .15rem;
+  }
+  .tier .t-body > strong {
+    display: block;
+    font-family: "Avenir Next Condensed","Arial Narrow",sans-serif;
+    text-transform: uppercase; letter-spacing: .04em; font-size: 1.05rem;
+  }
+  .tier .t-body .cost {
+    font-family: Menlo, ui-monospace, monospace; font-size: .68rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--nickel);
+    display: block; margin-bottom: .4rem;
+  }
+  .tier .t-body p, .tier .t-body ul { font-size: .93rem; }
+
+  footer {
+    border-top: 2px solid var(--ink); margin-top: 4rem; padding-top: 1rem;
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--nickel);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+  }
+
+  @media (max-width: 40rem) {
+    body { font-size: 16px; }
+    .tier { grid-template-columns: 1fr; gap: .1rem; }
+    .plate svg { min-width: 28rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="band">
+  <div class="band-inner">
+    <div class="eyebrow">Design exploration &nbsp;·&nbsp; v0.1 &nbsp;·&nbsp; Nothing implemented</div>
+    <h1 class="title">Lighting<br>At Dusk<span class="thin">Making the last third playable</span></h1>
+    <p class="deck">From about 70% of the day the block stops being readable. This is a
+      brief, not a patch: what the darkness actually measures, what the style guide will and
+      will not allow us to do about it, four techniques costed against each other, and a
+      tiered plan with a stopping rule at every tier.</p>
+    <dl class="facts">
+      <div><dt>Status</dt><dd>For review — no code written</dd></div>
+      <div><dt>Trigger</dt><dd>Playtest, 2026-08-10</dd></div>
+      <div><dt>Current rig</dt><dd>2 lights, 362 meshes, 22 materials</dd></div>
+      <div><dt>Budget</dt><dd>~155 kB gzip, 60 Hz on a phone</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main>
+
+  <section id="problem">
+    <h2><span class="sec">§1</span> What the darkness measures</h2>
+    <div class="col">
+      <p>Mean luminance of the block — the lower 58% of a 1000&times;640 frame, HUD hidden,
+      crow parked in the plaza, sampled from decoded screenshots at ten points in the day.
+      Numbers are sRGB 0–255.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate">
+        <svg viewBox="0 0 900 300" role="img" aria-label="Bar chart of block luminance falling from a mean of 164 at noon to 20 at 95 percent of the day, with the fifth percentile crossing the proposed floor of 35 at about 72 percent">
+          <g font-family="Menlo, monospace" font-size="10" fill="currentColor">
+            <!-- axis -->
+            <line x1="52" y1="250" x2="880" y2="250" stroke="currentColor" stroke-width="1.4"/>
+            <line x1="52" y1="24" x2="52" y2="250" stroke="currentColor" stroke-width="1.4"/>
+            <g opacity=".45">
+              <text x="18" y="253">0</text>
+              <text x="10" y="140">100</text>
+              <text x="10" y="28">200</text>
+            </g>
+            <!-- navigability floor -->
+            <line x1="52" y1="211" x2="880" y2="211" stroke="var(--sheen)" stroke-width="1.4" stroke-dasharray="5 4"/>
+            <line x1="760" y1="182" x2="760" y2="209" stroke="var(--sheen)" stroke-width="1"/>
+            <text x="622" y="176" fill="var(--sheen)" font-size="9.5" letter-spacing="1">PROPOSED FLOOR — 5TH PERCENTILE 35</text>
+          </g>
+
+          <!-- bars: mean (solid) and 5th percentile (hatched sliver) -->
+          <g>
+            <!-- t, mean, p05 : y = 250 - v*1.13 -->
+            <g fill="var(--brass)">
+              <rect x="72"  y="65"  width="52" height="185"/>
+              <rect x="162" y="108" width="52" height="142"/>
+              <rect x="252" y="143" width="52" height="107"/>
+              <rect x="342" y="180" width="52" height="70"/>
+              <rect x="432" y="194" width="52" height="56"/>
+              <rect x="522" y="203" width="52" height="47"/>
+              <rect x="612" y="210" width="52" height="40"/>
+              <rect x="702" y="220" width="52" height="30"/>
+              <rect x="792" y="228" width="52" height="22"/>
+            </g>
+            <g fill="var(--sheen)" opacity=".85">
+              <rect x="72"  y="191" width="52" height="59"/>
+              <rect x="162" y="205" width="52" height="45"/>
+              <rect x="252" y="214" width="52" height="36"/>
+              <rect x="342" y="222" width="52" height="28"/>
+              <rect x="432" y="226" width="52" height="24"/>
+              <rect x="522" y="233" width="52" height="17"/>
+              <rect x="612" y="236" width="52" height="14"/>
+              <rect x="702" y="238" width="52" height="12"/>
+              <rect x="792" y="241" width="52" height="9"/>
+            </g>
+          </g>
+
+          <g font-family="Menlo, monospace" font-size="10" fill="currentColor" text-anchor="middle">
+            <g opacity=".75">
+              <text x="98"  y="266">0.0</text>
+              <text x="188" y="266">0.4</text>
+              <text x="278" y="266">0.6</text>
+              <text x="368" y="266">0.7</text>
+              <text x="458" y="266">0.75</text>
+              <text x="548" y="266">0.8</text>
+              <text x="638" y="266">0.85</text>
+              <text x="728" y="266">0.9</text>
+              <text x="818" y="266">0.95</text>
+            </g>
+            <g font-size="9.5" fill="var(--brass)">
+              <text x="98"  y="58">164</text>
+              <text x="188" y="101">125</text>
+              <text x="278" y="136">95</text>
+              <text x="368" y="173">62</text>
+              <text x="458" y="187">49</text>
+              <text x="548" y="196">42</text>
+              <text x="638" y="203">35</text>
+              <text x="728" y="213">27</text>
+              <text x="818" y="221">20</text>
+            </g>
+            <text x="466" y="288" opacity=".6" font-size="9.5" letter-spacing="1.4">TIME OF DAY (elapsed / SESSION_SECONDS)</text>
+          </g>
+
+          <g font-family="Menlo, monospace" font-size="9.5" letter-spacing="1">
+            <rect x="640" y="16" width="11" height="11" fill="var(--brass)"/>
+            <text x="658" y="26" fill="currentColor" opacity=".8">MEAN</text>
+            <rect x="720" y="16" width="11" height="11" fill="var(--sheen)" opacity=".85"/>
+            <text x="738" y="26" fill="currentColor" opacity=".8">5TH PERCENTILE</text>
+          </g>
+        </svg>
+      </div>
+      <div class="exhibit-cap">Exhibit A · block luminance across the day · measured 2026-08-10</div>
+    </div>
+
+    <div class="col">
+      <h3>There are two different problems, not one</h3>
+      <p>The mean falls smoothly, which hides the interesting part. The <strong>median</strong>
+      does not: it goes 113 → 45 between <span class="mono">t=0.60</span> and
+      <span class="mono">t=0.70</span>, a 60% collapse in one tenth of the day, while the 95th
+      percentile only drops 135 → 111. Most of the frame falls into shadow while a few strips
+      stay bright.</p>
+
+      <ul>
+        <li><strong><span class="mono">t ≈ 0.70 – 0.88</span> is a contrast problem.</strong>
+          The sun elevation drops from 0.24 to 0.12 and the shadows go long and raking. At
+          <span class="mono">t=0.70</span> the block spans p05&nbsp;25 to p95&nbsp;111 — half of
+          it is in deep shade with the other half still bright, and the eye adapts to the
+          bright half. This is the "rust-red rake" in the playtest note.</li>
+        <li><strong><span class="mono">t ≈ 0.88 – 1.00</span> is an absolute darkness problem.</strong>
+          Mean 27 → 20, median 24 → 19. Nothing is bright any more.
+          <span class="mono">keyI</span> is 0.9 and <span class="mono">amb</span> 0.55 at the end
+          of <span class="mono">SKY_RAMP</span>. There is no second source to fall back on
+          because there is no second source at all.</li>
+      </ul>
+
+      <p>They want different answers. The first wants <em class="term">fill in the shadowed
+      half</em>. The second wants <em class="term">put actual light sources on the block</em>.
+      A plan that only does one of them fixes half the last third of the game.</p>
+    </div>
+
+    <div class="note col">
+      <span class="lbl">A target worth arguing about</span>
+      Keep the block's <strong>median above ~55</strong> and its <strong>5th percentile above
+      ~35</strong> for the whole session. Both are currently breached from about
+      <span class="mono">t=0.68</span>. These are the numbers I would assert in
+      <span class="mono">shoot.mjs</span>, and they are guesses until you look at a frame that
+      hits them — that is the first thing to check, not the last.
+    </div>
+  </section>
+
+  <section id="constraints">
+    <h2><span class="sec">§2</span> What the style guide allows</h2>
+    <div class="col">
+      <p>Four of the seven non-negotiables in <span class="mono">docs/style-guide.html</span>
+      bear directly on this, and one of them rules out the obvious answer.</p>
+    </div>
+
+    <div class="table-wrap exhibit">
+      <table>
+        <thead>
+          <tr><th>Rule</th><th>What it means here</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>No textures or gradients on geometry</strong></td>
+            <td>A baked lightmap is a gradient texture on geometry. This rule is the single
+              biggest constraint on the whole problem — see §4.</td>
+          </tr>
+          <tr>
+            <td><strong>Flat shading, three tones per object</strong></td>
+            <td>Smooth pools of falloff across a face fight the carved look. Light should
+              arrive as <em>separate lit things</em>, not as soft shading on existing things.</td>
+          </tr>
+          <tr>
+            <td><strong>Shade is violet, never neutral grey</strong></td>
+            <td>Every lamp is warm amber. Warm light on violet shade is the right contrast,
+              but additive amber over a violet ground desaturates toward grey if pushed. Cap
+              the pools well below full.</td>
+          </tr>
+          <tr>
+            <td><strong>The crow is the darkest thing on screen</strong></td>
+            <td>Hard constraint on where light may fall. A crow standing in a pool of lamplight
+              breaks the rule that the player uses to find the crow. See §7.</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="exhibit-cap" style="padding:.5rem .8rem 0">Exhibit B · the binding constraints</div>
+    </div>
+
+    <div class="col">
+      <p>And one convention from <span class="mono">CLAUDE.md</span> that is not about looks:
+      <strong>no asset pipeline.</strong> Every model is generated from primitives, there is
+      nothing to download at runtime, and the whole build is ~155 kB gzipped. Anything that
+      adds an image file is spending the thing the project is proudest of.</p>
+    </div>
+  </section>
+
+  <section id="techniques">
+    <h2><span class="sec">§3</span> Four techniques, costed</h2>
+
+    <div class="table-wrap exhibit">
+      <table>
+        <thead>
+          <tr>
+            <th>Technique</th><th>Runtime cost</th><th>Lights other objects?</th>
+            <th>Breaks a rule?</th><th>Effort</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>A · Emissive materials</strong><br>
+              <span class="mono">material.emissive</span> ramped with time of day</td>
+            <td>Zero. A constant term in a fragment shader that already runs. No new lights,
+              no recompile.</td>
+            <td class="no">No — a lit window is bright, the wall beside it is not</td>
+            <td class="no">No</td>
+            <td>Hours</td>
+          </tr>
+          <tr>
+            <td><strong>B · Additive ground pools</strong><br>
+              flat quad, canvas radial gradient, <span class="mono">AdditiveBlending</span></td>
+            <td>Near zero. One draw call and some overdraw per pool. No per-light shader work.</td>
+            <td class="no">No — it paints the paving, it does not light a passer-by</td>
+            <td class="no">No — the glint already does exactly this</td>
+            <td>A day</td>
+          </tr>
+          <tr>
+            <td><strong>C · Real point lights</strong><br>
+              <span class="mono">THREE.PointLight</span>, no shadows</td>
+            <td>Real. All 22 materials recompile with <span class="mono">NUM_POINT_LIGHTS=N</span>;
+              per-fragment cost scales with N &times; pixels. Needs measuring on a phone.</td>
+            <td class="yes">Yes — the only technique that lights people who walk through it</td>
+            <td class="no">No, if kept few</td>
+            <td>A day</td>
+          </tr>
+          <tr>
+            <td><strong>D · Baked lightmaps</strong><br>
+              second UV set + a lightmap texture</td>
+            <td>Lowest of all at runtime — one extra texture fetch.</td>
+            <td class="no">No — static by definition</td>
+            <td class="yes">Yes, two: textures on geometry, and the asset pipeline</td>
+            <td>Weeks</td>
+          </tr>
+          <tr>
+            <td><strong>E · Raise the floor</strong><br>
+              a fifth <span class="mono">SKY_RAMP</span> stop, higher <span class="mono">amb</span></td>
+            <td>Zero. It is four numbers.</td>
+            <td class="yes">Yes — it is a light</td>
+            <td class="no">No</td>
+            <td>Minutes</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="exhibit-cap" style="padding:.5rem .8rem 0">Exhibit C · technique comparison</div>
+    </div>
+
+    <div class="col">
+      <h3>The trap that will bite whoever implements this</h3>
+      <p><span class="mono">shapes.js</span> caches materials by colour.
+      <strong>38 meshes share the single cached <span class="mono">goldLit</span> material</strong>
+      — the four lamp bulbs and every lit window in the skyline. Setting
+      <span class="mono">.emissive</span> on it lights all thirty-eight at once.</p>
+      <p>That is mostly a gift: the whole city coming on in one assignment is exactly the
+      effect we want, for free. But it means <strong>you cannot stagger them, tune them
+      separately, or light one without the others until you clone.</strong> Any per-object
+      emissive work starts with <span class="mono">mesh.material = mesh.material.clone()</span>,
+      and cloning 38 materials gives back 38 shader programs where there was one. Decide which
+      you want before writing anything.</p>
+    </div>
+  </section>
+
+  <section id="baked">
+    <h2><span class="sec">§4</span> On pre-baking</h2>
+    <div class="col">
+      <p>The hypothesis on the table was: pre-baked light textures that only appear after 80%,
+      as the lowest-lift and least taxing option. <strong>The instinct is right and the
+      implementation is wrong,</strong> and the distinction is worth being precise about
+      because the right answer is hiding inside the wrong one.</p>
+
+      <p>Right: <em class="term">precompute the look instead of computing the lighting.</em>
+      Nothing about a streetlamp changes frame to frame. Paying a per-fragment lighting cost
+      sixty times a second to redraw the same amber ellipse is waste, and avoiding it is the
+      correct instinct.</p>
+
+      <p>Wrong: a lightmap specifically. Three reasons, in order of how hard they are to
+      argue with.</p>
+
+      <ol>
+        <li><strong>There is nothing to bake onto.</strong> The block is generated from
+          primitives at runtime. There is no authored mesh, no UV layout, and no second UV
+          channel. You would have to build all of that first, and then keep it in sync with
+          a level file that is edited by moving numbers around in JavaScript.</li>
+        <li><strong>It breaks two stated conventions</strong> — textures on geometry, and the
+          no-asset-pipeline rule. The ground alone is 120&times;90 m; a lightmap over it at any
+          usable resolution is a large image in a build that currently downloads nothing.</li>
+        <li><strong>It is static.</strong> The vendor walking out of his own stall light during
+          the pigeon distraction is the best thing that could happen to Cart Corner at dusk,
+          and a lightmap cannot do it.</li>
+      </ol>
+
+      <div class="note">
+        <span class="lbl">The same idea, expressed in this codebase</span>
+        <strong>Technique B is the pre-baked lightmap, done the way this project already does
+        things.</strong> A radial gradient generated once into a 128&times;128 canvas at boot,
+        reused by every pool, drawn as a flat additive quad on the paving. Precomputed:
+        yes. Zero per-light shader cost: yes. Ships as an asset: no — it is about forty lines
+        that generate their own texture. This is not a new idea in the game either: the pickup
+        glint in <span class="mono">world/pickups.js</span> is exactly this technique, already
+        shipped, already generating its gradient from a canvas at runtime.
+      </div>
+    </div>
+  </section>
+
+  <section id="inventory">
+    <h2><span class="sec">§5</span> Everything on the block worth lighting</h2>
+    <div class="col">
+      <p>Including the four you named, and eight more. Priority 1 is "the last third does not
+      work without it"; 3 is "would be lovely".</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate">
+        <svg viewBox="0 0 960 520" role="img" aria-label="Plan view of the block showing proposed light positions: four lampposts, the cart, the newsstand, the café frontage, the memorial, the fountain and the scaffolding">
+          <defs>
+            <radialGradient id="pool">
+              <stop offset="0%"   stop-color="var(--lamp)" stop-opacity=".38"/>
+              <stop offset="55%"  stop-color="var(--lamp)" stop-opacity=".14"/>
+              <stop offset="100%" stop-color="var(--lamp)" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+
+          <!-- pools first, under everything -->
+          <g>
+            <circle cx="97" cy="307" r="82" fill="url(#pool)"/>
+            <circle cx="360" cy="195" r="82" fill="url(#pool)"/>
+            <circle cx="615" cy="120" r="82" fill="url(#pool)"/>
+            <circle cx="840" cy="330" r="82" fill="url(#pool)"/>
+            <circle cx="705" cy="165" r="68" fill="url(#pool)"/>
+            <circle cx="645" cy="352" r="62" fill="url(#pool)"/>
+            <circle cx="480" cy="393" r="96" fill="url(#pool)"/>
+            <circle cx="292" cy="142" r="58" fill="url(#pool)"/>
+            <circle cx="150" cy="240" r="70" fill="url(#pool)"/>
+          </g>
+
+          <!-- block outline -->
+          <rect x="15" y="15" width="930" height="450" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".45"/>
+
+          <!-- skyline band -->
+          <g opacity=".5">
+            <rect x="15" y="0" width="930" height="12" fill="currentColor" opacity=".18"/>
+            <text x="24" y="9" font-family="Menlo, monospace" font-size="8.5" fill="currentColor" letter-spacing="1.2">SKYLINE — 34 LIT WINDOWS, z = −18</text>
+          </g>
+
+          <g fill="none" stroke="currentColor" stroke-width="1.5" opacity=".7">
+            <!-- fountain -->
+            <circle cx="150" cy="240" r="78"/>
+            <circle cx="150" cy="240" r="69" opacity=".4"/>
+            <!-- memorial -->
+            <rect x="265" y="115" width="55" height="55"/>
+            <!-- café -->
+            <rect x="352" y="420" width="255" height="60"/>
+            <rect x="352" y="368" width="255" height="51" stroke-dasharray="4 3" opacity=".55"/>
+            <!-- cart -->
+            <rect x="680" y="152" width="50" height="26"/>
+            <!-- newsstand -->
+            <rect x="619" y="339" width="52" height="27"/>
+            <!-- scaffolding -->
+            <rect x="742" y="60" width="180" height="52" stroke-dasharray="4 3"/>
+          </g>
+
+          <!-- lamps -->
+          <g>
+            <g fill="var(--lamp)">
+              <circle cx="97" cy="307" r="6"/>
+              <circle cx="360" cy="195" r="6"/>
+              <circle cx="615" cy="120" r="6"/>
+              <circle cx="840" cy="330" r="6"/>
+            </g>
+          </g>
+
+          <g font-family="Menlo, monospace" font-size="10" fill="currentColor" letter-spacing="1">
+            <text x="150" y="243" text-anchor="middle" opacity=".8">FOUNTAIN</text>
+            <text x="292" y="147" text-anchor="middle" opacity=".8">MEMORIAL</text>
+            <text x="480" y="455" text-anchor="middle" opacity=".8">CAFÉ ROW</text>
+            <text x="705" y="169" text-anchor="middle" opacity=".8">CART</text>
+            <text x="645" y="356" text-anchor="middle" opacity=".8">NEWSSTAND</text>
+            <text x="832" y="90" text-anchor="middle" opacity=".8">SCAFFOLDING</text>
+            <g opacity=".62" font-size="9">
+              <text x="97" y="338" text-anchor="middle">LAMP 1</text>
+              <text x="360" y="180" text-anchor="middle">LAMP 2</text>
+              <text x="615" y="105" text-anchor="middle">LAMP 3</text>
+              <text x="840" y="315" text-anchor="middle">LAMP 4</text>
+            </g>
+            <text x="30" y="502" opacity=".55" font-size="9">PLAN VIEW · CAMERA IS BELOW THE FRAME, LOOKING UP-SCREEN · 15 px = 1 m</text>
+          </g>
+        </svg>
+      </div>
+      <div class="exhibit-cap">Exhibit D · proposed light placements, with the ground pools they would cast</div>
+    </div>
+
+    <div class="table-wrap exhibit">
+      <table>
+        <thead>
+          <tr><th>Source</th><th class="num">Where</th><th>Technique</th><th>Why</th><th class="num">Pri</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Four lampposts</strong></td>
+            <td class="num">−25.5, 4.5<br>−8, −3<br>9, −8<br>24, 6</td>
+            <td>A on the bulb + B pool, ~5 m</td>
+            <td>The spine of the whole thing. Four pools across the block is the difference
+              between navigable and not. The bulb mesh already exists at y=4.52 in
+              <span class="mono">goldLit</span>.</td>
+            <td class="val">1</td>
+          </tr>
+          <tr>
+            <td><strong>Hot dog cart</strong></td>
+            <td class="num">15, −5</td>
+            <td>A on the griddle + B + <em>maybe</em> C</td>
+            <td>Cart Corner is the endgame and the darkest district. It also has the one
+              scripted moment where a lit person walks out of his own light.</td>
+            <td class="val">1</td>
+          </tr>
+          <tr>
+            <td><strong>Newsstand</strong></td>
+            <td class="num">11, 7.5</td>
+            <td>A on a new bulb under the canopy + B</td>
+            <td>Guards $6 on its roof. A magazine rack you cannot read the colours of is a
+              guarded stretch you cannot see the point of.</td>
+            <td class="val">1</td>
+          </tr>
+          <tr>
+            <td><strong>Café windows &amp; door</strong></td>
+            <td class="num">z ≈ 11.9</td>
+            <td>A — four meshes already exist</td>
+            <td>Named in the note. The café is the near-side occluder, so its glow lands right
+              where the player's eye already is.</td>
+            <td class="val">1</td>
+          </tr>
+          <tr>
+            <td><strong>Skyline windows</strong></td>
+            <td class="num">z = −18</td>
+            <td>A — free, they share the bulb material</td>
+            <td>34 of them already exist in <span class="mono">goldLit</span>. The city coming
+              on behind the block is the largest visual return in the document for the least
+              work. Randomised per session, so it never reads the same twice.</td>
+            <td class="val">1</td>
+          </tr>
+          <tr>
+            <td><strong>War memorial</strong></td>
+            <td class="num">−12.5, −6.5</td>
+            <td>C — an uplight, or B + emissive plaque</td>
+            <td>Named in the note. It is also where the nest is, so it must be findable from
+              anywhere at night. This is the one placement a ground pool genuinely cannot do:
+              the value is on a 3.6 m <em>vertical</em> shaft.</td>
+            <td class="val">1</td>
+          </tr>
+          <tr>
+            <td><strong>Fountain</strong></td>
+            <td class="num">−22, 0</td>
+            <td>A on the water plane, low</td>
+            <td>Civic fountains are lit from under the water, it is beautiful, it keeps the
+              wishing coins readable, and the losing ending already promises it in words:
+              <em>"the fountain is full of coins that nobody is watching."</em> Make the copy
+              true.</td>
+            <td class="val">2</td>
+          </tr>
+          <tr>
+            <td><strong>Café awning underside</strong></td>
+            <td class="num">0, 10.2</td>
+            <td>A on a strip, or B offset forward</td>
+            <td>The awning is the block's one deliberate occluder. Anything under it is in
+              double shade after dark.</td>
+            <td class="val">2</td>
+          </tr>
+          <tr>
+            <td><strong>Scaffolding warning lamps</strong></td>
+            <td class="num">17.5–29.5, −12</td>
+            <td>A — two or three small amber beads</td>
+            <td>Free character, and it marks the aerial route through the darkest corner of
+              the block. Building sites have exactly this.</td>
+            <td class="val">2</td>
+          </tr>
+          <tr>
+            <td><strong>The kid on the bench</strong></td>
+            <td class="num">−17.5, 8.6</td>
+            <td>B, small and soft</td>
+            <td>She is a trade target and she never moves. If she is invisible after dark, one
+              of the five tasks quietly stops being discoverable.</td>
+            <td class="val">2</td>
+          </tr>
+          <tr>
+            <td><strong>Crow contact shadow</strong></td>
+            <td class="num">follows crow</td>
+            <td>B, inverted — a dark blob, not a light one</td>
+            <td>See §7. The cheapest possible answer to "where am I" that does not put light
+              on the bird.</td>
+            <td class="val">2</td>
+          </tr>
+          <tr>
+            <td><strong>Busker's pitch</strong></td>
+            <td class="num">−6.5, −8</td>
+            <td>A on a small lamp by the case</td>
+            <td>A busker still playing after dark has a light on. Holds a $5.50 pitch that
+              otherwise vanishes.</td>
+            <td class="val">3</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="exhibit-cap" style="padding:.5rem .8rem 0">Exhibit E · the inventory</div>
+    </div>
+  </section>
+
+  <section id="plan">
+    <h2><span class="sec">§6</span> The plan, in tiers</h2>
+    <div class="col">
+      <p>Each tier is shippable on its own and each ends with a reason to stop. The point of
+      the ordering is that the cheap tiers might be enough, and we will not know until we look
+      at a frame.</p>
+    </div>
+
+    <div class="tiers">
+      <div class="tier">
+        <div class="t-id">TIER 0</div>
+        <div class="t-body">
+          <strong>Raise the floor</strong>
+          <span class="cost">Technique E · minutes · zero runtime cost</span>
+          <p>Add a fifth <span class="mono">SKY_RAMP</span> stop around
+          <span class="mono">t=0.93</span> and lift the terminal <span class="mono">amb</span>
+          from 0.55. Re-measure. This is the safety net that guarantees the game is playable
+          even if every other tier is cut, and it must land first so the later tiers are tuned
+          against a floor rather than against a hole.</p>
+          <div class="note stop">
+            <span class="lbl">Stop if</span>
+            The median clears 55 and the block reads as <em>evening</em> rather than <em>fog</em>.
+            It probably will not — raising ambient light with no sources tends to look like
+            grey wash, and it cannot make the crow's silhouette read against dark paving. But
+            it is four numbers and it should be tried before anything expensive.
+          </div>
+        </div>
+      </div>
+
+      <div class="tier">
+        <div class="t-id">TIER 1</div>
+        <div class="t-body">
+          <strong>Turn everything on</strong>
+          <span class="cost">Technique A · half a day · zero runtime cost</span>
+          <p>Ramp <span class="mono">emissive</span> on the sources: bulbs and skyline windows
+          together (one shared material, one assignment), café windows, a new bulb under the
+          newsstand canopy, the cart griddle, scaffolding beads, the fountain water.</p>
+          <p>This does not illuminate anything. It changes the read completely anyway — a
+          dark block with forty warm points in it is a <em>city at night</em>, where a dark
+          block with none is a <em>bug</em>. It is also the cheapest tier by a distance and the
+          one I would ship first if only one shipped.</p>
+          <div class="note stop">
+            <span class="lbl">Stop if</span>
+            You can tell where you are from the lit points alone. You will not be able to see
+            the paving, but you may not need to.
+          </div>
+        </div>
+      </div>
+
+      <div class="tier">
+        <div class="t-id">TIER 2</div>
+        <div class="t-body">
+          <strong>Pools on the ground</strong>
+          <span class="cost">Technique B · a day · one draw call per pool</span>
+          <p>One generated radial-gradient texture, reused. A flat additive quad at
+          <span class="mono">y ≈ 0.02</span> under each lamp, the cart, the newsstand, the café
+          frontage, the kid. Opacity ramps in with the same curve as Tier 1's emissive.</p>
+          <p>This is the tier that answers "I cannot see where to walk", and it is the honest
+          version of the pre-baked idea from §4. Watch for two things: additive amber over
+          violet paving desaturating toward grey if pushed past about 0.35, and z-fighting with
+          the paving slabs at <span class="mono">y = 0.012</span> — the pools need to sit above
+          them and write no depth.</p>
+          <div class="note stop">
+            <span class="lbl">Stop if</span>
+            The 5th percentile clears 35 and a chase across the plaza is legible. This is where
+            I expect it to be good enough.
+          </div>
+        </div>
+      </div>
+
+      <div class="tier">
+        <div class="t-id">TIER 3</div>
+        <div class="t-body">
+          <strong>Three real lights, at most</strong>
+          <span class="cost">Technique C · a day + measurement · the only tier with a real budget question</span>
+          <p>Only where a pool provably cannot do the job: the <strong>memorial uplight</strong>
+          (a vertical shaft), the <strong>cart</strong> and the <strong>newsstand</strong>
+          (people who walk in and out of their own light). No shadow casting — the key light
+          stays the only shadow caster, as it is today.</p>
+          <p>Three <span class="mono">PointLight</span>s on <span class="mono">MeshLambert</span>
+          across 22 materials is very likely fine; the reason it is last is that it is the only
+          option here whose cost has to be measured rather than reasoned about. Measure on the
+          390&times;844&nbsp;@2× mobile pass, not on the desktop one.</p>
+          <div class="note stop">
+            <span class="lbl">Cut if</span>
+            The mobile frame time moves at all. Tier 2 already carried the navigability;
+            this tier is buying charm, and charm does not get to cost frames.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="trigger">
+    <h2><span class="sec">§7</span> When they come on</h2>
+    <div class="col">
+      <p>The note said 80%. I would argue for <strong><span class="mono">t = 0.72</span></strong>,
+      for three reasons.</p>
+
+      <ol>
+        <li><strong>It is when the problem starts,</strong> not when it becomes intolerable.
+          The median breaches the floor at about <span class="mono">t=0.68</span>. Light that
+          arrives after the player is already lost reads as a fix; light that arrives just
+          before reads as a world.</li>
+        <li><strong>Real streetlights come on while there is still daylight.</strong> They
+          switch on and look faintly pointless for ten minutes. That is the correct look and it
+          is free.</li>
+        <li><strong>It is a second clock.</strong> Right now the only warning that the day is
+          ending is the sun dial in the corner of the HUD, which is a widget. "The lamps just
+          came on" is the same information delivered by the world, and it is the more
+          frightening version.</li>
+      </ol>
+
+      <h3>The theatre of it</h3>
+      <p>Ramp over ~6 s of game time, but not all together. Stagger the four lamps by 0.4 s
+      each, and give each one a two-frame flicker before it holds — sodium lamps do this and
+      everyone recognises it. A single soft <span class="mono">audio.js</span> tick as each
+      one catches, then nothing. This is perhaps twenty lines and it is the most memorable
+      thing in the document.</p>
+      <p>Note the constraint from §3: the four bulbs share one material with the 34 skyline
+      windows, so a per-lamp stagger means cloning four materials. That is cheap and worth it;
+      leave the skyline on the shared one and bring the whole city up in a single slow ramp
+      behind the staggered foreground.</p>
+    </div>
+  </section>
+
+  <section id="dark">
+    <h2><span class="sec">§8</span> What must stay dark</h2>
+    <div class="col">
+      <h3>The crow</h3>
+      <p><em>The crow is the darkest thing on screen</em> is how the player finds the crow.
+      That rule survives Tier 1 and Tier 2 untouched — an emissive window does not light
+      anything, and a ground pool is a quad at <span class="mono">y=0.02</span> that the bird
+      stands on top of and occludes. A crow silhouetted in a pool of lamplight is
+      <em>better</em> than a crow on grey paving.</p>
+      <p>Tier 3 is where it breaks. A real point light at the cart will put amber on the crow's
+      back, and <span class="mono">featherSheen</span> is <span class="mono">0x3c3a63</span> —
+      violet, and reasonably bright. Options if it looks wrong: exclude the crow via a render
+      layer, or accept it on the grounds that a crow lit from below at a hot dog cart at night
+      is a good image. My instinct is the second, but it is a look call and it is yours.</p>
+      <p>Either way, the <strong>contact shadow</strong> in Exhibit E is worth doing regardless
+      and belongs in Tier 2: a small dark radial quad under the bird, opacity ramping in as the
+      key light fades. When the key light is at 0.9 intensity the crow stops casting a real
+      shadow, and losing the shadow is most of why the bird gets hard to place in space.</p>
+
+      <h3>The open plaza</h3>
+      <p>Do not be tempted to fill the gaps between the pools. The pools only read as light
+      because there is dark between them. If the plaza floor comes up uniformly we are back to
+      Tier 0's grey wash with extra steps.</p>
+
+      <h3>The glints</h3>
+      <p>At <span class="mono">t=0.95</span> the pickup glints are already the brightest things
+      in the frame, and the game briefly becomes a treasure hunt by glint. That is an accident
+      and it is lovely. Whatever we add must stay <em>below</em> the glints in brightness, or we
+      lose it.</p>
+    </div>
+
+    <div class="note col">
+      <span class="lbl">Unrelated but adjacent — worth resolving first</span>
+      The losing ending says <em>"the shadows have gone violet all the way across the plaza."</em>
+      They do not: from <span class="mono">t≈0.8</span> they read rust-red, because
+      <span class="mono">setTimeOfDay</span> copies the sky's low colour into the hemisphere
+      fill (<span class="mono">this.fill.color.copy(low)</span>) while
+      <span class="mono">groundColor</span> stays at <span class="mono">PAL.shade</span> and the
+      key goes to <span class="mono">0xff7a48</span>. Either the copy is wrong or the rig is —
+      and since <em>shade is violet, never grey</em> is a non-negotiable, it is probably the
+      rig. This wants deciding <strong>before</strong> lamps are added, because every amber pool
+      is tuned against whatever colour the shade actually is.
+    </div>
+  </section>
+
+  <section id="verify">
+    <h2><span class="sec">§9</span> How we will know it worked</h2>
+    <div class="col">
+      <p>Per the repo's first convention, none of this counts until it has been looked at, and
+      preferably until it has been asserted. Three additions:</p>
+
+      <ol>
+        <li><strong>Dusk shots in <span class="mono">shoot.mjs</span>.</strong> Six frames at
+          <span class="mono">t</span> = 0.6, 0.72, 0.8, 0.88, 0.95, 1.0 from a fixed crow
+          position. They go in <span class="mono">shots/</span> and they get read.</li>
+        <li><strong>A luminance floor, asserted.</strong> The screenshot-decode used for Exhibit
+          A is about twenty lines and runs in the page. Fail the build if the block's median
+          drops below 55 or its 5th percentile below 35 at any sampled <span class="mono">t</span>.
+          This is the check that would have caught the current state before a playtest did.</li>
+        <li><strong>A frame-time budget on the mobile pass.</strong> Only needed if Tier 3
+          happens, and it is the gate for whether Tier 3 ships at all.</li>
+      </ol>
+
+      <p>One caveat on the numbers in Exhibit A: they were measured under SwiftShader, the
+      software renderer the headless harness uses. Absolute values on real hardware will differ
+      a little. The <em>shape</em> of the curve and the relative collapse of the median will
+      not, and that is what the argument rests on.</p>
+    </div>
+  </section>
+
+  <section id="open">
+    <h2><span class="sec">§10</span> What I would want decided</h2>
+    <div class="col">
+      <ol>
+        <li><strong>Violet or rust?</strong> The §8 callout. Everything downstream is tuned
+          against the answer, so it goes first.</li>
+        <li><strong>Does the crow get lit at the cart?</strong> A rule against a good image.
+          Only matters if Tier 3 happens.</li>
+        <li><strong>How far do we take the night?</strong> There is a version of this where
+          <span class="mono">t=0.95</span> is genuinely dark and the game becomes a different
+          game for ninety seconds — glints, pools, and a bird you track by its contact shadow.
+          It is a better ending than "it got hard to see". It is also a bigger change than the
+          note asked for, and it makes the last stretch harder rather than easier.</li>
+        <li><strong>Is 18 minutes still right?</strong> Sidebar, but the last 30% of the
+          session is currently the least playable 30%. Lighting it is one answer; the other is
+          that the ramp spends too much of the day in the dark. Worth a look at the curve
+          rather than only at the lights.</li>
+      </ol>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>Small Change — lighting at dusk</span>
+  <span>v0.1 · exploration · nothing implemented</span>
+</footer>
+
+</body>
+</html>

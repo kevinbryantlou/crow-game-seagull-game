@@ -70,6 +70,7 @@ src/
   ui/words.js          money spelled out (pure, unit tested)
   ui/rank.js           end-of-run titles (pure, unit tested)
 docs/                  design brief + style guide — the spec, written to be checked against
+                       lighting-brief.html — dusk lighting exploration, NOT implemented
 ```
 
 Pure logic goes in its own module so `smoke.mjs` can test it without a DOM.
