@@ -34,7 +34,7 @@ const TEST_TRADE_PAYOUT = null;
 // out-of-time ending are all driven by elapsed/SESSION_SECONDS, so setting this
 // to 60 runs a full dawn-to-dusk in a minute. Null means the real 18 minutes.
 // Carries the same three tripwires as the payout cheat above.
-const TEST_SESSION_SECONDS = 60;
+const TEST_SESSION_SECONDS = null;
 
 const SESSION_SECONDS = TEST_SESSION_SECONDS ?? 18 * 60;
 
