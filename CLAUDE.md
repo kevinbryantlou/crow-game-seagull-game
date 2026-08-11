@@ -92,6 +92,18 @@ That's why `words.js` and `rank.js` are separate from `hud.js`.
   into the basin than the stone did. Rings are now a real collider shape
   (`world/collide.js`), resolved radially. Don't add a second one lightly, but
   don't fake the next one either.
+- **Assert tuning *ratios*, not just outcomes.** Flapping in water sat at 62% of
+  full power, i.e. 16.7 m/s² against gravity's 19 — net downward. The only thing
+  lifting the crow was the buoyancy impulse, so escaping the fountain depended on
+  catching the right phase of the bob. Every scripted escape test passed; a human
+  holding the key never got out. `TUNING` is exported from `crow.js` so the
+  relationship itself can be checked. Water flap power must stay above
+  `GRAVITY / FLAP_ACCEL` = 0.704.
+- **Holding a key and tapping it are different mechanics.** Tapping is a duty
+  cycle: at ~40% on, average acceleration is 40% of the flap's. No sane power
+  setting makes a tapped flap beat gravity, so in water a beat sets a floor on
+  upward velocity (`WATER_HEAVE`) instead of adding acceleration. Test both
+  patterns for anything the player might mash.
 - **Pushing a walker out of a wall is not pathing.** It puts them back exactly
   where they were, so anyone walking straight at a wall deadlocks there forever.
   Steps have to be *steered* around obstacles, and the chosen side has to be held

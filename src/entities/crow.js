@@ -22,11 +22,48 @@ const STAMINA_MAX = 1.0;
 const STAMINA_DRAIN = 0.42;   // per second of flapping
 const STAMINA_REGEN = 0.62;   // per second on the ground
 const RADIUS = 0.34;
-// Wet wings still work, just badly. Flight used to be disabled outright in
-// water, which combined with the fountain's leaky rim to make the basin a trap:
-// in from three headings, out from none. A soaked crow hauls itself over a
-// 0.62m rim at this fraction of full power, and it costs the same stamina.
-const WATER_FLAP = 0.62;
+/**
+ * Wet wings still work, just badly — but they have to actually work.
+ *
+ * This must stay above GRAVITY / FLAP_ACCEL = 0.704. Below that ratio a flap in
+ * water is net *downward*, and the only thing lifting the crow is the buoyancy
+ * impulse under y = rim−0.34. It sat at 0.62 for a while, and the fountain was
+ * consequently escapable only by catching the right phase of the bob: scripted
+ * tests got out every time and a person holding the key never did.
+ */
+const WATER_FLAP = 0.80;
+/**
+ * The floor a single wingbeat puts under the crow while it is in water.
+ *
+ * Raising WATER_FLAP fixes holding the key and does nothing for tapping it,
+ * because tapping is a duty cycle: at ~40% on, the average acceleration is
+ * 0.4 × 27 × 0.80 = 9 m/s² against gravity's 19, and no sane flap power closes
+ * that — it would need WATER_FLAP above 1.69. So in water a beat is an impulse
+ * rather than an acceleration: a bird in a foot of water heaves itself up in
+ * discrete lunges, which is both the honest animal and the mechanic that makes
+ * every input pattern work.
+ */
+const WATER_HEAVE = 3.6;
+/**
+ * How high a ledge the crow will scramble onto instead of being stopped by it.
+ *
+ * Deliberately small, and it does the fountain's asymmetry for free rather than
+ * by special-casing it: floating inside the basin the crow measures from the
+ * water surface, 0.20 below the rim, so it can always climb out; standing on dry
+ * paving outside it measures from 0, so the 0.62 rim is still a wall and you
+ * still go in over the top. It also picks up the kerb and the busker's case,
+ * which were invisible walls, and leaves benches, planters and the memorial
+ * (0.5 and up) exactly as they were.
+ */
+const STEP_UP = 0.34;
+const SUPPORT = RADIUS * 0.7;   // the footprint the Y pass uses to find a floor
+
+/**
+ * Exposed so smoke.mjs can assert the *relationships* between these, not only
+ * their effects. Every outcome test passed while WATER_FLAP was below the
+ * gravity ratio; a test of the ratio itself would not have.
+ */
+export const TUNING = { GRAVITY, FLAP_ACCEL, FLAP_MAX_RISE, WATER_FLAP, WATER_HEAVE, STEP_UP, RADIUS };
 
 export class Crow {
   constructor(stage) {
@@ -184,10 +221,15 @@ export class Crow {
 
     // ── flap / glide ────────────────────────────────────────────────────────
     const wantFlap = canControl && input.flap;
-    if (wantFlap && this.stamina > 0.02) {
+    // Flapping in water is free, and is not gated on having anything left.
+    // Water already costs 20% of flap power and 55% of ground speed; charging
+    // stamina on top of that only ever produced one outcome, which was a player
+    // stuck in a fountain with an empty bar.
+    if (wantFlap && (this.stamina > 0.02 || this.inWater)) {
       const power = this.inWater ? WATER_FLAP : 1;
-      this.stamina = Math.max(0, this.stamina - STAMINA_DRAIN * dt);
+      if (!this.inWater) this.stamina = Math.max(0, this.stamina - STAMINA_DRAIN * dt);
       if (this.vel.y < FLAP_MAX_RISE * power) this.vel.y += FLAP_ACCEL * power * dt;
+      if (this.inWater) this.vel.y = Math.max(this.vel.y, WATER_HEAVE);
       this.grounded = false;
       this._flapping = 1;
       // One beat per wing cycle, not one per takeoff.
@@ -256,6 +298,16 @@ export class Crow {
     const p = this.pos;
     const cols = world.colliders;
 
+    // Scrambling only happens from a standing or floating start — no grabbing
+    // ledges out of the air. Afloat, the crow pushes off the water surface
+    // rather than off whatever height the bob has it at this instant, so
+    // climbing out of the basin does not depend on catching the bob right.
+    const afloat = this.inWater;
+    const canScramble = this.grounded || afloat;
+    const from = afloat ? Math.max(p.y, world.fountain.rim - 0.20) : p.y;
+    const scrambles = (c) => canScramble && c.bottom <= 0.01 && c.top - from <= STEP_UP;
+    let stepTo = -Infinity;
+
     // X then Z then Y, resolved separately — cheap, stable, and good enough for
     // a block made almost entirely of axis-aligned boxes.
     p.x += this.vel.x * dt;
@@ -263,6 +315,16 @@ export class Crow {
       if (c.shape === 'ring') continue;
       if (p.y >= c.top - 0.02 || p.y + 0.5 <= c.bottom) continue;
       if (p.x + RADIUS > c.minX && p.x - RADIUS < c.maxX && p.z + RADIUS > c.minZ && p.z - RADIUS < c.maxZ) {
+        if (scrambles(c)) {
+          // Carry on over it, but far enough in that the Y pass will find a
+          // floor. Stopping at the face leaves the crow overhanging its own
+          // support and it drops straight back off.
+          stepTo = Math.max(stepTo, c.top);
+          p.x = this.vel.x > 0
+            ? Math.max(p.x, c.minX - SUPPORT + 0.02)
+            : Math.min(p.x, c.maxX + SUPPORT - 0.02);
+          continue;
+        }
         p.x = this.vel.x > 0 ? c.minX - RADIUS : c.maxX + RADIUS;
         this.vel.x = 0;
       }
@@ -273,6 +335,13 @@ export class Crow {
       if (c.shape === 'ring') continue;
       if (p.y >= c.top - 0.02 || p.y + 0.5 <= c.bottom) continue;
       if (p.x + RADIUS > c.minX && p.x - RADIUS < c.maxX && p.z + RADIUS > c.minZ && p.z - RADIUS < c.maxZ) {
+        if (scrambles(c)) {
+          stepTo = Math.max(stepTo, c.top);
+          p.z = this.vel.z > 0
+            ? Math.max(p.z, c.minZ - SUPPORT + 0.02)
+            : Math.min(p.z, c.maxZ + SUPPORT - 0.02);
+          continue;
+        }
         p.z = this.vel.z > 0 ? c.minZ - RADIUS : c.maxZ + RADIUS;
         this.vel.z = 0;
       }
@@ -288,6 +357,18 @@ export class Crow {
       const d = Math.hypot(dx, dz);
       if (d + RADIUS <= c.rInner || d - RADIUS >= c.rOuter) continue;
       const s = d || 1e-6;
+      // Climbing out of the fountain. Only ever reachable from the inside: out
+      // on the paving `from` is 0 and a 0.62 rim is far out of range, so the
+      // wall still holds against anyone walking at it.
+      if (scrambles(c)) {
+        stepTo = Math.max(stepTo, c.top);
+        const onStone = c.rInner - SUPPORT + 0.02;
+        if (d < onStone) {
+          p.x = c.cx + (dx / s) * onStone;
+          p.z = c.cz + (dz / s) * onStone;
+        }
+        continue;
+      }
       // Nearer face wins, so you are let out of the basin as readily as in.
       const to = d < (c.rInner + c.rOuter) / 2 ? c.rInner - RADIUS : c.rOuter + RADIUS;
       p.x = c.cx + (dx / s) * to;
@@ -297,6 +378,13 @@ export class Crow {
       const radial = this.vel.x * nx + this.vel.z * nz;
       this.vel.x -= radial * nx;
       this.vel.z -= radial * nz;
+    }
+
+    // Apply the scramble before the vertical pass, so `prevY` is the ledge top
+    // and the Y pass lands the crow on it rather than treating it as a fall.
+    if (stepTo > p.y) {
+      p.y = stepTo;
+      if (this.vel.y < 0) this.vel.y = 0;
     }
 
     const prevY = p.y;

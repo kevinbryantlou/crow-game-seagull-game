@@ -136,18 +136,32 @@ const basin = !hasHandle ? null : await page.evaluate(async () => {
   const frame = () => new Promise((r) => requestAnimationFrame(r));
   g.crow.pos.set(f.x, f.floor, f.z);
   g.crow.vel.set(0, 0, 0);
-  // Empty bar, key held down: the state a player is actually in by the time
-  // they decide the fountain is broken.
   g.crow.stamina = 0;
   await frame(); await frame();
   const wet = g.crow.inWater;
 
-  let peak = -Infinity;
-  for (let i = 0; i < 240; i++) {
-    g.crow.update(1 / 60, { move: { x: 0, y: 0 }, flap: true }, g.world, g.audio);
-    peak = Math.max(peak, g.crow.pos.y);
+  // Three independent ways out, all from an empty bar — the state a player is
+  // actually in by the time they decide the fountain is broken. Holding and
+  // tapping fail differently, and walking needs no technique at all.
+  const out = { wet, rim: f.rim };
+  for (const [name, drive] of [
+    ['hold', (i) => ({ move: { x: 0, y: 0 }, flap: true })],
+    ['tap',  (i) => ({ move: { x: 0, y: 0 }, flap: (i % 12) < 5 })],
+    ['walk', (i) => ({ move: { x: 1, y: 0 }, flap: false })],
+  ]) {
+    g.crow.pos.set(f.x, f.floor, f.z);
+    g.crow.vel.set(0, 0, 0);
+    g.crow.stamina = 0;
+    g.crow.inWater = true;
+    let escaped = false;
+    for (let i = 0; i < 600 && !escaped; i++) {
+      g.crow.update(1 / 60, drive(i), g.world, g.audio);
+      const r = Math.hypot(g.crow.pos.x - f.x, g.crow.pos.z - f.z);
+      escaped = (!g.crow.inWater && g.crow.pos.y > f.rim) || r > f.r + 0.5;
+    }
+    out[name] = escaped;
   }
-  const out = { wet, peak, rim: f.rim, escaped: peak > f.rim + 0.25, stamina: g.crow.stamina };
+  out.escaped = out.hold && out.tap && out.walk;
 
   // And the wall holds: walk hard at it from outside, all the way round.
   let leaks = 0;
@@ -170,7 +184,8 @@ const basin = !hasHandle ? null : await page.evaluate(async () => {
 if (basin) console.log('  fountain:', JSON.stringify(basin));
 if (basin && !basin.wet) errors.push('crow on the basin floor is not in the water');
 if (basin && !basin.escaped) {
-  errors.push(`crow cannot flap out of the fountain (peak y ${basin.peak.toFixed(2)}, rim ${basin.rim})`);
+  const failed = ['hold', 'tap', 'walk'].filter((k) => !basin[k]);
+  errors.push(`crow cannot get out of the fountain by: ${failed.join(', ')}`);
 }
 if (basin && basin.leaks) errors.push(`rim leaks: walked into the basin from ${basin.leaks} heading(s)`);
 

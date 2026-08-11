@@ -34,7 +34,7 @@ globalThis.window = globalThis;
 
 const { buildLevel, RULES } = await import('../src/world/level.js');
 const { overlaps, blocksWalker, WALKER_RADIUS } = await import('../src/world/collide.js');
-const { Crow } = await import('../src/entities/crow.js');
+const { Crow, TUNING: CROW } = await import('../src/entities/crow.js');
 const { Human, Pigeon } = await import('../src/entities/human.js');
 const { Pickup } = await import('../src/world/pickups.js');
 
@@ -307,7 +307,29 @@ const audio = new Proxy({}, { get: () => () => {} });
    * rather than releasing it. If regen waits for the key to come up, that reads
    * as the game being broken.
    */
-  const escape = (startStamina, mashing) => {
+  /**
+   * The ratio that was the actual bug.
+   *
+   * A flap only lifts the crow if it out-accelerates gravity. At the old
+   * WATER_FLAP of 0.62 it did not — 27 × 0.62 = 16.7 against 19 — so flapping in
+   * the fountain was net downward and the only thing that ever raised the bird
+   * was the buoyancy impulse below rim−0.34. Escape therefore depended on
+   * catching the right phase of the bob: every scripted test got out, and a
+   * person holding the key did not. Assert the ratio, not just the outcome,
+   * because the outcome tests all passed while this was broken.
+   */
+  check('a flap in water out-accelerates gravity',
+    CROW.FLAP_ACCEL * CROW.WATER_FLAP > CROW.GRAVITY,
+    `(${(CROW.FLAP_ACCEL * CROW.WATER_FLAP).toFixed(1)} vs ${CROW.GRAVITY}, ` +
+    `need WATER_FLAP > ${(CROW.GRAVITY / CROW.FLAP_ACCEL).toFixed(3)})`);
+
+  /**
+   * Both input modes, because they fail differently. Holding rides the flap
+   * accumulator; tapping gives it up sixty times a second and only works if a
+   * single burst nets height. A player does one or the other without thinking
+   * about it and neither may strand them.
+   */
+  const escape = (startStamina, mode) => {
     const stuck = [];
     for (let deg = 0; deg < 360; deg += 45) {
       for (const r of [0, 2.0, 4.2]) {
@@ -315,15 +337,12 @@ const audio = new Proxy({}, { get: () => () => {} });
         const c = new Crow(stage);
         c.pos.set(F.x + Math.cos(a) * r, F.floor, F.z + Math.sin(a) * r);
         c.stamina = startStamina;
-        let out = false, holding = false;
+        let out = false;
         for (let i = 0; i < 60 * 12; i++) {
-          // Not mashing: float until the bar looks worth spending, then hold
-          // until it is gone — the way a player watching the bar would.
-          if (!mashing) {
-            if (!holding && c.stamina > 0.6) holding = true;
-            else if (holding && c.stamina <= 0.02) holding = false;
-          }
-          c.update(1 / 60, { move: { x: 0, y: 0 }, flap: mashing || holding }, world, audio);
+          // 5 frames down, 7 up — roughly a 90 ms tap at 5 per second, which is
+          // about as fast as a person actually presses a key.
+          const flap = mode === 'hold' ? true : (i % 12) < 5;
+          c.update(1 / 60, { move: { x: 0, y: 0 }, flap }, world, audio);
           if (c.pos.y > F.rim + 0.25) { out = true; break; }
         }
         if (!out) stuck.push(`${deg}° r${r}`);
@@ -332,15 +351,37 @@ const audio = new Proxy({}, { get: () => () => {} });
     return stuck;
   };
 
-  for (const [label, stamina, mashing] of [
-    ['on a full bar', 1.0, true],
-    ['on an empty bar', 0, false],
-    ['on an empty bar with the flap key held down', 0, true],
+  for (const [label, stamina, mode] of [
+    ['holding flap, full bar', 1.0, 'hold'],
+    ['holding flap, empty bar', 0, 'hold'],
+    ['tapping flap, full bar', 1.0, 'tap'],
+    ['tapping flap, empty bar', 0, 'tap'],
   ]) {
-    const stuck = escape(stamina, mashing);
-    check(`a crow in the water can flap back out ${label}`,
+    const stuck = escape(stamina, mode);
+    check(`a crow in the water gets out — ${label}`,
       stuck.length === 0, `(stuck at ${stuck.join(', ')})`);
   }
+
+  /**
+   * And the third way out, which needs no technique at all: walk at the wall.
+   * The rim has to stay one-way — climbable from inside where the crow floats
+   * 0.20 below it, solid from outside where it stands 0.62 below it.
+   */
+  const walkOut = [];
+  for (let deg = 0; deg < 360; deg += 15) {
+    const a = (deg * Math.PI) / 180;
+    const c = new Crow(stage);
+    c.pos.set(F.x + Math.cos(a) * 2.5, F.floor, F.z + Math.sin(a) * 2.5);
+    const move = { x: Math.cos(a), y: -Math.sin(a) };   // straight at the rim
+    let out = false;
+    for (let i = 0; i < 60 * 12; i++) {
+      c.update(1 / 60, { move, flap: false }, world, audio);
+      if (!c.inWater && Math.hypot(c.pos.x - F.x, c.pos.z - F.z) > F.r) { out = true; break; }
+    }
+    if (!out) walkOut.push(`${deg}°`);
+  }
+  check('a crow in the water can simply walk out, no flapping at all',
+    walkOut.length === 0, `(stuck at ${walkOut.join(', ')})`);
 
   // Regen is the whole fix, so state the rate rather than just the outcome.
   const floating = new Crow(stage);
