@@ -668,7 +668,12 @@
         <li><strong>Sun dial</strong> — a thin arc, bottom right, one dot travelling it.
           No numbers. Time should be felt, not read.</li>
         <li><strong>Context prompt</strong> — floats at the beak, names the verb and the
-          object: <span class="mono">TAKE — DOLLAR BILL</span>.</li>
+          object, and carries the key that performs it:
+          <span class="mono">[J] TAKE — DOLLAR BILL</span>.</li>
+        <li><strong>Nest pointer</strong> — a brass chevron that appears only while you
+          are carrying money you have not banked, and retires for good the moment you
+          stash something. It sits over the memorial when the nest is on screen and
+          clamps to the edge of the frame, pointing, when it is not.</li>
       </ul>
       <p>Type in the build matches this page: a condensed grotesque in caps for labels,
       monospace for numbers. No serif in-game — it would not hold at phone size.</p>
@@ -684,10 +689,25 @@
           <tr><td>Context prompt</td><td class="k">world-space, at beak</td><td class="k">#E8E2D2 on #0F0D14</td><td>One line. Verb, then noun.</td></tr>
           <tr><td>Touch stick</td><td class="k">bottom-left, dynamic</td><td class="k">#E9E5DA 30% alpha</td><td>Spawns where the thumb lands, not fixed.</td></tr>
           <tr><td>Touch buttons</td><td class="k">bottom-right stack</td><td class="k">#E9E5DA 30% alpha</td><td>Min 56pt targets, thumb-arc placement.</td></tr>
+          <tr><td>Nest pointer</td><td class="k">world-space, edge-clamped</td><td class="k">#E0B348 on #0F0D14</td><td>Only while carrying unbanked money, and only until the first stash.</td></tr>
         </tbody>
       </table>
     </div>
-    <div class="exhibit-cap">Exhibit F — HUD inventory. Six elements total; anything a seventh would say can be said by the world instead.</div>
+    <div class="exhibit-cap">Exhibit F — HUD inventory. Six permanent elements, plus one that retires itself.</div>
+
+    <div class="col">
+      <div class="note">
+        <span class="lbl">On the seventh element</span>
+        This page used to say there were six, and that anything a seventh would need to
+        say could be said by the world instead. The nest pointer is the exception that
+        proves the rule rather than a breach of it: it is the only HUD element with an
+        end condition. It exists because a first-time player is told to take money to
+        their nest without being told where that is — and it removes itself permanently
+        the moment they demonstrate they know. Any future addition should have to clear
+        the same bar: transient, teaching, and self-retiring. Permanent status belongs on
+        the enamel plates.
+      </div>
+    </div>
   </section>
 
   <section id="sound">

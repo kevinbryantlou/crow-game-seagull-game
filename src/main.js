@@ -22,6 +22,8 @@ const SESSION_SECONDS = 18 * 60;
 const STEP = 1 / 60;
 const REACH = 1.15;
 
+const _nestWorld = new THREE.Vector3();
+
 // Test hook: set to a number to override the kid's trade ladder, so one trade
 // clears the $20 goal and the end of the loop can be tested without collecting
 // the whole block first. Null in normal play. While it is non-null the game
@@ -372,6 +374,61 @@ class Game {
     if (this.elapsed >= SESSION_SECONDS && !this.finished) this._finish(false);
   }
 
+  /**
+   * Wayfinding to the nest, for players who have not yet learned where it is.
+   *
+   * Visible only while carrying money that has not been banked, and retired
+   * permanently after the first successful stash — at that point the loop is
+   * demonstrably learned. Deliberately not a glint: that signal means "you can
+   * take this", and the nest is where you put things.
+   */
+  _updateNestPointer() {
+    const carrying = this.crow.carried;
+    const show = this.running && this.banked === 0 && carrying && carrying.value > 0;
+    if (!show) { this.hud.setNestPointer(null); return; }
+
+    const n = this.world.nest;
+    _nestWorld.set(n.x, n.y + 1.5, n.z).project(this.stage.camera);
+
+    // Behind the camera, the projection mirrors through the origin; flipping
+    // both axes turns it back into a usable direction.
+    const behind = _nestWorld.z > 1;
+    const ndcX = behind ? -_nestWorld.x : _nestWorld.x;
+    const ndcY = behind ? -_nestWorld.y : _nestWorld.y;
+
+    let x = (ndcX * 0.5 + 0.5) * innerWidth;
+    let y = (-ndcY * 0.5 + 0.5) * innerHeight;
+
+    // Clamp inside a rectangle that clears the HUD plates rather than a uniform
+    // margin — a plain inset parks the pointer underneath the money counter.
+    const left = 70;
+    const right = Math.max(left + 2, innerWidth - 70);
+    const top = Math.min(innerHeight - 2, 124);     // under money + task list
+    const bottom = Math.max(top + 2, innerHeight - 96);  // over legend + sun dial
+
+    const onScreen = !behind && x > left && x < right && y > top && y < bottom;
+
+    let angle;
+    if (onScreen) {
+      // Sit above the nest and point down at it.
+      y = Math.max(top, y - 34);
+      angle = 180;
+    } else {
+      const cx = (left + right) / 2, cy = (top + bottom) / 2;
+      let dx = x - cx, dy = y - cy;
+      const len = Math.hypot(dx, dy) || 1;
+      dx /= len; dy /= len;
+      const halfW = (right - left) / 2;
+      const halfH = (bottom - top) / 2;
+      const t = Math.min(halfW / Math.max(Math.abs(dx), 1e-6), halfH / Math.max(Math.abs(dy), 1e-6));
+      x = cx + dx * t;
+      y = cy + dy * t;
+      angle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
+    }
+
+    this.hud.setNestPointer({ x, y, angle });
+  }
+
   _frame = (now) => {
     requestAnimationFrame(this._frame);
     let dt = (now - this._last) / 1000;
@@ -400,6 +457,7 @@ class Game {
     this.hud.setTime(t);
     this.hud.setCarry(this.crow.carried ? this.crow.carried.label : null);
     this.hud.setStamina(this.crow.stamina, !this.crow.grounded || this.crow.stamina < 0.98);
+    this._updateNestPointer();
 
     if (this.running) {
       const a = this._bestAction();

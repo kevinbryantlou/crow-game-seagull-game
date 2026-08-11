@@ -122,6 +122,59 @@ await look('07-cart', 15, 2.0, -2.0);
 await look('08-nest', -12.5, 5.0, -6.5);
 await look('09-kid', -17.5, 0, 11.5);
 
+// Functional check: the nest pointer appears only while carrying unbanked
+// money, and retires for good after the first stash.
+const nest = !hasHandle ? null : await page.evaluate(async () => {
+  const g = window.__game;
+  const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const on = () => document.getElementById('nestptr').classList.contains('on');
+
+  g.crow.carried = null; await frame();
+  const idle = on();
+
+  const coin = g.pickups.find((p) => p.value > 0 && p.state === 'world' && !p.pinned);
+  g._doAction({ kind: 'take', pickup: coin });
+  await frame();
+  const carrying = on();
+
+  // Stash it: stand on the cornice and bank.
+  g.crow.pos.set(g.world.nest.x, g.world.nest.y, g.world.nest.z);
+  await frame();
+  g._doAction({ kind: 'bank' });
+  await frame();
+  const afterBank = on();
+
+  const coin2 = g.pickups.find((p) => p.value > 0 && p.state === 'world' && !p.pinned);
+  g._doAction({ kind: 'take', pickup: coin2 });
+  await frame();
+  const carryingAgain = on();
+
+  g.crow.carried = null; g.banked = 0; g.total = 0;
+  return { idle, carrying, afterBank, carryingAgain };
+});
+if (nest) {
+  console.log('  nest pointer:', JSON.stringify(nest));
+  if (nest.idle) errors.push('nest pointer shows while carrying nothing');
+  if (!nest.carrying) errors.push('nest pointer missing while carrying money');
+  if (nest.afterBank) errors.push('nest pointer still showing after banking');
+  if (nest.carryingAgain) errors.push('nest pointer returned after the loop was learned');
+}
+
+// Photograph the pointer from across the block, where it has to clamp to the
+// screen edge rather than sit over the memorial.
+if (hasHandle) {
+  await page.evaluate(() => {
+    const g = window.__game;
+    const coin = g.pickups.find((p) => p.value > 0 && p.state === 'world' && !p.pinned);
+    g._doAction({ kind: 'take', pickup: coin });
+    g.crow.pos.set(24, 4, 4);
+    g.crow.vel.set(0, 0, 0);
+  });
+  await new Promise((r) => setTimeout(r, 1000));
+  await shoot('11-nest-pointer');
+  await page.evaluate(() => { window.__game.crow.carried = null; window.__game.banked = 0; });
+}
+
 // Functional check: the two teaching beats fire at the moment each applies.
 const teach = !hasHandle ? null : await page.evaluate(() => {
   const g = window.__game;

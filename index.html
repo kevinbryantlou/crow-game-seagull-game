@@ -121,6 +121,34 @@
   #prompt.on { display: block; }
   #prompt b { color: var(--brass); font-weight: 700; }
 
+  /* Wayfinding to the nest. Transient by design: it appears only while you are
+     carrying money you have not banked yet, and retires permanently the first
+     time you stash something. Deliberately NOT a glint — that signal is
+     reserved for "you can take this", and the nest is where you put things. */
+  #nestptr {
+    position: absolute; transform: translate(-50%, -50%);
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    opacity: 0; transition: opacity .25s ease; pointer-events: none;
+  }
+  #nestptr.on { opacity: .92; }
+  #nestptr svg {
+    width: 20px; height: 20px; display: block;
+    filter: drop-shadow(0 1px 2px rgba(15,13,20,.55));
+    animation: nest-bob 1.6s ease-in-out infinite;
+  }
+  #nestptr span {
+    font-family: var(--mono); font-size: 9px; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--brass);
+    background: rgba(15,13,20,.62); padding: 2px 6px;
+  }
+  @keyframes nest-bob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-3px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #nestptr svg { animation: none; }
+  }
+
   /* Visible while a test cheat is active, so it cannot be forgotten. */
   #testmode {
     position: absolute; top: calc(var(--safe-t) + 14px); left: 50%;
@@ -344,6 +372,13 @@
   <div id="prompt"></div>
   <div id="toast"></div>
   <div id="testmode" hidden>Test mode</div>
+
+  <div id="nestptr">
+    <svg id="nestptr-arrow" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 3 L20 13 L14.5 13 L14.5 21 L9.5 21 L9.5 13 L4 13 Z" fill="#e0b348"/>
+    </svg>
+    <span>Nest</span>
+  </div>
 
   <div id="controls">
     <button id="controls-toggle" type="button" aria-expanded="true" aria-controls="controls-body">

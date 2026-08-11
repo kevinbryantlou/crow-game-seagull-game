@@ -136,6 +136,19 @@ export class Hud {
     this.prompt.classList.add('on');
   }
 
+  /** @param {{x:number,y:number,angle:number}|null} s */
+  setNestPointer(s) {
+    if (!this.nestPtr) {
+      this.nestPtr = $('nestptr');
+      this.nestArrow = $('nestptr-arrow');
+    }
+    if (!s) { this.nestPtr.classList.remove('on'); return; }
+    this.nestPtr.classList.add('on');
+    this.nestPtr.style.left = `${s.x}px`;
+    this.nestPtr.style.top = `${s.y}px`;
+    this.nestArrow.style.rotate = `${s.angle}deg`;
+  }
+
   setStamina(v, visible) {
     this.stam.classList.toggle('on', visible);
     this.stamFill.style.width = `${Math.max(0, v) * 100}%`;
