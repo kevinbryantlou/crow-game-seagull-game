@@ -32,21 +32,48 @@ export function overlaps(c, x, z, r = 0) {
   return x + r > c.minX && x - r < c.maxX && z + r > c.minZ && z - r < c.maxZ;
 }
 
-/** Is this collider tall enough to stop someone on foot, and low enough to matter? */
-export function blocksWalker(c, height = WALKER_HEIGHT, stepOver = WALKER_STEP_OVER) {
-  return c.bottom < height && c.top > stepOver;
+/**
+ * Is this collider tall enough to stop someone on foot, and low enough to matter?
+ *
+ * `floor` is the deck the walker is standing on, and it is the whole reason a
+ * level can have more than one storey. Everything here used to assume y = 0,
+ * which is fine on a flat block and wrong the moment a waiter stands on a roof
+ * terrace: the deck he is standing on is a 5.4m solid, so he would be permanently
+ * inside a wall, unable to take a step in any direction. Measured from his own
+ * floor instead, the deck is under his feet and the parapet at the edge of it is
+ * still a wall. Level 1 passes 0 everywhere and is bit-for-bit unchanged.
+ */
+export function blocksWalker(c, height = WALKER_HEIGHT, stepOver = WALKER_STEP_OVER, floor = 0) {
+  return c.bottom < floor + height && c.top > floor + stepOver;
 }
 
 /** Is a disc of radius `r` at (x, z) clear of everything a walker can't cross? */
-export function isFree(cols, x, z, r, height = WALKER_HEIGHT, stepOver = WALKER_STEP_OVER) {
+export function isFree(cols, x, z, r, height = WALKER_HEIGHT, stepOver = WALKER_STEP_OVER, floor = 0) {
   for (const c of cols) {
-    if (!blocksWalker(c, height, stepOver)) continue;
+    if (!blocksWalker(c, height, stepOver, floor)) continue;
     // A ring is a solid disc to anyone on foot — see resolveWalk.
     if (c.shape === 'ring') {
       if (Math.hypot(x - c.cx, z - c.cz) - r < c.rOuter) return false;
     } else if (overlaps(c, x, z, r)) return false;
   }
   return true;
+}
+
+/**
+ * The deck a walker standing at (x, z) would be on — the highest landable top
+ * at or below `from`, or 0 for the ground.
+ *
+ * Used to place people and to check that a placement is on a surface rather than
+ * hanging in the air over the yard, which on a block with a roof on it is a
+ * mistake you cannot see in a code review.
+ */
+export function deckAt(cols, x, z, from = Infinity, r = 0) {
+  let best = 0;
+  for (const c of cols) {
+    if (!c.perch || c.top > from + 0.01 || c.top <= best) continue;
+    if (overlaps(c, x, z, r)) best = c.top;
+  }
+  return best;
 }
 
 /**
@@ -61,10 +88,27 @@ export function isFree(cols, x, z, r, height = WALKER_HEIGHT, stepOver = WALKER_
  * try straight, then progressively wider deflections to either side, and take
  * the first angle that is actually free.
  */
-const DEFLECTIONS = [22, 45, 68, 90, 112];
+/**
+ * The angles a step may be deflected by, in order of preference.
+ *
+ * It stopped at 112° for as long as the only obstacles were a fountain and some
+ * café tables. Skirting something wide breaks that: as the walker slides along a
+ * face *away* from its target, the direction to the target keeps rotating, and
+ * past the halfway point every deflection under 112° still points into the wall.
+ * The committed side then has nothing free, the other side does, and the walker
+ * turns round — which is the shuffle, arrived at from the opposite direction.
+ * Level 2's delivery van is 7.2m across and reproduced it exactly.
+ *
+ * 135 and 158 are nearly sideways and nearly backwards. They are only ever
+ * reached when everything gentler is blocked, and the alternative to reaching
+ * them is a deadlock.
+ */
+const DEFLECTIONS = [22, 45, 68, 90, 112, 135, 158];
+/** How far up the road to look before releasing a committed side, in metres. */
+const LOOKAHEAD = 2.5;
 
 export function stepAround(cols, pos, tx, tz, dist, r, prefer = 0,
-  height = WALKER_HEIGHT, stepOver = WALKER_STEP_OVER) {
+  height = WALKER_HEIGHT, stepOver = WALKER_STEP_OVER, floor = 0) {
   const dx = tx - pos.x, dz = tz - pos.z;
   const d = Math.hypot(dx, dz) || 1;
   const ux = dx / d, uz = dz / d;
@@ -78,10 +122,35 @@ export function stepAround(cols, pos, tx, tz, dist, r, prefer = 0,
     };
   };
   const take = (p) => { pos.x = p.x; pos.z = p.z; };
-  const free = (p) => isFree(cols, p.x, p.z, r, height, stepOver);
+  const free = (p) => isFree(cols, p.x, p.z, r, height, stepOver, floor);
 
   const straight = at(0, 0);
-  if (free(straight)) { take(straight); return 0; }
+  if (free(straight)) {
+    take(straight);
+    if (!prefer) return 0;
+    /**
+     * One free step is not the same as a clear road, and treating it as one is
+     * how the commitment gets thrown away at the worst possible moment.
+     *
+     * Skirting a wide obstacle, a walker reaches the point on its face nearest
+     * the target, and there the next single step toward the target is free —
+     * so the side it had committed to was released, the cost function was asked
+     * again, and both ways round measured the same. It picked one, took a step,
+     * was blocked, released again, picked the other. The van in level 2's yard is
+     * 7.2m across and the probe starts 2.9m from it; the walker shuffled on the
+     * spot for the full twenty seconds.
+     *
+     * So look two and a half metres up the road before letting go. Five samples,
+     * only on frames where a side was already chosen, which is a small minority
+     * of them.
+     */
+    const steps = 5;
+    for (let i = 1; i <= steps; i++) {
+      const f = Math.min(1, ((i / steps) * LOOKAHEAD) / d);
+      if (!isFree(cols, pos.x + dx * f, pos.z + dz * f, r, height, stepOver, floor)) return prefer;
+    }
+    return 0;
+  }
 
   // Once a side is chosen it is held until the straight line is clear again.
   // A per-frame "whichever candidate ends up nearest the target" rule looks
@@ -115,9 +184,9 @@ export function stepAround(cols, pos, tx, tz, dist, r, prefer = 0,
  * wading in the fountain, and treating the basin as enterable would let a chase
  * walk them into a well they have no way to climb out of.
  */
-export function resolveWalk(cols, pos, r, height = WALKER_HEIGHT, stepOver = WALKER_STEP_OVER) {
+export function resolveWalk(cols, pos, r, height = WALKER_HEIGHT, stepOver = WALKER_STEP_OVER, floor = 0) {
   for (const c of cols) {
-    if (!blocksWalker(c, height, stepOver)) continue;
+    if (!blocksWalker(c, height, stepOver, floor)) continue;
 
     if (c.shape === 'ring') {
       const dx = pos.x - c.cx, dz = pos.z - c.cz;

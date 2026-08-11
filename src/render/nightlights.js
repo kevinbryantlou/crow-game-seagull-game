@@ -144,6 +144,10 @@ export class NightLights {
    * bird stays a silhouette in the pool rather than being lit by it — which is
    * the whole reason this technique survives "the crow is the darkest thing on
    * screen" where a real point light would not.
+   *
+   * `opts.y` is the deck the pool lies on. A lamp on a roof terrace needs its
+   * light on the terrace, not on the yard six metres below it, and the 0.05
+   * clearance over the paving is the same clearance over any other floor.
    */
   addPool(parent, x, z, radius, opts = {}) {
     const material = new THREE.MeshBasicMaterial({
@@ -156,7 +160,7 @@ export class NightLights {
     });
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(radius * 2, radius * 2), material);
     mesh.rotation.x = -Math.PI / 2;
-    mesh.position.set(x, 0.05, z);
+    mesh.position.set(x, (opts.y ?? 0) + 0.05, z);
     mesh.renderOrder = 2;
     parent.add(mesh);
 

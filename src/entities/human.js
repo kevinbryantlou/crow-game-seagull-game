@@ -13,7 +13,8 @@ import { PAL } from '../render/palette.js';
 import { box, cyl, ico, at, mat } from '../render/shapes.js';
 import {
   resolveWalk, stepAround,
-  WALKER_RADIUS, PIGEON_RADIUS, PIGEON_HEIGHT, PIGEON_STEP_OVER,
+  WALKER_RADIUS, WALKER_HEIGHT, WALKER_STEP_OVER,
+  PIGEON_RADIUS, PIGEON_HEIGHT, PIGEON_STEP_OVER,
 } from '../world/collide.js';
 
 const CALM = 'calm', SUSPICIOUS = 'suspicious', SHOOING = 'shooing',
@@ -24,6 +25,15 @@ export class Human {
     Object.assign(this, spec);
     this.pos = new THREE.Vector3(...spec.pos);
     this.homePos = new THREE.Vector3(...spec.home);
+    /**
+     * The deck this person stands on. Everything about walking is still 2-D —
+     * nobody uses stairs and nobody changes storey — but a roof terrace is a
+     * 5.4m solid, and a walker that measures obstacles from y = 0 is inside it.
+     * `floorY` is what collision, reach and sightlines all measure from, so the
+     * maître d' can chase across a roof while the porter chases across a yard
+     * with one implementation and no special cases.
+     */
+    this.floorY = spec.pos[1] || 0;
     this.heading = spec.faces ? Math.atan2(-spec.faces[1], spec.faces[0]) : 0;
     this.state = CALM;
     this.stateT = 0;
@@ -151,7 +161,13 @@ export class Human {
   canSee(p) {
     if (this.kid) return false;
     const dx = p.x - this.pos.x, dz = p.z - this.pos.z;
-    const dist = Math.hypot(dx, dz);
+    // Height counts, at a discount. On one flat block it never mattered; with a
+    // yard under a terrace it decides whether the roof staff spend the whole
+    // session shooing at a crow five metres below their feet that they could
+    // not reach if they wanted to. Discounted rather than blocked, because a
+    // person does notice a bird overhead — they just notice it less.
+    const dy = (p.y - this.floorY) * 0.62;
+    const dist = Math.hypot(dx, dz, dy);
     if (dist > this.viewDist) return false;
     if (this.busker && this.buskerEyes < 0.5) return false;
     if (dist < 1.4) return true;
@@ -184,7 +200,7 @@ export class Human {
     if (!provoked && this.cooldown <= 0) {
       for (const p of game.pickups) {
         if (p.state !== 'world' || p.taken || !this.owns(p)) continue;
-        const d = Math.hypot(crow.pos.x - p.pos.x, crow.pos.z - p.pos.z);
+        const d = Math.hypot(crow.pos.x - p.pos.x, crow.pos.z - p.pos.z, crow.pos.y - p.pos.y);
         if (d < this.guardRadius && this.canSee(crow.pos)) { provoked = true; break; }
       }
     }
@@ -214,12 +230,15 @@ export class Human {
       }
       case SHOOING: {
         this._face(crow.pos, dt, 9);
-        // Useless once the crow is airborne — flight is the answer to being chased.
-        const reachable = crow.pos.y < 1.9;
+        // Useless once the crow is airborne — flight is the answer to being
+        // chased. Measured from this person's own deck: arms reach the same
+        // distance above a roof terrace as above a pavement.
+        const above = crow.pos.y - this.floorY;
+        const reachable = above < 1.9;
         if (reachable) this._moveToward(crow.pos, dt, this.chaseSpeed);
         else this._moveToward(crow.pos, dt, this.chaseSpeed * 0.45);
 
-        if (distCrow < 1.15 && crow.pos.y < 1.6 && crow.stunned <= 0) {
+        if (distCrow < 1.15 && above < 1.6 && above > -1.2 && crow.stunned <= 0) {
           game.onShooed(this, crow);
           this.cooldown = 2.2;
           this._enter(RETURNING, audio);
@@ -254,11 +273,12 @@ export class Human {
     // walked straight through the fountain, the café tables and the newsstand —
     // and no amount of route authoring fixes it, because SHOOING steers at the
     // crow and the crow can stand anywhere.
-    resolveWalk(game.world.colliders, this.pos, WALKER_RADIUS);
+    resolveWalk(game.world.colliders, this.pos, WALKER_RADIUS,
+      WALKER_HEIGHT, WALKER_STEP_OVER, this.floorY);
 
     const speed = this._lastSpeed || 0;
     this._animate(dt, speed);
-    this.root.position.copy(this.pos);
+    this.root.position.set(this.pos.x, this.floorY, this.pos.z);
     this.root.rotation.y = this.heading;
 
     this._setMarker(
@@ -335,7 +355,8 @@ export class Human {
     const d = Math.hypot(target.x - this.pos.x, target.z - this.pos.z);
     if (d < 0.05) { this._lastSpeed = 0; return; }
     const step = Math.min(d, speed * dt);
-    const side = stepAround(this._cols, this.pos, target.x, target.z, step, WALKER_RADIUS, this._skirt);
+    const side = stepAround(this._cols, this.pos, target.x, target.z, step, WALKER_RADIUS,
+      this._skirt, WALKER_HEIGHT, WALKER_STEP_OVER, this.floorY);
     // Remember which way round we went, so the next frame commits to the same
     // side of the obstacle instead of re-deciding from scratch.
     this._skirt = side ?? 0;
@@ -388,16 +409,30 @@ export class Human {
  * and the vendor leaves his cart to shoo them.
  */
 export class Pigeon {
-  constructor(x, z) {
-    this.pos = new THREE.Vector3(x, 0, z);
-    this.home = new THREE.Vector3(x, 0, z);
+  /**
+   * @param {number} x
+   * @param {number} z
+   * @param {number} floorY  the deck it lives on — 0 for a plaza, 8.8 for a roof
+   * @param {number} range   how far it will wander from home
+   */
+  constructor(x, z, floorY = 0, range = 7) {
+    this.pos = new THREE.Vector3(x, floorY, z);
+    this.home = new THREE.Vector3(x, floorY, z);
     this.target = this.home.clone();
+    this.floorY = floorY;
+    this.range = range;
     this.heading = Math.random() * Math.PI * 2;
     this.waitT = Math.random() * 2;
     this._walk = 0;
     this.mobbing = null;
 
     this.root = new THREE.Group();
+    this._build();
+    this.root.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    this.root.position.copy(this.pos);
+  }
+
+  _build() {
     const body = ico(0.16, 0, PAL.steel, { up: PAL.silver, down: PAL.shade });
     body.scale.set(1.5, 1, 1);
     body.position.y = 0.20;
@@ -408,30 +443,36 @@ export class Pigeon {
     const beak = box(0.08, 0.03, 0.03, PAL.gold, { shadow: false });
     beak.position.set(0.26, 0.30, 0);
     this.root.add(beak);
-    this.root.traverse((o) => { if (o.isMesh) o.castShadow = true; });
-    this.root.position.copy(this.pos);
   }
 
   update(dt, food, crow, world) {
     // Food beats everything; a nearby crow scatters them.
-    const scared = Math.hypot(crow.pos.x - this.pos.x, crow.pos.z - this.pos.z) < 1.6 && crow.pos.y < 1.2;
+    const scared = Math.hypot(crow.pos.x - this.pos.x, crow.pos.z - this.pos.z) < 1.6
+      && Math.abs(crow.pos.y - this.floorY) < 1.2;
+    // Birds do not use stairs. Food two storeys down is somebody else's lunch,
+    // which is what lets level 2 lure the roof birds off the roof and leave the
+    // yard birds where they are.
+    const mine = food && Math.abs((food.y ?? 0) - this.floorY) < 2.2;
 
-    if (food) {
+    if (mine) {
       this.mobbing = food;
-      this.target.set(food.x + (Math.random() - 0.5) * 0.6, 0, food.z + (Math.random() - 0.5) * 0.6);
+      this.target.set(
+        food.x + (Math.random() - 0.5) * 0.6, this.floorY,
+        food.z + (Math.random() - 0.5) * 0.6,
+      );
     } else if (scared) {
       const dx = this.pos.x - crow.pos.x, dz = this.pos.z - crow.pos.z;
       const d = Math.hypot(dx, dz) || 1;
-      this.target.set(this.pos.x + (dx / d) * 3, 0, this.pos.z + (dz / d) * 3);
+      this.target.set(this.pos.x + (dx / d) * 3, this.floorY, this.pos.z + (dz / d) * 3);
     } else {
       this.mobbing = null;
       this.waitT -= dt;
       if (this.waitT <= 0) {
         this.waitT = 1.2 + Math.random() * 3;
         this.target.set(
-          this.home.x + (Math.random() - 0.5) * 7,
-          0,
-          this.home.z + (Math.random() - 0.5) * 7,
+          this.home.x + (Math.random() - 0.5) * this.range,
+          this.floorY,
+          this.home.z + (Math.random() - 0.5) * this.range,
         );
       }
     }
@@ -445,7 +486,7 @@ export class Pigeon {
       // turned back by its pedestal — and by the fountain it used to paddle in.
       if (world) {
         this._skirt = stepAround(world.colliders, this.pos, this.target.x, this.target.z,
-          step, PIGEON_RADIUS, this._skirt, PIGEON_HEIGHT, PIGEON_STEP_OVER) ?? 0;
+          step, PIGEON_RADIUS, this._skirt, PIGEON_HEIGHT, PIGEON_STEP_OVER, this.floorY) ?? 0;
       } else {
         this.pos.x += (dx / d) * step;
         this.pos.z += (dz / d) * step;
@@ -456,16 +497,101 @@ export class Pigeon {
       while (a < -Math.PI) a += Math.PI * 2;
       this.heading += a * Math.min(1, 9 * dt);
       this._walk += dt * speed * 6;
-      this.root.position.y = Math.abs(Math.sin(this._walk)) * 0.04;
+      this.root.position.y = this.floorY + Math.abs(Math.sin(this._walk)) * 0.04;
     } else {
       this._walk += dt * 1.5;
-      this.root.position.y = 0;
+      this.root.position.y = this.floorY;
     }
 
-    if (world) resolveWalk(world.colliders, this.pos, PIGEON_RADIUS, PIGEON_HEIGHT, PIGEON_STEP_OVER);
+    if (world) {
+      resolveWalk(world.colliders, this.pos, PIGEON_RADIUS,
+        PIGEON_HEIGHT, PIGEON_STEP_OVER, this.floorY);
+    }
 
     this.root.position.x = this.pos.x;
     this.root.position.z = this.pos.z;
     this.root.rotation.y = this.heading;
+  }
+}
+
+/**
+ * Gulls.
+ *
+ * A pigeon that is bigger, louder, and stays where it was put. They exist
+ * because level 2 is a roof and a roof has no cover: on the block you could put
+ * a plane tree between yourself and the waiter, and on a terrace there is
+ * nothing to put anywhere. So the danger is authored as birds instead of walls —
+ * land inside a gull's patch and it shrieks, and every person who hears it turns
+ * round. They are markers that say *not here*, and unlike a guard they cannot be
+ * outrun, only avoided or moved.
+ *
+ * Moving them is the level's set piece: gulls mob dropped food exactly as
+ * pigeons do, so one cone of chips dropped in the yard empties the parapet and
+ * takes the maître d' with it.
+ *
+ * They are also the joke this project owes itself. The Instagram prompt offered
+ * a seagull chasing forty chips; the crow was chosen instead. The seagulls got
+ * in anyway, and the chips with them.
+ */
+export class Gull extends Pigeon {
+  constructor(x, z, floorY = 0) {
+    // A gull holds its pitch. Range is small on purpose — it shuffles on the
+    // parapet rather than patrolling, so its patch stays learnable.
+    super(x, z, floorY, 2.2);
+    this.alarmRadius = 2.4;
+    this.alarmCooldown = 0;
+    this.alarmed = false;
+    this.shriek = 0;
+  }
+
+  _build() {
+    const body = ico(0.21, 0, PAL.stone, { up: PAL.shiny, down: PAL.shade });
+    body.scale.set(1.55, 1.05, 1);
+    body.position.y = 0.28;
+    this.root.add(body);
+    // The grey mantle across the back — the one marking that reads as "gull"
+    // rather than "large pale pigeon" at the distance the camera sits.
+    const mantle = box(0.26, 0.06, 0.26, PAL.steel, { up: PAL.silver, down: PAL.shade });
+    mantle.position.set(-0.05, 0.40, 0);
+    this.root.add(mantle);
+    const head = ico(0.115, 0, PAL.stone, { up: PAL.shiny, down: PAL.shade });
+    head.position.set(0.22, 0.45, 0);
+    this.root.add(head);
+    const beak = box(0.13, 0.045, 0.04, PAL.gold, { shadow: false });
+    beak.position.set(0.34, 0.44, 0);
+    this.root.add(beak);
+    this.body = body;
+    this.head = head;
+  }
+
+  /**
+   * @param {object} game  needs `onGullAlarm(gull)` — the gull does not know
+   *   what a human is, it only makes a noise and lets the game decide who heard.
+   */
+  update(dt, food, crow, world, game) {
+    if (this.alarmCooldown > 0) this.alarmCooldown -= dt;
+    this.shriek = Math.max(0, this.shriek - dt * 2.2);
+    this.alarmed = false;
+
+    // Landing next to one is the mistake. Flying over it is not: a gull on a
+    // parapet does not care about a bird two metres above its head, and if it
+    // did the level would punish the one thing it is trying to teach.
+    const near = Math.hypot(crow.pos.x - this.pos.x, crow.pos.z - this.pos.z) < this.alarmRadius
+      && Math.abs(crow.pos.y - this.floorY) < 1.3;
+    if (near && !this.mobbing && this.alarmCooldown <= 0) {
+      this.alarmCooldown = 4.5;
+      this.shriek = 1;
+      this.alarmed = true;
+      game?.onGullAlarm?.(this);
+    }
+
+    super.update(dt, food, crow, world);
+
+    // Head thrown back mid-shriek. Two lines of animation, and it is the only
+    // feedback the player gets that the noise came from *this* bird.
+    if (this.head) {
+      this.head.position.y = 0.45 + this.shriek * 0.09;
+      this.head.position.x = 0.22 - this.shriek * 0.05;
+    }
   }
 }

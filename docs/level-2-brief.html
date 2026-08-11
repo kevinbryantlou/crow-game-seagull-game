@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<title>Small Change — Level 2: Second Storey</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  html { -webkit-text-size-adjust: 100%; }
+  :root {
+    --paper:      #E9E5DA;
+    --paper-2:    #DFDACB;
+    --ink:        #141C18;
+    --ink-soft:   #3E4A44;
+    --nickel:     #8B948F;
+    --rule:       #C3BFB1;
+    --enamel:     #1F4D3D;
+    --enamel-2:   #17392E;
+    --brass:      #A87C22;
+    --brass-lit:  #C79A34;
+    --sheen:      #4B4B7A;
+    --band-text:  #EDEAE0;
+    --band-dim:   #9FB5AB;
+    --chip-bg:    #D7D2C2;
+    --shadow:     rgba(20,28,24,.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:     #131815;
+      --paper-2:   #1A211D;
+      --ink:       #E4E2D7;
+      --ink-soft:  #A3ADA6;
+      --nickel:    #7C857F;
+      --rule:      #2C3630;
+      --enamel:    #16332A;
+      --enamel-2:  #102520;
+      --brass:     #D2A644;
+      --brass-lit: #E0B85C;
+      --sheen:     #8A8AC4;
+      --band-text: #E4E2D7;
+      --band-dim:  #7E9A8D;
+      --chip-bg:   #212925;
+      --shadow:    rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:     #131815;
+    --paper-2:   #1A211D;
+    --ink:       #E4E2D7;
+    --ink-soft:  #A3ADA6;
+    --nickel:    #7C857F;
+    --rule:      #2C3630;
+    --enamel:    #16332A;
+    --enamel-2:  #102520;
+    --brass:     #D2A644;
+    --brass-lit: #E0B85C;
+    --sheen:     #8A8AC4;
+    --band-text: #E4E2D7;
+    --band-dim:  #7E9A8D;
+    --chip-bg:   #212925;
+    --shadow:    rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .display {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold",
+                 "Arial Narrow", "Helvetica Neue", sans-serif;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-wrap: balance;
+  }
+  .mono {
+    font-family: Menlo, ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: .82em;
+    letter-spacing: .01em;
+  }
+
+  /* ---- sign band ---- */
+  .band {
+    background: var(--enamel);
+    color: var(--band-text);
+    padding: 3.2rem 1.5rem 2.4rem;
+    border-bottom: 6px solid var(--brass);
+  }
+  .band-inner { max-width: 62rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1.1rem; }
+  .band .eyebrow {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .72rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--band-dim);
+  }
+  h1.title {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: clamp(3rem, 11vw, 6.5rem);
+    line-height: .86;
+    letter-spacing: .005em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  h1.title .thin { display: block; color: var(--brass-lit); }
+  .band .deck {
+    font-size: 1.12rem; max-width: 34rem; color: var(--band-text);
+    opacity: .88; margin: 0;
+  }
+  .facts {
+    display: flex; flex-wrap: wrap; gap: 0 2.2rem;
+    border-top: 1px solid rgba(159,181,171,.28);
+    padding-top: 1rem; margin-top: .4rem;
+  }
+  .facts div { display: flex; flex-direction: column; gap: .1rem; }
+  .facts dt {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .18em; text-transform: uppercase; color: var(--band-dim);
+  }
+  .facts dd { margin: 0; font-size: .95rem; }
+
+  /* ---- document body ---- */
+  main { max-width: 62rem; margin: 0 auto; padding: 0 1.5rem 6rem; }
+  .col { max-width: 38rem; }
+
+  section { padding-top: 3.4rem; }
+  section > * + * { margin-top: 1rem; }
+
+  h2 {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase;
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+    line-height: 1.05; letter-spacing: .015em;
+    margin: 0 0 .2rem; padding-bottom: .55rem;
+    border-bottom: 2px solid var(--ink);
+    display: flex; align-items: baseline; gap: .7rem;
+  }
+  h2 .sec {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .7rem; font-weight: 400; letter-spacing: .12em;
+    color: var(--brass); flex: none;
+  }
+  h3 {
+    font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    font-size: .95rem; margin: 1.8rem 0 .3rem; color: var(--ink);
+  }
+  p { margin: 0; }
+  section p + p { margin-top: .85rem; }
+  a { color: var(--brass); }
+
+  ul, ol { margin: .2rem 0; padding-left: 1.15rem; }
+  li { margin: .3rem 0; }
+  li::marker { color: var(--nickel); }
+
+  strong { font-weight: 700; }
+  em.term { font-style: normal; font-weight: 700; color: var(--sheen); }
+
+  /* ---- exhibits (break the column) ---- */
+  .exhibit { margin: 2rem 0 0; }
+  .exhibit-cap {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--nickel); margin-top: .6rem;
+  }
+  .plate {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    padding: 1.2rem;
+    overflow-x: auto;
+  }
+  .plate svg { display: block; width: 100%; height: auto; min-width: 30rem; }
+
+  /* ---- tables ---- */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--rule); background: var(--paper-2); }
+  table { border-collapse: collapse; width: 100%; min-width: 34rem; font-size: .92rem; }
+  th, td { text-align: left; padding: .6rem .85rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); background: var(--chip-bg); border-bottom: 2px solid var(--ink);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num { font-family: Menlo, ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.val { font-family: Menlo, ui-monospace, monospace; font-variant-numeric: tabular-nums; color: var(--brass); white-space: nowrap; }
+
+  /* ---- key caps ---- */
+  kbd {
+    font-family: Menlo, ui-monospace, monospace; font-size: .74rem;
+    background: var(--chip-bg); border: 1px solid var(--rule);
+    border-bottom-width: 2px; border-radius: 3px;
+    padding: .1rem .38rem; color: var(--ink); white-space: nowrap;
+  }
+
+  /* ---- callout ---- */
+  .note {
+    border-left: 4px solid var(--brass);
+    background: var(--paper-2);
+    padding: .9rem 1.1rem;
+    font-size: .95rem;
+  }
+  .note .lbl {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--brass); display: block; margin-bottom: .25rem;
+  }
+
+  /* ---- scope columns ---- */
+  .scope { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0; border: 1px solid var(--rule); }
+  .scope > div { padding: 1rem 1.15rem; border-right: 1px solid var(--rule); }
+  .scope > div:last-child { border-right: 0; }
+  .scope h4 {
+    font-family: Menlo, ui-monospace, monospace; font-weight: 400;
+    font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+    margin: 0 0 .5rem; color: var(--ink-soft);
+  }
+  .scope ul { padding-left: 1rem; font-size: .9rem; }
+  .scope.in  > div:first-child { background: var(--paper-2); }
+
+  /* ---- milestones ---- */
+  .miles { border-top: 2px solid var(--ink); }
+  .mile {
+    display: grid; grid-template-columns: 5.5rem 1fr; gap: 1.2rem;
+    padding: .85rem 0; border-bottom: 1px solid var(--rule); align-items: baseline;
+  }
+  .mile .m-id {
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; color: var(--brass); padding-top: .15rem;
+  }
+  .mile .m-body strong { display: block; font-family: "Avenir Next Condensed","Arial Narrow",sans-serif; text-transform: uppercase; letter-spacing: .04em; font-size: 1rem; }
+  .mile .m-body span { font-size: .9rem; color: var(--ink-soft); }
+
+  footer {
+    border-top: 2px solid var(--ink); margin-top: 4rem; padding-top: 1rem;
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--nickel);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+  }
+
+  @media (max-width: 40rem) {
+    body { font-size: 16px; }
+    .mile { grid-template-columns: 1fr; gap: .1rem; }
+    .plate svg { min-width: 26rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="band">
+  <div class="band-inner">
+    <div class="eyebrow">Level Design Brief &nbsp;·&nbsp; Level 2 &nbsp;·&nbsp; Built &amp; verified</div>
+    <h1 class="title">Second<br>Storey<span class="thin">A crow's ladder</span></h1>
+    <p class="deck">The back of a hotel, from the bins to the water tank. Same crow, same beak,
+      same one thing at a time — but the money is above you now, and everything it costs to get
+      is measured in altitude.</p>
+    <dl class="facts">
+      <div><dt>District</dt><dd>The Vantage Hotel</dd></div>
+      <div><dt>Goal</dt><dd>$40.00</dd></div>
+      <div><dt>Decks</dt><dd>Four — 0 / 2.0 / 5.4 / 9.2 m</dd></div>
+      <div><dt>Session</dt><dd>8 min, starting at t=0.42</dd></div>
+      <div><dt>New mechanics</dt><dd>None for the player</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main>
+
+  <section id="why">
+    <h2><span class="sec">§1</span> What level 1 never used</h2>
+    <div class="col">
+      <p>The block is a good level and it is flat. Three districts run left to right, money
+      density falls as you go, guard density rises, and the whole thing happens between
+      y&nbsp;=&nbsp;0 and y&nbsp;=&nbsp;5.35. The crow has wings, a stamina bar, a glide, and a
+      list of authored perches, and almost none of it is load-bearing: you can play a competent
+      2m07s run and never climb higher than the memorial you bank on.</p>
+
+      <p>So the second block does not add a verb. It takes the one system the first block
+      installed and never spent — <em class="term">altitude</em> — and makes it the price of
+      everything.</p>
+
+      <div class="note">
+        <span class="lbl">The constraint, stated up front</span>
+        No new player mechanics. Fly, take one thing, bank it, shove the weight off the bill,
+        bait a guard with food, trade a shiny with a kid. Every one of those is level 1's, taught
+        on level 1, and charged for differently here. The only new <em>entity</em> is a gull, and
+        §6 argues for it.
+      </div>
+    </div>
+  </section>
+
+  <section id="idea">
+    <h2><span class="sec">§2</span> The value ladder is the altitude ladder</h2>
+    <div class="col">
+      <p>On the block, a penny cost you a short walk and a ten cost you a plan. The denominations
+      did the pricing and the geography was nearly free.</p>
+
+      <p>Up here the geography does the pricing. The nest is on a water tank twelve metres above
+      the yard. A penny in the yard is worth one cent and costs a twelve-metre climb to bank,
+      which is a bad trade and is <em>supposed</em> to be a bad trade. Nobody says so. There is no
+      tooltip and no tutorial beat. The player works it out the first time they haul a nickel up
+      four decks and watch the counter move by five cents.</p>
+
+      <p>That is the entire design. Everything below is consequence.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate">
+        <svg viewBox="0 0 900 430" role="img" aria-label="Elevation of the four decks: yard at 0m, fire escape at 2m, terrace at 5.4m, roof at 9.2m, nest at 12.35m">
+          <g font-family="Menlo, monospace" font-size="10.5" fill="currentColor">
+            <!-- deck rules -->
+            <g stroke="currentColor" stroke-width="1.4">
+              <line x1="120" y1="390" x2="860" y2="390"/>
+              <line x1="120" y1="330" x2="330" y2="330"/>
+              <line x1="120" y1="240" x2="860" y2="240"/>
+              <line x1="120" y1="150" x2="430" y2="150"/>
+              <line x1="215" y1="90" x2="300" y2="90" stroke-width="2.4"/>
+            </g>
+            <!-- the tank -->
+            <g stroke="currentColor" stroke-width="1.2" fill="none" opacity=".75">
+              <path d="M222 150 L222 96 M293 150 L293 96"/>
+              <rect x="215" y="96" width="85" height="6"/>
+            </g>
+            <!-- climb arrows -->
+            <g stroke="currentColor" stroke-width="1.3" opacity=".55" marker-end="url(#a2)">
+              <path d="M470 388 L470 244"/>
+              <path d="M360 328 L360 244"/>
+              <path d="M170 238 L170 154"/>
+              <path d="M258 148 L258 96"/>
+              <path d="M600 388 L600 334"/>
+            </g>
+            <defs>
+              <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+              </marker>
+            </defs>
+            <!-- labels -->
+            <g text-anchor="end" opacity=".62">
+              <text x="112" y="394">0.0 m</text>
+              <text x="112" y="334">2.0 m</text>
+              <text x="112" y="244">5.4 m</text>
+              <text x="112" y="154">9.2 m</text>
+              <text x="112" y="94">12.35 m</text>
+            </g>
+          </g>
+          <g font-family="'Avenir Next Condensed','Arial Narrow',sans-serif" font-weight="700" font-size="17" fill="currentColor" letter-spacing=".5">
+            <text x="128" y="382">THE YARD</text>
+            <text x="128" y="322">FIRE ESCAPE</text>
+            <text x="128" y="232">THE TERRACE</text>
+            <text x="128" y="142">CHIMNEY ROW</text>
+            <text x="310" y="88">THE NEST</text>
+          </g>
+          <g font-family="Charter, Georgia, serif" font-size="12" fill="currentColor" opacity=".72">
+            <text x="240" y="382">bins, crates, a van, a loading dock — $1.25 of small change</text>
+            <text x="270" y="322">the kid who trades · $0.80 · a landing every 1.7 m</text>
+            <text x="290" y="232">five tables, the plunge pool, the wallet, the bill-fold — $46.15</text>
+            <text x="290" y="142">the pigeon loft, the feed tin, the window cleaner — $2.00</text>
+          </g>
+          <g font-family="Menlo, monospace" font-size="10" fill="currentColor" opacity=".5">
+            <text x="480" y="320">5.4 m</text>
+            <text x="370" y="290">3.4</text>
+            <text x="180" y="200">3.8</text>
+            <text x="268" y="126">3.0</text>
+            <text x="610" y="366">2.0</text>
+          </g>
+          <text x="490" y="418" font-family="Menlo, monospace" font-size="10" letter-spacing="2" fill="currentColor" opacity=".45" text-anchor="middle">NO SINGLE CLIMB EXCEEDS 5.4 M — A FULL STAMINA BAR BUYS ABOUT 15</text>
+        </svg>
+      </div>
+      <div class="exhibit-cap">Exhibit A — the elevation. Money rises with the floor; so does the cost of banking it.</div>
+    </div>
+
+    <div class="col">
+      <h3>Why it is a staircase and not a cliff</h3>
+      <p>A full stamina bar is 1.0&nbsp;/&nbsp;0.42 = 2.38 seconds of flapping at up to 6.4&nbsp;m/s,
+      so the theoretical ceiling is about fifteen metres. Sizing the level for that would be sizing
+      it for a player who arrives at the bottom of every climb with a full bar — which is exactly
+      the player who does not exist, because you arrive at a climb having just flown away from
+      somebody.</p>
+      <p>So the tallest single hop on the block is <strong>5.4&nbsp;m</strong>, and even that one is
+      broken up further: the fire escape has landings at 2.0, 3.65 and 5.25, the van roof is at
+      2.55, the loading dock at 1.15. Climbing is a rhythm of short hops and rests, and stamina
+      regenerates while grounded — so a perch is the first thing on this block that is genuinely
+      functional rather than scenery.</p>
+    </div>
+  </section>
+
+  <section id="money">
+    <h2><span class="sec">§3</span> The money</h2>
+    <div class="col">
+      <p>$56.70 on the block against a $40 goal. Of that, <strong>$7.05</strong> is unguarded and
+      dry — and almost all of it is coins in a yard twelve metres under the nest. The endgame is
+      the terrace, in every possible order of play, and no difficulty tuning produces that: the
+      layout does.</p>
+      <p>The twenty is new. Level 1's top prize was a ten against a twenty; this is a twenty
+      against a forty, which is the same ratio and a bigger number, and it means the folded note
+      in the maître d's bill-fold is worth half the level on its own.</p>
+    </div>
+
+    <div class="exhibit table-wrap">
+      <table>
+        <thead>
+          <tr><th>Deck</th><th>What is there</th><th>Value</th><th>Guarded by</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Yard</td><td>Ten pennies, five nickels, four dimes, two quarters in the drain</td><td class="val">$1.25</td><td>Nobody — and the climb</td></tr>
+          <tr><td>Yard</td><td>Loose change in an open crate</td><td class="val">$1.20</td><td>The porter</td></tr>
+          <tr><td>Yard</td><td>The tin by the kitchen door</td><td class="val">$5.00</td><td>The chef</td></tr>
+          <tr><td>Fire escape</td><td>Coins on the first landing, a dime on the second</td><td class="val">$0.80</td><td>Nobody</td></tr>
+          <tr><td>Cradle (4.0 m)</td><td>The window cleaner's five</td><td class="val">$5.00</td><td>Nobody — it is the geometry</td></tr>
+          <tr><td>Terrace</td><td>Table change, two tables</td><td class="val">$1.95</td><td>The busser</td></tr>
+          <tr><td>Terrace</td><td>The tip glass — three singles</td><td class="val">$3.00</td><td>The busser</td></tr>
+          <tr><td>Terrace</td><td>The check, under the candle lantern</td><td class="val">$5.00</td><td>The busser, and a weight</td></tr>
+          <tr><td>Terrace</td><td>Six quarters on the floor of the plunge pool</td><td class="val">$1.50</td><td>The water</td></tr>
+          <tr><td>Terrace</td><td>A wallet on a lounger</td><td class="val">$10.00</td><td>The maître d'</td></tr>
+          <tr><td>Terrace</td><td><strong>The bill-fold</strong></td><td class="val">$20.00</td><td>The maître d', and six gulls</td></tr>
+          <tr><td>Roof</td><td>The loft's feed tin</td><td class="val">$2.00</td><td>The window cleaner</td></tr>
+          <tr><td>Everywhere</td><td>Four shinies — foil, a corkscrew, a money clip, a room fob</td><td class="val">trade</td><td>The kid on the fire escape</td></tr>
+        </tbody>
+      </table>
+      <div class="exhibit-cap">Exhibit B — one idea per surface. Five tables, five stories, no table with two takeables on it.</div>
+    </div>
+
+    <div class="note col">
+      <span class="lbl">Verified, not asserted</span>
+      Every figure on this page is read out of the built level by
+      <span class="mono">scripts/smoke.mjs</span>, which fails the run if unguarded money could
+      ever reach the goal, or if the guarded stretch is not larger than the slack. The numbers
+      here and the numbers in the build cannot drift apart without the test going red.
+    </div>
+  </section>
+
+  <section id="decks">
+    <h2><span class="sec">§4</span> The four decks</h2>
+    <div class="col">
+      <h3>The yard (y = 0)</h3>
+      <p>Bins, crates, a delivery van, a loading dock, a drain. It is the bottom of a light well
+      and the cheapest place on the block. Two things make it worth entering at all: the chef's
+      tin by the kitchen door, and the fact that it is the only deck the chips can be wasted on.</p>
+
+      <h3>The fire escape (2.0 / 3.65 / 5.25)</h3>
+      <p>The authored route up, and the only part of the level that rewards not flying. The kid
+      who trades shinies sits on the first landing — deliberately halfway, so a trade is always
+      on the way to somewhere rather than a detour to the bottom.</p>
+
+      <h3>The terrace (5.4)</h3>
+      <p>Four fifths of the money, two guards, six gulls, five tables and a plunge pool. It is
+      also the only deck with a parapet, which is a wall to a walker and a perch to a crow — and
+      it has a deliberate gap in it at the head of the fire escape, because a 0.7&nbsp;m lip is
+      over the crow's 0.34&nbsp;m scramble and without the gap every stair climb would end in one
+      pointless extra flap.</p>
+
+      <h3>Chimney Row (9.2), and the tank (12.35)</h3>
+      <p>The crow's own territory: pots, an aerial, a pigeon loft, a window cleaner on his break,
+      and the water tank with the nest on its lid. The lid is round and its collider is the square
+      inside it, so the crow can never stand on a corner with nothing underneath — and at
+      3.35&nbsp;m against a 1.5&nbsp;m twig ring it clears the nest-platform rule with room to
+      spare, which matters more here than on the memorial because you arrive at this one out of
+      breath.</p>
+    </div>
+  </section>
+
+  <section id="cast">
+    <h2><span class="sec">§5</span> The cast</h2>
+    <div class="exhibit table-wrap">
+      <table>
+        <thead><tr><th>Who</th><th>Deck</th><th>Owns</th><th>Behaviour</th></tr></thead>
+        <tbody>
+          <tr><td>The maître d'</td><td class="num">5.4</td><td>The wallet, the bill-fold</td><td>Patrols the terrace. The most alert person in the game.</td></tr>
+          <tr><td>The busser</td><td class="num">5.4</td><td>Table change, the tip glass, the check</td><td>Fast, wide route, clearing tables.</td></tr>
+          <tr><td>The chef</td><td class="num">0</td><td>The tin</td><td>Static in the doorway. Narrow cone; he is not really looking.</td></tr>
+          <tr><td>The porter</td><td class="num">0</td><td>The crate change</td><td>Oblivious. A moving obstacle rather than a threat.</td></tr>
+          <tr><td>The window cleaner</td><td class="num">9.2</td><td>The feed tin</td><td>Static on the roof, between you and the nest.</td></tr>
+          <tr><td>The kid</td><td class="num">2.0</td><td>—</td><td>Trades shinies for cash. $1.00 / $1.50 / $2.00 / $3.00.</td></tr>
+        </tbody>
+      </table>
+      <div class="exhibit-cap">Exhibit C — six people on three floors. Nobody uses stairs; everybody is solid.</div>
+    </div>
+  </section>
+
+  <section id="gulls">
+    <h2><span class="sec">§6</span> The gulls, and why they are allowed</h2>
+    <div class="col">
+      <p>A roof has no cover on it. On the block you could put a plane tree between yourself and
+      the waiter, or take the awning, or drop behind the fountain. On a fifty-metre terrace there
+      is nothing to put anywhere, and a level whose whole pitch is "the money is up here" cannot
+      also be a level where being up here is free.</p>
+
+      <p>So the danger is authored as birds. Six gulls hold fixed pitches — two on the parapet
+      either side of the maître d's stand, one by the pool, two on the roof. Land inside one's
+      patch and it shrieks; every person within eleven metres turns to look and gets a shove of
+      suspicion. Fly <em>over</em> it and nothing happens, because a gull does not care about a
+      bird two metres above its head and because punishing flight would punish the one thing the
+      level is trying to teach.</p>
+
+      <p>They are markers that say <em class="term">not here</em>. Unlike a guard they cannot be
+      outrun — only avoided, or moved.</p>
+
+      <div class="note">
+        <span class="lbl">What this actually cost</span>
+        <span class="mono">Gull extends Pigeon</span>. A different mesh, a smaller wander range,
+        and eleven lines that make a noise and hand the game a callback. The alarm runs through
+        the same <span class="mono">lookAt</span> / <span class="mono">_suspicion</span> plumbing a
+        caw already used — which is the point: a gull is the crow's own trick, used against it.
+      </div>
+
+      <h3>The joke it settles</h3>
+      <p>This project exists because of an Instagram "would you rather" with two options: turned
+      into a crow until you collect $20, or turned into a seagull until you eat 40 chips. The crow
+      won, on the argument that $20 is a value ladder and 40 chips is 40 identical pickups. The
+      seagulls got in anyway. So did the chips.</p>
+    </div>
+  </section>
+
+  <section id="setpiece">
+    <h2><span class="sec">§7</span> The set piece</h2>
+    <div class="col">
+      <p>Level 1's marquee puzzle is a hot dog: drop it away from the cart, the pigeons mob it,
+      the vendor leaves, and there are twelve seconds of unguarded ten. This block runs the same
+      machinery and gets two effects out of one action.</p>
+
+      <p>There is a paper cone of chips on the fourth table. Drop it on the terrace, eight metres
+      or more from the maître d's stand, and:</p>
+      <ul>
+        <li>every gull on the terrace leaves its pitch for the chips — so an entire approach to
+          the bill-fold goes quiet;</li>
+        <li>the maître d' goes to deal with them — so the thing at the end of that approach is
+          unguarded.</li>
+      </ul>
+
+      <p>Drop it in the yard instead and the yard's pigeons get a meal and the terrace carries on
+      exactly as it was. That failure is the level's one deliberate teaching beat, and it is
+      taught by failing rather than by a toast that arrives before you have done anything:
+      <strong>birds do not use stairs</strong>. It is the cheapest possible way to tell a player
+      that this block has floors.</p>
+
+      <h3>And the weight</h3>
+      <p>A candle lantern sits on the check on the third table. <span class="mono">SHOVE</span> it
+      and the five comes loose. It is the saltshaker, exactly — the verb is taught on the block for
+      free and charged for here, on a table beside a man who is paid to notice.</p>
+    </div>
+  </section>
+
+  <section id="engine">
+    <h2><span class="sec">§8</span> What a second floor cost the engine</h2>
+    <div class="col">
+      <p>Almost everything in the game quietly assumed <span class="mono">y = 0</span>. Four
+      generalisations were needed, all small, all of which leave level 1 bit-for-bit identical
+      because it passes 0 everywhere.</p>
+      <ul>
+        <li><strong>Walkers have a floor.</strong> <span class="mono">blocksWalker</span> and
+          friends take the deck the walker is standing on. Without it, a maître d' on a roof
+          terrace is permanently inside the 5.4&nbsp;m solid he is standing on and cannot take a
+          step in any direction.</li>
+        <li><strong>People and birds have a <span class="mono">floorY</span>.</strong> Reach,
+          sightlines and rendering all measure from it. A person also sees height at a discount,
+          so roof staff do not spend the session shooing at a crow five metres below their feet
+          they could not reach if they wanted to.</li>
+        <li><strong>Light pools have a y.</strong> A lamp on a terrace has to put its light on the
+          terrace, not on the yard six metres below it.</li>
+        <li><strong>Water has a floor as well as a surface.</strong> See below.</li>
+      </ul>
+
+      <h3>Two real bugs, found by building on top of things</h3>
+      <p>Both are the kind that could not exist on a flat block and are invisible in review on a
+      tall one.</p>
+      <ul>
+        <li><strong>The pool was a lobster pot again.</strong> The crow's scramble test read
+          <span class="mono">c.bottom &lt;= 0.01</span> — "is this thing standing on the ground?"
+          — which is the right question asked the wrong way. The plunge pool's rim stands on a
+          terrace, so its bottom is 5.4, so a crow floating in it could not climb out at any
+          heading at all. It now measures from the crow's own feet, which says the same thing on
+          every floor. The fountain's basin was a trap once before for a completely different
+          reason; this is the second time and the last, because the rule is now about a
+          relationship rather than about zero.</li>
+        <li><strong>You could swim in a pool five metres over your head.</strong>
+          <span class="mono">inWater</span> was "inside the ring and below the surface", which is
+          true of the entire column of air underneath a raised pool. Bounded below as well as
+          above, and asserted from the yard.</li>
+      </ul>
+
+      <h3>And one that was already there</h3>
+      <p>Pathing ran out of steering. <span class="mono">stepAround</span> deflected a blocked step
+      by up to 112°, which is enough to get round a fountain and not enough to get round a
+      seven-metre van: as a walker slides along a wide face <em>away</em> from its target, the
+      direction to the target keeps rotating until every deflection under 112° still points into
+      the wall. The committed side then has nothing free, the other side does, and the walker turns
+      round — the old shuffle, arrived at from the opposite direction. Two wider angles were added,
+      and a committed side is now held until two and a half metres of the road ahead are clear
+      rather than until one step is.</p>
+    </div>
+  </section>
+
+  <section id="rules">
+    <h2><span class="sec">§9</span> Three new rules</h2>
+    <div class="col">
+      <p>The contract moved out of <span class="mono">world/level.js</span> and into
+      <span class="mono">world/rules.js</span>, because a rule that lives inside the level it
+      constrains is not a contract, it is a comment. Every rule now runs against both blocks.
+      Three are new, and all three are what a level with floors needs.</p>
+    </div>
+
+    <div class="exhibit table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Rule</th><th>Why it exists</th></tr></thead>
+        <tbody>
+          <tr><td class="num">9</td><td>No climb longer than <span class="mono">maxUnbrokenClimb</span> = 9 m with nothing to land on</td>
+            <td>60% of what a full bar buys, so it clears on a bar that is two thirds empty. This is why the roofline is a staircase.</td></tr>
+          <tr><td class="num">11</td><td>Every pickup, person and bird is resting on a deck that exists</td>
+            <td>Unfalsifiable on a flat block and the easiest mistake on a tall one: write a terrace coordinate, forget the offset, and it hangs in the air with nothing under it and no way to see that from the source.</td></tr>
+          <tr><td class="num">12</td><td>There is somewhere legal to drop the bait</td>
+            <td>The set piece has a deck requirement and a distance requirement. If they ever conflict, the level's marquee puzzle is quietly unsolvable.</td></tr>
+        </tbody>
+      </table>
+      <div class="exhibit-cap">Exhibit D — rules 1–8 are level 1's, unchanged, and now enforced on both.</div>
+    </div>
+
+    <div class="col">
+      <p>Rule 11 earned its place immediately: it failed on <em>level 1</em>, on the ten hanging in
+      the hot dog vendor's apron pocket. That one is deliberate, so it now says so in the level
+      data — <span class="mono">hung: true</span> — and it is the only exemption on either block.</p>
+    </div>
+  </section>
+
+  <section id="light">
+    <h2><span class="sec">§10</span> The light, and what it caught</h2>
+    <div class="col">
+      <p>This block starts at <span class="mono">dayStart = 0.42</span> and gets the back 58% of
+      the sunset ramp. Same eight minutes, less daylight in them: the lamps catch at
+      <strong>4m08s</strong> here against 5m46s on the block, so dusk arrives while you are still
+      working rather than as a consolation for being slow.</p>
+
+      <p>That meant time-of-day is no longer the same number as progress through the run, which is
+      exactly the class of arithmetic that has bitten this project twice. The HUD's sun dial is
+      now handed elapsed seconds separately, and the lamp-timing assertion converts the trigger on
+      to each level's own clock before comparing it to the rank ladder — in both directions, as
+      the existing note demands.</p>
+
+      <h3>The navigability floor did its job</h3>
+      <p>The block must stay playable after dark: median luminance ≥ 48, 5th percentile ≥ 24,
+      measured off the rendered frame with the HUD hidden. Level 2 failed it badly on the first
+      measurement — 5th percentile of <strong>6</strong> — and the fix was not more light. It was
+      four materials.</p>
+      <ul>
+        <li>The hotel wall was terracotta. Fifty metres of it, facing away from a sun that comes
+          from behind the block: it filled a third of the frame, was most of the darkest 5%, and
+          dragged the whole dusk average red at the hour the palette says shade goes violet. Both
+          failures, one material.</li>
+        <li>The yard was one step darker than the plaza — "wet asphalt, the bottom of a light
+          well". It is the largest surface in frame from every camera position on the level, and
+          the fiction was not worth the median.</li>
+        <li>The van was navy. A seven-metre navy box is a lot of dark.</li>
+        <li>Six service windows were unlit teal, and measured <em>darker in daylight than the
+          shadow they sat in</em> — which is also just wrong. Glass seen from outside on a sunny
+          afternoon is a mirror of the sky, not a hole.</li>
+      </ul>
+      <p>Shipped figures, over six samples from two camera positions across the session:
+      median <strong>51–127</strong>, 5th percentile <strong>27–41</strong>, and blue beats red in
+      the frame average at dusk. The floors were not touched — lowering a shared threshold to make
+      a new level pass is the failure mode this repo has a whole note about.</p>
+    </div>
+  </section>
+
+  <section id="perf">
+    <h2><span class="sec">§11</span> What it costs to run</h2>
+    <div class="exhibit table-wrap">
+      <table>
+        <thead><tr><th></th><th>Level 1 — the block</th><th>Level 2 — the roofline</th></tr></thead>
+        <tbody>
+          <tr><td>Meshes</td><td class="num">375</td><td class="num">383</td></tr>
+          <tr><td>Colliders</td><td class="num">52</td><td class="num">47</td></tr>
+          <tr><td>People</td><td class="num">6</td><td class="num">6</td></tr>
+          <tr><td>Birds</td><td class="num">7 pigeons</td><td class="num">5 pigeons + 6 gulls</td></tr>
+          <tr><td>Night lights</td><td class="num">11 sources, 9 pools</td><td class="num">12 sources, 9 pools</td></tr>
+          <tr><td>Money on the block</td><td class="val">$33.95</td><td class="val">$56.70</td></tr>
+          <tr><td>Unguarded and dry</td><td class="val">$0.75</td><td class="val">$7.05</td></tr>
+        </tbody>
+      </table>
+      <div class="exhibit-cap">Exhibit E — the two blocks, side by side. Printed by <span class="mono">npm run smoke</span> on every run.</div>
+    </div>
+    <div class="col">
+      <p>One level is built at a time, so nothing above is additive at runtime. The whole cost of a
+      second block is what it adds to the bundle: <strong>164.6&nbsp;kB gzipped</strong>, against
+      roughly 155 before — about <strong>9&nbsp;kB</strong>, nearly all of it geometry described in
+      source. There is still no asset pipeline, nothing to download, and no new draw-call class:
+      the gulls are pigeons, the pools are the same additive quads, and the terrace tables are the
+      café tables from <span class="mono">world/kit.js</span>.</p>
+
+      <div class="note">
+        <span class="lbl">Where the shared parts live now</span>
+        <span class="mono">world/kit.js</span> holds anything a second block would otherwise
+        copy-paste — tables, benches, lamps, bins, planters, the skyline, the nest, and the pool.
+        A café table is kit. A war memorial with a nest on it is not. Level 1 was rebuilt on the
+        kit first and re-verified before level 2 was written, so the refactor and the new level
+        never had to be debugged at the same time.
+      </div>
+    </div>
+  </section>
+
+  <section id="open">
+    <h2><span class="sec">§12</span> Deliberately not here</h2>
+    <div class="col">
+      <ul>
+        <li><strong>How you get from one block to the other.</strong> Selection is
+          <span class="mono">?level=2</span> and <span class="mono">main.js</span> is the only
+          thing that reads it. That is a seam, not a join, and it is left open on purpose.</li>
+        <li><strong>Carrying anything between levels.</strong> No money, no rank, no state. Each
+          block is a session.</li>
+        <li><strong>A story that commits.</strong> The endings are written to stand alone. Level
+          1's win turns you back into a person on top of a war memorial; level 2's turns you back
+          on top of a water tank, in front of a window cleaner who has questions. Neither depends
+          on the other having happened.</li>
+        <li><strong>New verbs.</strong> Still none. If a third block needs one, it should be
+          because a third block's pacing demands it — not because the second one set a precedent.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <span>Small Change — level 2 brief</span>
+    <span>Second Storey · $40.00 · four decks</span>
+  </footer>
+
+</main>
+</body>
+</html>

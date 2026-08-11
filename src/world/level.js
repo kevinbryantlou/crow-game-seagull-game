@@ -1,9 +1,13 @@
 /**
- * The block.
+ * LEVEL 1 — the block.
  *
  * One continuous space, authored by hand — no procedural generation. Three
  * districts flow into each other left to right, with money density falling and
  * guard density rising as you go. See docs/design-brief.html §6.
+ *
+ * Everything here is at ground level; the vertical block is level 2. The parts
+ * both blocks share now live in world/kit.js and the contract in world/rules.js,
+ * which is why this file is shorter than it was without a line of it changing.
  *
  * Returns geometry plus the collision, pickup and NPC data the sim needs.
  */
@@ -12,78 +16,14 @@ import * as THREE from 'three';
 import { PAL } from '../render/palette.js';
 import { box, cyl, cone, ico, plane, at, group, mat, tint } from '../render/shapes.js';
 import { NightLights } from '../render/nightlights.js';
+import { makeKit } from './kit.js';
+import { RULES } from './rules.js';
 
 export const BOUNDS = { minX: -31, maxX: 31, minZ: -15, maxZ: 15 };
 
-/**
- * Level-design invariants — the contract a future block has to keep.
- *
- * Eight rules are enforced. The ones with a number live here and are read by
- * both the level and the harnesses, so there is one place to change them. The
- * rest are structural and have nothing to tune; they are listed anyway, because
- * this object is what someone reads to find out what the contract *is*, and for
- * a while it held two of the eight while the other six were scattered through
- * scripts/ as literals.
- *
- *   numeric, below
- *     1. a nest's landing surface is ≥ 2× the nest        smoke
- *     2. no two distinct pickups within a beak-length     smoke
- *     3. the block is navigable after dark                shoot (luminance)
- *     4. the street lights come on before it is a problem smoke + level
- *
- *   structural, asserted but nothing to tune
- *     5. nothing is built inside the fountain             smoke
- *     6. no pickup is buried, or hidden from the camera   smoke
- *     7. every volume the crow can enter, it can leave    smoke + shoot
- *     8. nobody stands or walks through solid geometry    smoke
- */
-export const RULES = {
-  /**
-   * The surface you land on to reach a nest must be at least twice the nest's
-   * own footprint in each dimension. Banking happens under pressure — the last
-   * thing between a player and their money should never be pixel-accurate
-   * landing on a plinth the size of the nest.
-   */
-  nestPlatformRatio: 2,
-  /**
-   * Two takeable things closer than this are one ambiguous target, because the
-   * beak grabs the nearest. Keep pickups further apart than the beak's reach.
-   */
-  minPickupSeparation: 1.2,
-  /**
-   * The block has to stay navigable after dark. Measured by scripts/shoot.mjs
-   * as the median and 5th-percentile luminance (sRGB 0–255) of the lower 58% of
-   * the frame with the HUD hidden. Before the dusk work these fell to 19 and 8,
-   * and the last third of the session — the guarded stretch the money layout
-   * deliberately saves for the end — was the least playable part of the game.
-   * docs/lighting-brief.html §1 guessed 55 and 35 before anything was built;
-   * these are what the shipped frames actually justify.
-   */
-  duskMedianFloor: 48,
-  duskShadowFloor: 24,
-  /**
-   * How long the day lasts, in seconds.
-   *
-   * It was 18 minutes, which was nine times a competent run — the real playtest
-   * time is 2m07s and the rank ladder's fast cutoff is 2m30s. The consequence
-   * was not just slack pacing: the light did not visibly change until 10m48s
-   * and the lamps did not catch until 12m58s, so nobody who played well ever
-   * saw dusk at all, and the sunset the game is named around never happened.
-   *
-   * At 8 minutes the lamps catch at 5m46s, just past the 5m30s
-   * Accomplished Thief cutoff. Finish well and daylight is the reward; take
-   * your time and the sunset is.
-   */
-  sessionSeconds: 8 * 60,
-  /**
-   * Time of day at which the street lights catch. Before the shadows go long
-   * enough to be a navigation problem, not after — light that arrives once the
-   * player is lost reads as a fix, light that arrives just before reads as a
-   * world. It is also the day's second clock, and the only one that is not a
-   * HUD widget. docs/lighting-brief.html §7.
-   */
-  lampsOnAt: 0.72,
-};
+// Re-exported so anything that already imports RULES from the level it
+// constrains keeps working. rules.js is where it lives now.
+export { RULES };
 
 export function buildLevel() {
   const root = new THREE.Group();
@@ -92,30 +32,11 @@ export function buildLevel() {
   const perches = [];
   const night = new NightLights(RULES.lampsOnAt);
 
-  /** Axis-aligned solid. `top` is landable; `bottom` lets the crow fly underneath. */
-  const solid = (x, z, w, d, top, bottom = 0, opts = {}) => {
-    colliders.push({
-      minX: x - w / 2, maxX: x + w / 2,
-      minZ: z - d / 2, maxZ: z + d / 2,
-      top, bottom, perch: opts.perch !== false,
-      tag: opts.tag || null,
-    });
-  };
-
-  /**
-   * A hollow circular wall — the fountain, and nothing else. `minX`…`maxZ` are
-   * the ring's bounding square, so code that only wants rough bounds still has
-   * them; anything that cares tests `shape === 'ring'`. See world/collide.js.
-   */
-  const ring = (cx, cz, rInner, rOuter, top, opts = {}) => {
-    colliders.push({
-      shape: 'ring', cx, cz, rInner, rOuter,
-      minX: cx - rOuter, maxX: cx + rOuter,
-      minZ: cz - rOuter, maxZ: cz + rOuter,
-      top, bottom: 0, perch: opts.perch !== false,
-      tag: opts.tag || null,
-    });
-  };
+  const kit = makeKit({ root, colliders, occluders, perches, night });
+  const {
+    solid, addTree, addPlanter, addBench, addLamp, addBin, addTable,
+    addSkyline, makeNest, addPool,
+  } = kit;
 
   // ── ground ────────────────────────────────────────────────────────────────
   const ground = plane(120, 90, PAL.paving, { receive: true });
@@ -140,35 +61,14 @@ export function buildLevel() {
   solid(0, 16.4, 120, 1.2, 0.34);
 
   // ── backdrop skyline (far side, never occludes) ───────────────────────────
-  const skyline = [
-    [-34, 14, 22, PAL.terracotta], [-18, 11, 17, PAL.stoneMid], [-5, 13, 26, PAL.terracotta],
-    [10, 10, 20, PAL.bark], [22, 15, 24, PAL.stoneMid], [37, 12, 19, PAL.terracotta],
-  ];
-  let bx = -46;
-  const skylineLit = [];
-  for (const [, w, h, c] of skyline) {
-    const b = box(w, h, 12, c, { up: PAL.stone, down: PAL.shade, receive: false });
-    b.position.set(bx + w / 2, h / 2, -24);
-    root.add(b);
-    // Windows: a grid of small dark quads, cheap and enough at this distance.
-    const cols = Math.floor(w / 3), rows = Math.floor(h / 3.4);
-    for (let i = 0; i < cols; i++) {
-      for (let j = 0; j < rows; j++) {
-        if (Math.random() < 0.22) continue;
-        const lit = Math.random() < 0.3;
-        const win = box(1.5, 1.9, 0.2, lit ? PAL.goldLit : PAL.shade, { shadow: false, receive: false });
-        win.position.set(bx + 2 + i * 3, 2.4 + j * 3.4, -18.05);
-        root.add(win);
-        if (lit) skylineLit.push(win);
-      }
-    }
-    bx += w + 1.5;
-  }
   // The whole city coming up behind the block, on one material and one
   // assignment. Slow and unstaggered: the foreground lamps are the event, and
   // the skyline is the weather behind it. Randomised per session, so no two
   // runs light the same windows.
-  night.add(skylineLit, PAL.goldLit, { peak: 0.75, warm: 6.0, delay: 0.2 });
+  addSkyline([
+    [14, 22, PAL.terracotta], [11, 17, PAL.stoneMid], [13, 26, PAL.terracotta],
+    [10, 20, PAL.bark], [15, 24, PAL.stoneMid], [12, 19, PAL.terracotta],
+  ], -24, { startX: -46 });
   solid(0, -20, 120, 10, 24);
 
   // Invisible bounds so the crow cannot leave the block.
@@ -179,52 +79,10 @@ export function buildLevel() {
   // ══════════════════════════════════════════════════════════════════════════
   // FOUNTAIN PLAZA
   // ══════════════════════════════════════════════════════════════════════════
-  const FOUNTAIN = { x: -22, z: 0, r: 5.2, rim: 0.62, floor: 0.06 };
+  const POOL = addPool(-22, 0, 5.2, 0, { tag: 'fountain-rim' });
+  const FOUNTAIN = POOL.spec;
   {
-    const g = new THREE.Group();
-    // The basin has to be genuinely hollow — a solid cylinder would cap the
-    // interior and hide both the water and the coins the player dives for.
-    const R = FOUNTAIN.r, RI = FOUNTAIN.r - 0.6, SEG = 20;
-
-    const wall = new THREE.Mesh(
-      new THREE.CylinderGeometry(R + 0.3, R + 0.3, FOUNTAIN.rim, SEG, 1, true),
-      mat(PAL.stoneMid, { side: THREE.DoubleSide }),
-    );
-    wall.position.y = FOUNTAIN.rim / 2;
-    wall.castShadow = true; wall.receiveShadow = true;
-    g.add(wall);
-
-    const innerWall = new THREE.Mesh(
-      new THREE.CylinderGeometry(RI, RI, FOUNTAIN.rim, SEG, 1, true),
-      mat(PAL.pavingMid, { side: THREE.DoubleSide }),
-    );
-    innerWall.position.y = FOUNTAIN.rim / 2;
-    innerWall.receiveShadow = true;
-    g.add(innerWall);
-
-    const rimTop = new THREE.Mesh(
-      new THREE.RingGeometry(RI, R + 0.3, SEG).rotateX(-Math.PI / 2),
-      mat(PAL.stone),
-    );
-    rimTop.position.y = FOUNTAIN.rim;
-    rimTop.receiveShadow = true;
-    g.add(rimTop);
-
-    const basinFloor = new THREE.Mesh(
-      new THREE.CircleGeometry(RI, SEG).rotateX(-Math.PI / 2),
-      mat(PAL.stoneMid),
-    );
-    basinFloor.position.y = FOUNTAIN.floor;
-    basinFloor.receiveShadow = true;
-    g.add(basinFloor);
-
-    // Sits well below the rim, so the coins on the floor read through it.
-    const water = new THREE.Mesh(
-      new THREE.CircleGeometry(RI - 0.03, SEG).rotateX(-Math.PI / 2),
-      new THREE.MeshLambertMaterial({ color: PAL.water, transparent: true, opacity: 0.62, flatShading: true }),
-    );
-    water.position.y = FOUNTAIN.rim - 0.20;
-    g.add(water);
+    const g = POOL.group, water = POOL.water;
 
     const pedestal = cyl(0.5, 0.85, 1.9, 8, PAL.stone, { up: PAL.stone, down: PAL.shade });
     pedestal.position.y = FOUNTAIN.rim + 0.95;
@@ -233,19 +91,6 @@ export function buildLevel() {
     bowl.position.y = FOUNTAIN.rim + 2.0;
     g.add(bowl);
 
-    g.position.set(FOUNTAIN.x, 0, FOUNTAIN.z);
-    root.add(g);
-
-    // The rim is one ring collider, matching the stone exactly, so the crow can
-    // perch on it and hop in.
-    //
-    // It used to be twelve 1.6m boxes laid round the circle, and that was the
-    // worst bug on the block: the boxes only met at their corners, so the basin
-    // was walk-in-able at three headings out of 180 — and since flapping was
-    // disabled in water, a crow that got in anywhere else could never get out.
-    // The boxes also reached to r=3.78, nearly a metre inside the stone they
-    // were standing in for. A circle costs one collider to test exactly.
-    ring(FOUNTAIN.x, FOUNTAIN.z, RI, R + 0.3, FOUNTAIN.rim, { tag: 'fountain-rim' });
     perches.push({ x: FOUNTAIN.x, y: FOUNTAIN.rim + 2.3, z: FOUNTAIN.z });
     g.userData.water = water;
     root.userData.fountainWater = water;
@@ -273,16 +118,7 @@ export function buildLevel() {
     g.add(at(box(1.1, 0.7, 0.06, PAL.steelDark, { shadow: false }), 0, 2.6, 1.02));
 
     // The nest: a ring of twigs.
-    const nest = new THREE.Group();
-    for (let i = 0; i < 22; i++) {
-      const a = (i / 22) * Math.PI * 2 + Math.random() * 0.3;
-      const r = 0.62 + Math.random() * 0.12;
-      const twig = box(0.5 + Math.random() * 0.35, 0.07, 0.07, i % 3 ? PAL.bark : PAL.barkShade);
-      twig.position.set(Math.cos(a) * r, 0.06 + (i % 3) * 0.07, Math.sin(a) * r);
-      twig.rotation.y = -a + Math.PI / 2 + (Math.random() - 0.5) * 0.4;
-      twig.rotation.z = (Math.random() - 0.5) * 0.3;
-      nest.add(twig);
-    }
+    const nest = makeNest();
     nest.position.set(0, 5.0, 0);
     g.add(nest);
     g.userData.nest = nest;
@@ -297,84 +133,13 @@ export function buildLevel() {
     perches.push({ x: NEST.x, y: NEST.y, z: NEST.z });
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // shared prop builders
-  // ══════════════════════════════════════════════════════════════════════════
-  const addTree = (x, z, scale = 1) => {
-    const g = new THREE.Group();
-    const trunkH = 3.0 * scale;
-    g.add(at(cyl(0.18 * scale, 0.3 * scale, trunkH, 6, PAL.bark, { up: PAL.bark, down: PAL.barkShade }), 0, trunkH / 2, 0));
-    const blobs = [[0, trunkH + 0.7, 0, 1.7], [0.9, trunkH + 0.25, 0.4, 1.2], [-0.8, trunkH + 0.4, -0.5, 1.25], [0.2, trunkH + 1.5, -0.3, 1.05]];
-    for (const [bxx, by, bz, r] of blobs) {
-      const b = ico(r * scale, 0, PAL.canopy, { up: PAL.canopyLit, down: PAL.canopyShade });
-      b.position.set(bxx * scale, by * scale, bz * scale);
-      b.rotation.set(Math.random(), Math.random(), Math.random());
-      g.add(b);
-    }
-    g.position.set(x, 0, z);
-    root.add(g);
-    solid(x, z, 0.6, 0.6, trunkH);
-    solid(x, z, 2.8, 2.8, (trunkH + 1.9) * scale, (trunkH + 0.6) * scale);
-    perches.push({ x, y: (trunkH + 2.0) * scale, z });
-    if (z > 6) occluders.push(...g.children);
-    return g;
-  };
-
-  const addBench = (x, z, ry = 0) => {
-    const g = new THREE.Group();
-    g.add(at(box(2.6, 0.12, 0.62, PAL.bark, { up: PAL.bark, down: PAL.barkShade }), 0, 0.55, 0));
-    g.add(at(box(2.6, 0.5, 0.1, PAL.bark, { up: PAL.bark, down: PAL.barkShade }), 0, 0.86, -0.28));
-    for (const s of [-1, 1]) {
-      g.add(at(box(0.14, 0.55, 0.5, PAL.steelDark), s * 1.1, 0.28, 0));
-    }
-    g.position.set(x, 0, z);
-    g.rotation.y = ry;
-    root.add(g);
-    solid(x, z, ry ? 0.9 : 2.7, ry ? 2.7 : 0.9, 0.67);
-    perches.push({ x, y: 0.67, z });
-    return g;
-  };
-
-  let lampIndex = 0;
-  const addLamp = (x, z) => {
-    const g = new THREE.Group();
-    g.add(at(cyl(0.09, 0.13, 4.6, 6, PAL.steel, { up: PAL.steel, down: PAL.steelDark }), 0, 2.3, 0));
-    g.add(at(box(0.5, 0.14, 0.5, PAL.steelDark), 0, 0.07, 0));
-    g.add(at(cyl(0.34, 0.16, 0.5, 6, PAL.steelDark, { up: PAL.steel }), 0, 4.75, 0));
-    const bulb = at(ico(0.22, 0, PAL.goldLit, { shadow: false }), 0, 4.52, 0);
-    bulb.material = mat(PAL.goldLit);
-    g.add(bulb);
-    // Each lamp on its own clone and its own clock. They catch a beat apart,
-    // which is the difference between a light switch and a street waking up.
-    night.add(bulb, PAL.goldLit, { peak: 1.0, delay: lampIndex * 0.45, warm: 1.6, flicker: true });
-    night.addPool(root, x, z, 5.2, { peak: 0.68, delay: lampIndex * 0.45, warm: 1.6, flicker: true });
-    lampIndex++;
-    g.position.set(x, 0, z);
-    root.add(g);
-    solid(x, z, 0.3, 0.3, 4.6);
-    perches.push({ x, y: 5.0, z });
-    return g;
-  };
-
-  const addPlanter = (x, z) => {
-    const g = new THREE.Group();
-    g.add(at(box(1.8, 0.7, 1.8, PAL.terracotta, { up: PAL.terracottaLit, down: PAL.shade }), 0, 0.35, 0));
-    for (let i = 0; i < 4; i++) {
-      const b = ico(0.42, 0, PAL.canopy, { up: PAL.canopyLit, down: PAL.canopyShade });
-      b.position.set((Math.random() - 0.5) * 1.1, 0.85 + Math.random() * 0.2, (Math.random() - 0.5) * 1.1);
-      g.add(b);
-    }
-    g.position.set(x, 0, z);
-    root.add(g);
-    solid(x, z, 1.8, 1.8, 0.7);
-    return g;
-  };
-
+  // Anything on the near side of the block (z > 6) can come between the camera
+  // and the crow, so it is registered to fade to a silhouette.
   addTree(-28, -7);
-  addTree(-27.5, 9, 0.9);
-  addTree(-11.5, 12.5, 1.05);   // clear of the kid's bench and its sightline
+  addTree(-27.5, 9, 0.9, { occlude: true });
+  addTree(-11.5, 12.5, 1.05, { occlude: true });   // clear of the kid's bench and its sightline
   addTree(4, -9, 0.95);
-  addTree(21, 10.5);
+  addTree(21, 10.5, 1, { occlude: true });
   addPlanter(-17, -8.5);
   addPlanter(8, 11.5);
   addLamp(-25.5, 4.5);
@@ -443,30 +208,7 @@ export function buildLevel() {
     { x: -6.5, z: 5.5 }, { x: -2.0, z: 8.0 }, { x: 2.0, z: 5.0 },
     { x: 6.0, z: 8.2 }, { x: -0.5, z: 2.0 },
   ];
-  const tableTops = [];
-  for (const t of CAFE_TABLES) {
-    const g = new THREE.Group();
-    g.add(at(cyl(0.06, 0.28, 0.72, 8, PAL.steelDark, { up: PAL.steel }), 0, 0.36, 0));
-    g.add(at(cyl(0.62, 0.62, 0.09, 12, PAL.stone, { up: PAL.stone, down: PAL.shade }), 0, 0.76, 0));
-    for (let i = 0; i < 2; i++) {
-      const a = i * Math.PI + 0.6;
-      const ch = new THREE.Group();
-      ch.add(at(box(0.5, 0.07, 0.5, PAL.awning, { up: PAL.awningLit, down: PAL.shade }), 0, 0.44, 0));
-      ch.add(at(box(0.5, 0.55, 0.06, PAL.awning, { up: PAL.awningLit, down: PAL.shade }), 0, 0.72, -0.22));
-      for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
-        ch.add(at(box(0.05, 0.44, 0.05, PAL.steelDark), sx * 0.2, 0.22, sz * 0.2));
-      }
-      ch.position.set(Math.cos(a) * 1.05, 0, Math.sin(a) * 1.05);
-      ch.rotation.y = -a + Math.PI / 2;
-      g.add(ch);
-    }
-    g.position.set(t.x, 0, t.z);
-    root.add(g);
-    solid(t.x, t.z, 1.24, 1.24, 0.81, 0.66);
-    solid(t.x, t.z, 0.5, 0.5, 0.66);
-    perches.push({ x: t.x, y: 0.81, z: t.z });
-    tableTops.push({ x: t.x, y: 0.81, z: t.z });
-  }
+  const tableTops = CAFE_TABLES.map((t) => addTable(t.x, t.z).top);
 
   // The saltshaker pinning the café bill — a weighted object you must move first.
   const saltshaker = group(
@@ -474,6 +216,7 @@ export function buildLevel() {
     at(cyl(0.06, 0.07, 0.05, 6, PAL.steel, { up: PAL.steel }), 0, 0.24, 0),
   );
   saltshaker.position.set(CAFE_TABLES[3].x + 0.18, 0.81, CAFE_TABLES[3].z);
+  saltshaker.userData.label = 'SALTSHAKER';
   root.add(saltshaker);
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -551,15 +294,8 @@ export function buildLevel() {
   }
 
   // Bins
-  for (const [x, z, c] of [[26.5, 5, PAL.canopyShade], [27.8, 6.6, PAL.steelDark]]) {
-    const g = new THREE.Group();
-    g.add(at(cyl(0.62, 0.55, 1.5, 8, c, { up: PAL.steel, down: PAL.shade }), 0, 0.75, 0));
-    g.add(at(cyl(0.68, 0.68, 0.12, 8, PAL.steelDark, { up: PAL.steel }), 0, 1.56, 0));
-    g.position.set(x, 0, z);
-    root.add(g);
-    solid(x, z, 1.3, 1.3, 1.62);
-    perches.push({ x, y: 1.62, z });
-  }
+  addBin(26.5, 5, PAL.canopyShade);
+  addBin(27.8, 6.6, PAL.steelDark);
 
   // Scaffolding — the aerial route the vendor cannot follow.
   {
@@ -620,17 +356,27 @@ export function buildLevel() {
     root, colliders, occluders, perches,
     nightLights: night,
     fountain: FOUNTAIN,
+    waterDeck: 0,
     nest: NEST,
     nestPlatform: 3.4,     // the cornice you land on
     nestFootprint: 1.5,    // the twig ring itself
+    decks: { ground: 0 },
     cart: CART,
     cafeTables: tableTops,
-    saltshaker,
+    // The weighted object pinning the café bill. `pin` is the name the game
+    // knows it by; level 2's is a candle lantern on a restaurant check.
+    pin: saltshaker,
     kidBench,
     purseBench,
     cashbox: null,
     pickups: pickupPlacements({ FOUNTAIN, CART, CASE, tableTops }),
     humans: humanPlacements({ CART, CASE }),
+    gulls: [],
+    // Scattered rather than authored: on the block they are ambience, and the
+    // only thing that has to be true of them is that they are near the plaza.
+    pigeons: Array.from({ length: 7 }, () => ({
+      x: -20 + Math.random() * 14, z: 4 + Math.random() * 8,
+    })),
   };
 }
 
@@ -689,8 +435,11 @@ function pickupPlacements({ FOUNTAIN, CART, CASE, tableTops }) {
   add('bill1', 1.00, 11.9, 2.28, 8.05, { owner: 'newsagent' });
   add('bill5', 5.00, 10.0, 2.50, 8.05, { owner: 'newsagent', label: 'CASH TIN' });
   // Hanging on the far end of the cart, not worn — the vendor walks away during
-  // the pigeon distraction, and the ten has to stay put when he does.
-  add('bill10', 10.00, CART.x + 1.15, 1.18, CART.z + 0.94, { owner: 'vendor', label: 'APRON POCKET' });
+  // the pigeon distraction, and the ten has to stay put when he does. `hung`
+  // says so out loud, because "every pickup is resting on something" is a rule
+  // now and this is the one thing on either block that deliberately is not.
+  add('bill10', 10.00, CART.x + 1.15, 1.18, CART.z + 0.94,
+    { owner: 'vendor', label: 'APRON POCKET', hung: true });
 
   // — Shinies: worthless, tradeable —
   add('shiny', 0, -27.5, 0.07, 3.5, { shinyKind: 'cap' });

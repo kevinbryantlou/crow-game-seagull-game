@@ -1,0 +1,580 @@
+/**
+ * Everything scripts/smoke.mjs asserts about *a* block, run once per block.
+ *
+ * This was the middle four hundred lines of smoke.mjs, and it was written when
+ * there was one level and the words "the block" meant something definite. The
+ * checks have not changed; what has changed is that the numbers they close over
+ * — the goal, the water's deck, the basin's radius — come from the level rather
+ * than from a literal, and that a rule which only ever ran against the block it
+ * was written for now runs against both.
+ *
+ * Three rules are new, and all three are the ones a level with floors needs:
+ * no climb longer than a stamina bar, nothing standing in mid-air, and nobody
+ * placed on a deck that is not there.
+ */
+
+import * as THREE from 'three';
+
+const finite = (v) => Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.z);
+
+/**
+ * @param {object} o
+ * @param {object} o.level    the descriptor from world/levels.js
+ * @param {object} o.world    the built block
+ * @param {Function} o.check  (name, cond, detail) → void
+ * @param {object} o.deps     the modules smoke already imported
+ */
+export function auditLevel({ level, world, check, deps }) {
+  const {
+    RULES, overlaps, blocksWalker, deckAt, WALKER_RADIUS,
+    Crow, CROW, Human, Pigeon, Gull, Pickup,
+  } = deps;
+
+  const name = `L${level.id}`;
+  const say = (s) => `${s} [${name}]`;
+
+  console.log(`\n── level ${level.id}: ${level.title} (${level.district}) ──`);
+  check(say('level builds'), !!world.root);
+  check(say('colliders present'), world.colliders.length > 20, `(${world.colliders.length})`);
+  check(say('every collider is finite'), world.colliders.every(
+    (c) => [c.minX, c.maxX, c.minZ, c.maxZ, c.top, c.bottom].every(Number.isFinite)));
+  check(say('nest group exists'), !!world.root.userData.nestGroup);
+  check(say('water surface exists'), !!world.root.userData.fountainWater);
+
+  // A mesh whose material has vertexColors on but whose geometry carries no
+  // `color` attribute renders pure black. This is invisible to any test that
+  // does not look at the actual buffers, and it silently ate most of the block.
+  const blackMeshes = [];
+  let meshCount = 0;
+  world.root.traverse((o) => {
+    if (!o.isMesh) return;
+    meshCount++;
+    const m = Array.isArray(o.material) ? o.material[0] : o.material;
+    if (m && m.vertexColors && !o.geometry.attributes.color) blackMeshes.push(o);
+  });
+  check(say('no mesh renders black from a missing color attribute'),
+    blackMeshes.length === 0, `(${blackMeshes.length} of ${meshCount} meshes)`);
+  console.log(`       meshes ${meshCount}, colliders ${world.colliders.length}`);
+
+  // ── the water ─────────────────────────────────────────────────────────────
+  const F = world.fountain;
+  const DECK = world.waterDeck ?? 0;
+  const inWater = world.colliders.filter((c) => {
+    if (c.shape === 'ring') return false;
+    // Only things at the water's own height count. A terrace pool sits on top of
+    // a fifty-metre building, and the building is not "inside" it.
+    if (c.top <= DECK + 0.02 || c.bottom >= F.rim) return false;
+    const cx = Math.max(c.minX, Math.min(F.x, c.maxX));
+    const cz = Math.max(c.minZ, Math.min(F.z, c.maxZ));
+    return Math.hypot(cx - F.x, cz - F.z) < F.r - 0.8;
+  });
+  check(say('nothing is built inside the water'), inWater.length === 0,
+    `(${inWater.length} collider(s) overlap the basin)`);
+
+  check(say(`nest landing surface is at least ${RULES.nestPlatformRatio}x the nest`),
+    world.nestPlatform >= world.nestFootprint * RULES.nestPlatformRatio,
+    `(platform ${world.nestPlatform} vs nest ${world.nestFootprint})`);
+
+  // ── pickups ───────────────────────────────────────────────────────────────
+  const pickups = world.pickups.map((s) => new Pickup(s));
+  check(say('all pickups construct'), pickups.length === world.pickups.length, `(${pickups.length})`);
+  check(say('every pickup has a label'),
+    pickups.every((p) => typeof p.label === 'string' && p.label.length));
+  // The style guide's rule: a thing you can take is the only thing that glints.
+  // The bait is not money but it is takeable, and it is the key to the level's
+  // set piece — without a glint the player cannot tell the puzzle is there.
+  check(say('every takeable pickup carries a glint'), pickups.every((p) => !!p.glint),
+    `(missing: ${pickups.filter((p) => !p.glint).map((p) => p.kind).join(', ') || 'none'})`);
+  const bait = pickups.filter((p) => p.kind === 'hotdog' || p.kind === 'chips');
+  check(say('the level has exactly one piece of bait, and it glints'),
+    bait.length === 1 && !!bait[0].glint, `(${bait.length})`);
+
+  // Two takeables inside one beak-length are one ambiguous target — the cart had
+  // three, which made grabbing the thing you actually wanted a lucky dip.
+  const tooClose = [];
+  for (let i = 0; i < pickups.length; i++) {
+    for (let j = i + 1; j < pickups.length; j++) {
+      const a = pickups[i].home, b = pickups[j].home;
+      const d = a.distanceTo(b);
+      // Loose change piles and scattered coins are meant to read as one heap.
+      const heap = pickups[i].kind === pickups[j].kind
+        && ['penny', 'nickel', 'dime', 'quarter', 'bill1'].includes(pickups[i].kind);
+      if (d < RULES.minPickupSeparation && !heap) {
+        tooClose.push(`${pickups[i].label}/${pickups[j].label} ${d.toFixed(2)}`);
+      }
+    }
+  }
+  check(say('no two distinct pickups sit within one beak-length'), tooClose.length === 0,
+    `(${tooClose.join('; ')})`);
+
+  // A pickup inside a collider's blocking volume cannot be reached at all.
+  const buried = pickups.filter((p) => world.colliders.some((c) =>
+    overlaps(c, p.home.x, p.home.z)
+      && p.home.y > c.bottom + 0.02 && p.home.y < c.top - 0.02));
+  check(say('no pickup is buried inside solid geometry'), buried.length === 0,
+    `(${buried.map((p) => p.label).join(', ')})`);
+
+  /**
+   * Rule 11, and the one a block with floors is going to break.
+   *
+   * Every pickup has to be sitting on something. On one flat level this was
+   * unfalsifiable — y was 0.06 and the floor was 0 — and the moment there are
+   * four decks it becomes the easiest mistake in the file: write a terrace
+   * coordinate, forget to add DECK.terrace to it, and the coin hangs in the air
+   * over the yard with nothing under it and no way to tell from the source.
+   *
+   * Coins in the water are exempt; they rest on a basin floor that is not a
+   * collider. So is anything the level explicitly declares as hung on
+   * something — the ten in the vendor's apron pocket, and nothing else.
+   */
+  const floating = [];
+  for (const p of pickups) {
+    if (p.inWater || p.inJar || p.hung) continue;
+    const under = deckAt(world.colliders, p.home.x, p.home.z, p.home.y - 0.005);
+    if (p.home.y - under > 0.4) {
+      floating.push(`${p.label} at y ${p.home.y.toFixed(2)} over a floor at ${under.toFixed(2)}`);
+    }
+  }
+  check(say('every pickup is resting on something'), floating.length === 0,
+    `(${floating.join('; ')})`);
+
+  /**
+   * The camera never rotates, so whether a pickup can be seen is a fixed property
+   * of where it sits — not something that varies with play. Cast a ray from each
+   * pickup along the one sightline the game ever uses (38 deg pitch, 25 deg yaw)
+   * and see whether solid, non-fading geometry stands in the way.
+   */
+  const PITCH = (38 * Math.PI) / 180, YAW = (25 * Math.PI) / 180;
+  const toCamera = new THREE.Vector3(
+    Math.sin(YAW) * Math.cos(PITCH), Math.sin(PITCH), Math.cos(YAW) * Math.cos(PITCH),
+  ).normalize();
+
+  // Raycasting reads matrixWorld, which is only refreshed during a render. With
+  // no renderer here it has to be done by hand, or every hit is computed against
+  // an identity transform and the results are quietly meaningless.
+  world.root.updateMatrixWorld(true);
+
+  const fading = new Set(world.occluders.filter(Boolean));
+  const opaque = [];
+  world.root.traverse((o) => {
+    if (!o.isMesh || fading.has(o)) return;
+    const m = Array.isArray(o.material) ? o.material[0] : o.material;
+    if (m && m.transparent && m.opacity < 0.9) return;
+    opaque.push(o);
+  });
+
+  const ray = new THREE.Raycaster();
+  ray.far = 60;
+  const hidden = [];
+  for (const p of pickups) {
+    const from = p.home.clone().addScaledVector(toCamera, 0.06);
+    ray.set(from, toCamera);
+    const hit = ray.intersectObjects(opaque, false);
+    if (hit.length) {
+      const o = hit[0].object.getWorldPosition(new THREE.Vector3());
+      hidden.push(`${p.label} at (${p.home.x.toFixed(1)}, ${p.home.y.toFixed(1)}, ${p.home.z.toFixed(1)})`
+        + ` behind ${hit[0].object.geometry.type} at (${o.x.toFixed(1)}, ${o.y.toFixed(1)}, ${o.z.toFixed(1)})`);
+    }
+  }
+  check(say('no pickup is hidden from the fixed camera'), hidden.length === 0,
+    `(${hidden.join('; ')})`);
+
+  // ── the economy ───────────────────────────────────────────────────────────
+  const GOAL = level.goal;
+  const money = pickups.reduce((a, p) => a + p.value, 0);
+  const free = pickups.filter((p) => !p.owner && !p.inWater && p.value > 0)
+    .reduce((a, p) => a + p.value, 0);
+  const guarded = pickups.filter((p) => p.owner).reduce((a, p) => a + p.value, 0);
+  console.log(`       goal $${GOAL.toFixed(2)}  ·  on the block $${money.toFixed(2)}`
+    + `  ·  unguarded + dry $${free.toFixed(2)}  ·  guarded $${guarded.toFixed(2)}`);
+  check(say(`more money exists than the $${GOAL} goal`), money > GOAL, `($${money.toFixed(2)})`);
+  check(say(`unguarded money alone cannot reach $${GOAL}`), free < GOAL, `($${free.toFixed(2)})`);
+  check(say('the endgame must be the guarded stretch'), guarded > money - GOAL,
+    `(guarded $${guarded.toFixed(2)} vs slack $${(money - GOAL).toFixed(2)})`);
+
+  /**
+   * Rule 9: no climb longer than a stamina bar.
+   *
+   * For every pickup and for the nest, find the highest thing you could have
+   * been standing on within six metres horizontally, and measure the gap. Six
+   * metres because a climbing crow moves sideways while it climbs; the ground
+   * always counts, so this can only ever fail on something genuinely high with
+   * nothing underneath it.
+   */
+  const climbTo = (x, y, z) => {
+    let best = 0;
+    for (const c of world.colliders) {
+      if (!c.perch || c.top >= y - 0.05) continue;
+      const dx = Math.max(c.minX - x, 0, x - c.maxX);
+      const dz = Math.max(c.minZ - z, 0, z - c.maxZ);
+      if (Math.hypot(dx, dz) <= 6 && c.top > best) best = c.top;
+    }
+    return y - best;
+  };
+  const climbs = [];
+  for (const p of pickups) {
+    const h = climbTo(p.home.x, p.home.y, p.home.z);
+    if (h > RULES.maxUnbrokenClimb) climbs.push(`${p.label} ${h.toFixed(1)}m`);
+  }
+  const toNest = climbTo(world.nest.x, world.nest.y, world.nest.z);
+  if (toNest > RULES.maxUnbrokenClimb) climbs.push(`the nest ${toNest.toFixed(1)}m`);
+  check(say(`nothing is more than ${RULES.maxUnbrokenClimb}m of unbroken climb`),
+    climbs.length === 0, `(${climbs.join('; ')})`);
+  console.log(`       tallest climb to the nest ${toNest.toFixed(1)}m`
+    + ` (a full bar buys ~${(CROW.FLAP_MAX_RISE / 0.42).toFixed(0)}m)`);
+
+  // ── the cast ──────────────────────────────────────────────────────────────
+  const humans = world.humans.map((s) => new Human(s));
+  check(say('all humans construct'), humans.length === world.humans.length);
+  check(say('exactly one kid'), humans.filter((h) => h.kid).length === 1);
+  check(say('the bait guard exists and owns the biggest thing on the block'),
+    (() => {
+      const guard = humans.find((h) => h.id === level.bait.guard);
+      if (!guard) return false;
+      const dearest = pickups.reduce((a, b) => (b.value > a.value ? b : a));
+      return dearest.owner === guard.id;
+    })(),
+    `(guard ${level.bait.guard})`);
+
+  const pigeons = (world.pigeons || []).map((s) => new Pigeon(s.x, s.z, s.y ?? 0));
+  const gulls = (world.gulls || []).map((s) => new Gull(s.x, s.z, s.y ?? 0));
+  check(say('birds construct'), pigeons.every((p) => !!p.root) && gulls.every((g) => !!g.root),
+    `(${pigeons.length} pigeons, ${gulls.length} gulls)`);
+
+  const stage = {
+    basis: () => ({ forward: new THREE.Vector3(0, 0, -1), right: new THREE.Vector3(1, 0, 0) }),
+  };
+  const crow = new Crow(stage);
+  crow.pos.set(...level.spawn);
+  check(say('crow constructs'), !!crow.root);
+  check(say('beak resolves to a world point'), finite(crow.beakWorld));
+  check(say('the crow spawns on a surface, not in the air or in a wall'),
+    Math.abs(level.spawn[1] - deckAt(world.colliders, level.spawn[0], level.spawn[2], level.spawn[1] + 0.05)) < 0.35
+      && !world.colliders.some((c) => blocksWalker(c, 0.7, 0.05, level.spawn[1])
+        && overlaps(c, level.spawn[0], level.spawn[2], 0.34)),
+    `(spawn ${level.spawn.join(', ')})`);
+
+  // ── the water, as a room with a door in the ceiling ───────────────────────
+  const audio = new Proxy({}, { get: () => () => {} });
+  {
+    const dry = { move: { x: 0, y: 0 }, flap: false };
+    // Far enough out to build up speed, near enough to still be on the deck the
+    // pool sits on. On the block that is eight metres of open plaza; on the
+    // terrace it is however much roof there is round a three-metre pool.
+    const approach = Math.min(8, F.r + 2.3);
+    const leaks = [];
+    for (let deg = 0; deg < 360; deg += 2) {
+      const a = (deg * Math.PI) / 180;
+      const c = new Crow(stage);
+      c.pos.set(F.x + Math.cos(a) * approach, DECK, F.z + Math.sin(a) * approach);
+      dry.move.x = -Math.cos(a); dry.move.y = Math.sin(a);   // straight at the middle
+      for (let i = 0; i < 60 * 8 && !c.inWater; i++) c.update(1 / 60, dry, world, audio);
+      if (c.inWater) leaks.push(deg);
+    }
+    check(say('the rim is a wall at every heading — you go in over the top, not through'),
+      leaks.length === 0, `(walked straight in at ${leaks.length} heading(s): ${leaks.slice(0, 8).join(', ')})`);
+
+    /**
+     * The ratio that was the actual bug. A flap only lifts the crow if it
+     * out-accelerates gravity; at the old WATER_FLAP it did not, and escape
+     * depended on catching the right phase of the bob.
+     */
+    check(say('a flap in water out-accelerates gravity'),
+      CROW.FLAP_ACCEL * CROW.WATER_FLAP > CROW.GRAVITY,
+      `(${(CROW.FLAP_ACCEL * CROW.WATER_FLAP).toFixed(1)} vs ${CROW.GRAVITY}, `
+      + `need WATER_FLAP > ${(CROW.GRAVITY / CROW.FLAP_ACCEL).toFixed(3)})`);
+
+    /**
+     * Both input modes, because they fail differently, and from an empty bar,
+     * because that is the state a player is actually in by the time they decide
+     * the water is broken.
+     */
+    const radii = [0, F.r * 0.45, F.r * 0.78];
+    const escape = (startStamina, mode) => {
+      const stuck = [];
+      for (let deg = 0; deg < 360; deg += 45) {
+        for (const r of radii) {
+          const a = (deg * Math.PI) / 180;
+          const c = new Crow(stage);
+          c.pos.set(F.x + Math.cos(a) * r, F.floor, F.z + Math.sin(a) * r);
+          c.stamina = startStamina;
+          let out = false;
+          for (let i = 0; i < 60 * 12; i++) {
+            // 5 frames down, 7 up — roughly a 90 ms tap at 5 per second.
+            const flap = mode === 'hold' ? true : (i % 12) < 5;
+            c.update(1 / 60, { move: { x: 0, y: 0 }, flap }, world, audio);
+            if (c.pos.y > F.rim + 0.25) { out = true; break; }
+          }
+          if (!out) stuck.push(`${deg}° r${r.toFixed(1)}`);
+        }
+      }
+      return stuck;
+    };
+
+    for (const [label, stamina, mode] of [
+      ['holding flap, full bar', 1.0, 'hold'],
+      ['holding flap, empty bar', 0, 'hold'],
+      ['tapping flap, full bar', 1.0, 'tap'],
+      ['tapping flap, empty bar', 0, 'tap'],
+    ]) {
+      const stuck = escape(stamina, mode);
+      check(say(`a crow in the water gets out — ${label}`),
+        stuck.length === 0, `(stuck at ${stuck.join(', ')})`);
+    }
+
+    // And the third way out, which needs no technique at all: walk at the wall.
+    const walkOut = [];
+    for (let deg = 0; deg < 360; deg += 15) {
+      const a = (deg * Math.PI) / 180;
+      const c = new Crow(stage);
+      c.pos.set(F.x + Math.cos(a) * (F.r * 0.5), F.floor, F.z + Math.sin(a) * (F.r * 0.5));
+      const move = { x: Math.cos(a), y: -Math.sin(a) };   // straight at the rim
+      let out = false;
+      for (let i = 0; i < 60 * 12; i++) {
+        c.update(1 / 60, { move, flap: false }, world, audio);
+        if (!c.inWater && Math.hypot(c.pos.x - F.x, c.pos.z - F.z) > F.r) { out = true; break; }
+      }
+      if (!out) walkOut.push(`${deg}°`);
+    }
+    check(say('a crow in the water can simply walk out, no flapping at all'),
+      walkOut.length === 0, `(stuck at ${walkOut.join(', ')})`);
+
+    // Regen is the whole fix, so state the rate rather than just the outcome.
+    const floater = new Crow(stage);
+    floater.pos.set(F.x, F.floor, F.z);
+    floater.stamina = 0;
+    for (let i = 0; i < 60; i++) floater.update(1 / 60, { move: { x: 0, y: 0 }, flap: false }, world, audio);
+    check(say('a second of floating gets most of the bar back'),
+      floater.stamina > 0.5, `(${floater.stamina.toFixed(2)} after 1s)`);
+
+    const bobber = new Crow(stage);
+    bobber.pos.set(F.x + F.r * 0.4, F.floor, F.z);
+    let lo = Infinity, hi = -Infinity, bobs = 0, prevVel = 0;
+    for (let i = 0; i < 60 * 6; i++) {
+      bobber.update(1 / 60, { move: { x: 0, y: 0 }, flap: false }, world, audio);
+      if (i < 60) continue;                       // let it settle
+      lo = Math.min(lo, bobber.pos.y);
+      hi = Math.max(hi, bobber.pos.y);
+      if (prevVel < 0 && bobber.vel.y >= 0) bobs++;
+      prevVel = bobber.vel.y;
+    }
+    check(say('a crow left in the water still bobs'),
+      hi - lo > 0.15 && bobs >= 4,
+      `(${(hi - lo).toFixed(2)}m over ${bobs} bobs in 5s)`);
+
+    /**
+     * And the trap a raised pool sets that a ground-level one cannot.
+     *
+     * `inWater` used to be "inside the ring and below the surface", which is
+     * true of the entire column of air under a pool that is five metres up. A
+     * crow in the yard would have been swimming.
+     */
+    if (DECK > 1) {
+      const below = new Crow(stage);
+      below.pos.set(F.x, 0, F.z);
+      below.update(1 / 60, { move: { x: 0, y: 0 }, flap: false }, world, audio);
+      check(say('a crow far below a raised pool is not in it'), below.inWater === false);
+    }
+  }
+
+  // ── where people stand ────────────────────────────────────────────────────
+  const solidTo = (floor) => world.colliders.filter((c) => blocksWalker(c, undefined, undefined, floor));
+  const inside = (x, z, floor = 0) =>
+    solidTo(floor).filter((c) => overlaps(c, x, z, WALKER_RADIUS));
+
+  const embedded = world.humans
+    .filter((h) => inside(h.pos[0], h.pos[2], h.pos[1] || 0).length)
+    .map((h) => `${h.id} at (${h.pos[0]}, ${h.pos[2]}) on deck ${h.pos[1] || 0}`);
+  check(say('no one spawns inside solid geometry'), embedded.length === 0, `(${embedded.join('; ')})`);
+
+  /**
+   * Rule 11 again, for people. A human's y is authored, not derived — they never
+   * fall — so a maître d' written onto a deck that is not under him stands in
+   * the air over a yard, working normally, for the whole session.
+   */
+  const midair = world.humans
+    .filter((h) => Math.abs((h.pos[1] || 0) - deckAt(world.colliders, h.pos[0], h.pos[2], (h.pos[1] || 0) + 0.05)) > 0.3)
+    .map((h) => `${h.id} on ${h.pos[1] || 0}, floor is ${deckAt(world.colliders, h.pos[0], h.pos[2], (h.pos[1] || 0) + 0.05).toFixed(2)}`);
+  check(say('everyone is standing on a deck that exists'), midair.length === 0, `(${midair.join('; ')})`);
+
+  const badBirds = [...(world.gulls || []), ...(world.pigeons || [])]
+    .filter((b) => Math.abs((b.y ?? 0) - deckAt(world.colliders, b.x, b.z, (b.y ?? 0) + 0.05)) > 0.3)
+    .map((b) => `(${b.x}, ${b.z}) on ${b.y ?? 0}`);
+  check(say('every bird is standing on a deck that exists'), badBirds.length === 0,
+    `(${badBirds.join('; ')})`);
+
+  const badWaypoints = [];
+  for (const h of world.humans) {
+    for (const [x, z] of h.patrol || []) {
+      if (inside(x, z, h.pos[1] || 0).length) badWaypoints.push(`${h.id} → (${x}, ${z})`);
+    }
+  }
+  check(say('no patrol waypoint sits inside solid geometry'), badWaypoints.length === 0,
+    `(${badWaypoints.join('; ')})`);
+
+  // Collision stops people wading, but a route that walks into the water every
+  // lap only trades a person in it for a person grinding along a wall.
+  const wading = [];
+  for (const h of world.humans) {
+    if (!h.patrol || Math.abs((h.pos[1] || 0) - DECK) > 0.5) continue;
+    for (let i = 0; i < h.patrol.length; i++) {
+      const [ax, az] = h.patrol[i];
+      const [bx, bz] = h.patrol[(i + 1) % h.patrol.length];
+      for (let t = 0; t <= 1; t += 0.004) {
+        const d = Math.hypot(ax + (bx - ax) * t - F.x, az + (bz - az) * t - F.z);
+        if (d < F.r + WALKER_RADIUS) { wading.push(`${h.id} leg ${i}`); break; }
+      }
+    }
+  }
+  check(say('no patrol route walks through the water'), wading.length === 0,
+    `(${[...new Set(wading)].join('; ')})`);
+
+  /**
+   * Chases cannot be authored around anything: SHOOING steers straight at the
+   * crow, and the crow can stand behind whatever it likes. So a walker has to be
+   * able to get to a point on the far side of every large solid it shares a deck
+   * with.
+   */
+  {
+    const stranded = [];
+    for (const [label, floor, from, to] of level.chaseProbes(world)) {
+      const walker = new Human({
+        id: 'probe', cloth: 0, skin: 0, hair: 0,
+        pos: [from[0], floor, from[1]], home: [from[0], floor, from[1]], patrol: null,
+        speed: 0, chaseSpeed: 0, viewDist: 0, viewCos: 1, guardRadius: 0, alertness: 0,
+      });
+      walker._cols = world.colliders;
+      const target = new THREE.Vector3(to[0], 0, to[1]);
+      let arrived = false;
+      for (let i = 0; i < 60 * 20 && !arrived; i++) {
+        walker._moveToward(target, 1 / 60, 4.0);
+        arrived = Math.hypot(walker.pos.x - to[0], walker.pos.z - to[1]) < 0.9;
+      }
+      if (!arrived) stranded.push(`${label} (gave up at ${walker.pos.x.toFixed(1)}, ${walker.pos.z.toFixed(1)})`);
+    }
+    check(say('a chase can get round every large solid on its own deck'),
+      stranded.length === 0, `(${stranded.join('; ')})`);
+  }
+
+  /**
+   * The set piece has to be possible. There must be somewhere the player can
+   * actually put the bait: on the deck the level requires, far enough from what
+   * it guards, inside the block, and not inside a wall.
+   */
+  {
+    const b = level.bait;
+    const anchor = b.anchor(world);
+    const deck = b.deck ?? 0;
+    let spots = 0;
+    for (let x = -24; x <= 24; x += 1) {
+      for (let z = -12; z <= 14; z += 1) {
+        if (Math.hypot(x - anchor.x, z - anchor.z) < b.minDist) continue;
+        if (Math.abs(deckAt(world.colliders, x, z, deck + 0.05) - deck) > 0.3) continue;
+        if (world.colliders.some((c) => blocksWalker(c, 0.6, 0.05, deck) && overlaps(c, x, z, 0.4))) continue;
+        spots++;
+      }
+    }
+    check(say('there is somewhere legal to drop the bait'), spots >= 12, `(${spots} square metres)`);
+  }
+
+  // ── one simulated minute ──────────────────────────────────────────────────
+  const game = {
+    audio, pickups, elapsed: 0, world, humans,
+    onShooed: () => { game.shooCount = (game.shooCount || 0) + 1; },
+    onGullAlarm: () => { game.alarms = (game.alarms || 0) + 1; },
+  };
+
+  const input = { move: { x: 0, y: 0 }, flap: false };
+  const STEP = 1 / 60;
+  let minY = Infinity, maxY = -Infinity, escaped = false;
+  const reached = new Map();
+  const lastIndex = new Map(humans.map((h) => [h.id, h.patrolIndex]));
+
+  for (let i = 0; i < 60 * 60; i++) {
+    // Wander: change direction periodically, flap in bursts, so we exercise
+    // walking, flight, gliding, landing, water and the collision resolver.
+    if (i % 37 === 0) {
+      input.move.x = Math.sin(i * 0.7);
+      input.move.y = Math.cos(i * 0.41);
+    }
+    input.flap = (i % 120) < 45;
+
+    game.elapsed += STEP;
+    crow.update(STEP, input, world, audio);
+    for (const p of pickups) p.update(STEP, world, null);
+    for (const h of humans) h.update(STEP, crow, game);
+    for (const p of pigeons) p.update(STEP, null, crow, world);
+    for (const g of gulls) g.update(STEP, null, crow, world, game);
+    for (const h of humans) {
+      if (!h.patrol || h.patrolIndex === lastIndex.get(h.id)) continue;
+      lastIndex.set(h.id, h.patrolIndex);
+      reached.set(h.id, (reached.get(h.id) || 0) + 1);
+    }
+
+    if (!finite(crow.pos) || !finite(crow.vel)) { escaped = true; break; }
+    minY = Math.min(minY, crow.pos.y);
+    maxY = Math.max(maxY, crow.pos.y);
+    if (crow.pos.x < -40 || crow.pos.x > 40 || crow.pos.z < -30 || crow.pos.z > 30) escaped = true;
+  }
+
+  check(say('one simulated minute produced no NaN'),
+    !escaped && finite(crow.pos) && finite(crow.vel));
+  check(say('crow never fell through the world'), minY > -0.5, `(min y ${minY.toFixed(2)})`);
+  check(say('crow actually got airborne'), maxY > 1.5, `(max y ${maxY.toFixed(2)})`);
+  check(say('crow stayed inside the block'),
+    crow.pos.x > -34 && crow.pos.x < 34 && crow.pos.z > -20 && crow.pos.z < 20,
+    `(${crow.pos.x.toFixed(1)}, ${crow.pos.z.toFixed(1)})`);
+  check(say('humans stayed finite'), humans.every((h) => finite(h.pos)));
+  check(say('humans stayed near the block'),
+    humans.every((h) => Math.abs(h.pos.x) < 40 && Math.abs(h.pos.z) < 25));
+
+  const stuckIn = humans
+    .filter((h) => inside(h.pos.x, h.pos.z, h.floorY).length)
+    .map((h) => `${h.id} at (${h.pos.x.toFixed(1)}, ${h.pos.z.toFixed(1)})`);
+  check(say('no one ended up inside solid geometry'), stuckIn.length === 0, `(${stuckIn.join('; ')})`);
+
+  const stalled = humans.filter((h) => h.patrol && (reached.get(h.id) || 0) < 2);
+  check(say('everyone with a route got round at least two waypoints in the minute'),
+    stalled.length === 0,
+    `(${humans.filter((h) => h.patrol).map((h) => `${h.id} ${reached.get(h.id) || 0}`).join(', ')})`);
+
+  const paddling = [...pigeons, ...gulls]
+    .filter((p) => Math.abs(p.floorY - DECK) < 0.5 && Math.hypot(p.pos.x - F.x, p.pos.z - F.z) < F.r);
+  check(say('no bird is standing in the water'), paddling.length === 0, `(${paddling.length})`);
+
+  // A gull is a hazard marker, so it has to stay where it was put — a gull that
+  // wanders is a hazard that moves, and the whole point of them is learnability.
+  const drifted = gulls.filter((g) => g.pos.distanceTo(g.home) > 2.6);
+  check(say('gulls hold their pitch'), drifted.length === 0,
+    `(${drifted.map((g) => g.pos.distanceTo(g.home).toFixed(1)).join(', ')})`);
+
+  // And it has to actually go off when the crow lands next to it.
+  if (gulls.length) {
+    const g = gulls[0];
+    const c = new Crow(stage);
+    c.pos.set(g.pos.x + 0.9, g.floorY, g.pos.z);
+    const probe = { onGullAlarm: () => { probe.fired = true; }, fired: false };
+    g.alarmCooldown = 0;
+    g.update(STEP, null, c, world, probe);
+    check(say('a gull shrieks when the crow lands beside it'), probe.fired === true);
+
+    const far = new Crow(stage);
+    far.pos.set(g.pos.x + 0.9, g.floorY + 4, g.pos.z);
+    const probe2 = { onGullAlarm: () => { probe2.fired = true; }, fired: false };
+    g.alarmCooldown = 0;
+    g.update(STEP, null, far, world, probe2);
+    check(say('a gull ignores a crow flying over it'), probe2.fired === false);
+  }
+
+  // ── carry / bank ──────────────────────────────────────────────────────────
+  const coin = pickups.find((p) => p.value > 0 && !p.pinned);
+  coin.setCarried(crow.grip);
+  crow.carried = coin;
+  check(say('carried item reparents to the beak'), coin.root.parent === crow.grip);
+  check(say('carried item hides its glint'), coin.glint ? coin.glint.visible === false : true);
+  coin.bank(world.root.userData.nestGroup, 0);
+  check(say('banked item lands in the nest'), coin.root.parent === world.root.userData.nestGroup);
+  check(say('banked item is marked taken'), coin.taken === true);
+
+  return { meshCount, colliders: world.colliders.length, money, free, guarded, toNest };
+}

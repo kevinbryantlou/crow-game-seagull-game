@@ -265,9 +265,17 @@ export class Crow {
     this._move(dt, world);
 
     // ── water ───────────────────────────────────────────────────────────────
+    // `fountain` is whichever water body the level has — a plaza fountain on the
+    // block, a plunge pool on the roof terrace. The name is the field the crow
+    // and the pickups both read; the fiction is the level's business.
     const f = world.fountain;
     const inRing = Math.hypot(this.pos.x - f.x, this.pos.z - f.z) < f.r - 0.7;
-    const nowInWater = inRing && this.pos.y < f.rim - 0.05;
+    // Bounded below as well as above. The upper test alone says "anywhere under
+    // the surface", which is true of the whole column of air beneath a pool that
+    // is not at ground level — a crow in the yard would have been swimming in a
+    // pool five metres over its head. Costs nothing at y = 0, where the floor is
+    // 0.06 and the bound is -0.54.
+    const nowInWater = inRing && this.pos.y < f.rim - 0.05 && this.pos.y > f.floor - 0.6;
     if (nowInWater && !this.inWater) audio.plop();
     this.inWater = nowInWater;
     if (nowInWater) {
@@ -305,7 +313,22 @@ export class Crow {
     const afloat = this.inWater;
     const canScramble = this.grounded || afloat;
     const from = afloat ? Math.max(p.y, world.fountain.rim - 0.20) : p.y;
-    const scrambles = (c) => canScramble && c.bottom <= 0.01 && c.top - from <= STEP_UP;
+    /**
+     * A ledge can be scrambled onto if its base is at or below your feet and its
+     * top is within a step.
+     *
+     * The base test used to be `c.bottom <= 0.01`, which is the same statement
+     * as long as your feet are on the ground and a lie the moment they are not.
+     * On level 2 the plunge pool's rim sits on a terrace five metres up, so its
+     * `bottom` is 5.4 — and a crow floating in that pool could not climb out of
+     * it at any heading. The basin was a lobster pot again, for the second time,
+     * for a completely different reason.
+     *
+     * What it is really guarding against is climbing onto something with air
+     * underneath it: a café awning, a scaffold deck. Measured from the crow's own
+     * feet, that still holds, and it holds on every floor.
+     */
+    const scrambles = (c) => canScramble && c.bottom <= from + 0.01 && c.top - from <= STEP_UP;
     let stepTo = -Infinity;
 
     // X then Z then Y, resolved separately — cheap, stable, and good enough for
@@ -411,9 +434,10 @@ export class Crow {
       this.grounded = true;
     }
 
-    // The fountain floor is below its rim.
+    // The fountain floor is below its rim — but only for a crow that is actually
+    // in the basin, not for one directly under a raised one.
     const f = world.fountain;
-    if (Math.hypot(p.x - f.x, p.z - f.z) < f.r - 0.7 && p.y < f.floor) {
+    if (Math.hypot(p.x - f.x, p.z - f.z) < f.r - 0.7 && p.y < f.floor && p.y > f.floor - 0.6) {
       p.y = f.floor;
       if (this.vel.y < 0) this.vel.y = 0;
       this.grounded = true;

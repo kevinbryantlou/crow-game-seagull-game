@@ -51,6 +51,10 @@ export class Hud {
     this.sessionSeconds = sessionSeconds;
     this.goal = goal;
     this.amt = $('amt');
+    // The target under the counter is markup, and it said "of $20.00" whatever
+    // the level was actually asking for — the bar filled to the right place and
+    // the number beside it lied. Write it from the goal.
+    $('goal').textContent = `of $${goal.toFixed(2)}`;
     this.barFill = $('bar-fill');
     this.taskList = $('task-list');
     this.tasks = $('tasks');
@@ -196,12 +200,21 @@ export class Hud {
     this.stam.classList.toggle('low', v < 0.25);
   }
 
-  setTime(t) {
+  /**
+   * @param {number} t        time of day, 0..1 — where the sun is drawn
+   * @param {number} elapsed  seconds since this run began
+   *
+   * The two are not the same number any more. Level 2 starts in the late
+   * afternoon, so its `t` is already past 0.4 on the first frame; deriving
+   * elapsed from it would show the clock immediately, which is exactly the
+   * class of bug that made this line `30 / (18 * 60)` in the first place.
+   */
+  setTime(t, elapsed = t * this.sessionSeconds) {
     // Hidden for the first 30 seconds — let the player look at the block before
     // being handed a clock. Thirty *seconds*, not a fraction of a hardcoded
     // session: this was `30 / (18 * 60)` and would have silently become
     // thirteen seconds when the day was shortened to eight minutes.
-    this.sun.classList.toggle('on', t * this.sessionSeconds > 30);
+    this.sun.classList.toggle('on', elapsed > 30);
     const a = Math.PI - t * Math.PI;
     this.sunDot.setAttribute('cx', (54 + Math.cos(a) * 46).toFixed(1));
     this.sunDot.setAttribute('cy', (52 - Math.sin(a) * 46).toFixed(1));

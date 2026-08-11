@@ -8,16 +8,28 @@
 
 import * as THREE from 'three';
 import { PAL } from '../render/palette.js';
-import { box, cyl, ico, at, group, mat } from '../render/shapes.js';
+import { box, cyl, cone, ico, at, group, mat } from '../render/shapes.js';
 import { overlaps } from './collide.js';
 
 export const KIND_LABEL = {
   penny: 'PENNY', nickel: 'NICKEL', dime: 'DIME', quarter: 'QUARTER',
   coins: 'LOOSE CHANGE', bill1: 'DOLLAR BILL', bill5: 'FIVE', bill10: 'TEN',
-  shiny: 'SOMETHING SHINY', hotdog: 'HOT DOG',
+  bill20: 'TWENTY',
+  shiny: 'SOMETHING SHINY', hotdog: 'HOT DOG', chips: 'A CONE OF CHIPS',
 };
 
-const SHINY_LABEL = { cap: 'BOTTLE CAP', ring: 'A RING', marble: 'A MARBLE', key: 'A KEY' };
+const SHINY_LABEL = {
+  cap: 'BOTTLE CAP', ring: 'A RING', marble: 'A MARBLE', key: 'A KEY',
+  fob: 'A ROOM KEY', foil: 'A FOIL WRAPPER', clip: 'A MONEY CLIP', screw: 'A CORKSCREW',
+};
+
+/**
+ * Bait — the kinds that pull birds. Level 1 has one hot dog, level 2 has a cone
+ * of chips; both are takeable, neither is money, and both exist so the crow can
+ * move a guard by moving a smell. Named here rather than in either level so the
+ * game's one bait rule reads off the pickup vocabulary.
+ */
+export const BAIT_KINDS = new Set(['hotdog', 'chips']);
 
 /**
  * The glint texture: a soft radial falloff with a faint four-point star.
@@ -103,6 +115,18 @@ function buildMesh(spec) {
       g.add(fold);
       return g;
     }
+    case 'bill20': {
+      // The top of the ladder. Biggest note, and the only one folded twice, so
+      // that at the distance the camera actually sits it is a different silhouette
+      // from the ten rather than a slightly larger rectangle of the same green.
+      const g = billMesh(PAL.bill, 0.42, 0.20);
+      for (const [dx, w] of [[-0.09, 0.055], [0.09, 0.055]]) {
+        const fold = box(0.42, 0.012, w, PAL.billDark, { shadow: false });
+        fold.position.set(0, 0.012, dx);
+        g.add(fold);
+      }
+      return g;
+    }
     case 'shiny': {
       switch (spec.shinyKind) {
         case 'ring': {
@@ -129,6 +153,38 @@ function buildMesh(spec) {
           g.add(ring);
           return g;
         }
+        case 'foil': {
+          // A sweet wrapper, screwed up. An icosahedron at detail 0 is already
+          // all facets — scaled unevenly it reads as crumpled foil for free.
+          const m = ico(0.058, 0, PAL.silver, { up: PAL.shiny, down: PAL.shade });
+          m.scale.set(1.25, 0.7, 1.05);
+          return m;
+        }
+        case 'clip': {
+          const g = new THREE.Group();
+          g.add(at(box(0.13, 0.016, 0.06, PAL.gold, { up: PAL.goldLit, down: PAL.shade }), 0, 0, 0));
+          g.add(at(box(0.13, 0.016, 0.02, PAL.goldLit, { shadow: false }), 0, 0.018, -0.02));
+          return g;
+        }
+        case 'screw': {
+          const g = new THREE.Group();
+          g.add(at(cyl(0.016, 0.016, 0.13, 5, PAL.silver, { up: PAL.shiny }), 0, 0.03, 0));
+          const handle = box(0.09, 0.022, 0.022, PAL.bark, { up: PAL.bark, down: PAL.barkShade });
+          handle.position.y = 0.10;
+          g.add(handle);
+          return g;
+        }
+        case 'fob': {
+          // A hotel key fob: a tag on a ring, which is a different silhouette
+          // from the flat key in level 1 even though both read as "keys".
+          const g = new THREE.Group();
+          g.add(at(box(0.075, 0.018, 0.05, PAL.cloth[3], { up: PAL.clothLit[3], down: PAL.shade }), 0.04, 0, 0));
+          const ring = new THREE.Mesh(new THREE.TorusGeometry(0.038, 0.011, 4, 8), mat(PAL.silver));
+          ring.rotation.x = Math.PI / 2;
+          ring.position.x = -0.04;
+          g.add(ring);
+          return g;
+        }
         default: {
           const g = new THREE.Group();
           g.add(cyl(0.055, 0.055, 0.016, 8, PAL.cloth[0], { up: PAL.clothLit[0], down: PAL.shade }));
@@ -147,6 +203,26 @@ function buildMesh(spec) {
       const mustard = box(0.22, 0.012, 0.02, PAL.gold, { shadow: false });
       mustard.position.y = 0.072;
       g.add(mustard);
+      return g;
+    }
+    case 'chips': {
+      // A paper cone with chips standing out of it. Level 2's bait, and the one
+      // joke the whole project is owed: the seagull-and-fries prompt this game
+      // was chosen over turns up inside it as a single puzzle.
+      const g = new THREE.Group();
+      const cone_ = cone(0.10, 0.24, 6, PAL.stone, { up: PAL.stone, down: PAL.shade });
+      cone_.rotation.z = Math.PI;      // point down, mouth up
+      cone_.position.y = 0.12;
+      g.add(cone_);
+      for (const [dx, dz, h, a] of [
+        [0.00, 0.00, 0.15, 0.0], [0.045, 0.02, 0.12, 0.35], [-0.04, 0.03, 0.13, -0.28],
+        [0.02, -0.045, 0.11, 0.22],
+      ]) {
+        const chip = box(0.028, h, 0.028, PAL.goldLit, { up: PAL.goldLit, down: PAL.gold });
+        chip.position.set(dx, 0.22 + h / 2, dz);
+        chip.rotation.z = a;
+        g.add(chip);
+      }
       return g;
     }
     default: return ico(0.06, 0, PAL.gold);
@@ -212,8 +288,11 @@ export class Pickup {
           if (this.pos.y >= c.top - 0.2 && c.top > floor) floor = c.top;
         }
       }
+      // Same lower bound as the crow's: a pool that is not at ground level would
+      // otherwise catch anything dropped anywhere in the column beneath it.
       const f = world.fountain;
-      if (Math.hypot(this.pos.x - f.x, this.pos.z - f.z) < f.r - 0.7) floor = f.floor;
+      if (Math.hypot(this.pos.x - f.x, this.pos.z - f.z) < f.r - 0.7
+        && this.pos.y > f.floor - 0.6 && f.floor > floor) floor = f.floor;
 
       if (this.pos.y <= floor) {
         this.pos.y = floor;
@@ -230,7 +309,8 @@ export class Pickup {
       this.glint.material.opacity = 0.5 + pulse * 0.42;
       this.glint.scale.setScalar(0.30 + pulse * 0.07);
     }
-    if (this.kind !== 'coins' && this.kind !== 'hotdog') {
+    // Heaps and food sit still; anything with one readable face turns slowly.
+    if (this.kind !== 'coins' && !BAIT_KINDS.has(this.kind)) {
       this.mesh.rotation.y = this._spin * 0.55;
     }
   }

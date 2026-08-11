@@ -12,7 +12,7 @@ identical pickups.
 
 ```bash
 npm run dev        # http://localhost:5173
-npm run smoke      # headless sim + level invariants + unit tests (no browser)
+npm run smoke      # headless sim + level invariants + unit tests, BOTH levels (no browser)
 npm run shoot      # headless Chrome: real WebGL, screenshots to shots/, functional checks
 npm run build      # → dist/, relative base, for Capacitor
 npm run build:web  # → dist/, absolute base, for the beacon2 subpath deploy
@@ -40,11 +40,15 @@ This is the most important convention in the repo, and it was learned the hard w
 a bug where **100 of 351 meshes rendered pure black** shipped to the user because
 the game had never been looked at. Both harnesses exist to close that gap.
 
-- **`scripts/smoke.mjs`** builds the real world headless and steps a simulated
-  minute. Everything but the renderer is plain three.js maths, so it catches NaN,
+- **`scripts/smoke.mjs`** builds *every* level headless and steps a simulated
+  minute through each. The per-block half lives in `scripts/audit-level.mjs` and
+  is run once per entry in `LEVELS`, so a rule written for one block is enforced
+  on all of them — which is the only reason rule 11 caught a real thing on level
+  1 the day it was written for level 2. Everything but the renderer is plain three.js maths, so it catches NaN,
   falling through geometry, and — critically — *level-design defects* (see below).
 - **`scripts/shoot.mjs`** drives real WebGL in headless Chrome, writes PNGs to
-  `shots/`, and fails on any console error or failed request. Read the PNGs. It can
+  `shots/`, and fails on any console error or failed request. It runs both
+  blocks: `01`–`13` are the block, `20`–`29` and `l2-dusk-*` are the roofline. Read the PNGs. It can
   place the crow anywhere via `window.__game` (dev builds only) for spot checks,
   and asserts behaviour like trade auto-equip.
 
@@ -62,16 +66,21 @@ src/
   render/shapes.js     primitive kit + three-tone face tinting
   render/stage.js      renderer, fixed camera, sunset light rig, occlusion fade
   render/nightlights.js  what comes on at dusk — emissive only, no scene lights
-  world/level.js       the authored block: geometry, colliders, placements, RULES
+  world/rules.js       RULES — the level-design contract, shared by both blocks
+  world/kit.js         the shared prop kit: tables, lamps, bins, the nest, the pool
+  world/level.js       LEVEL 1 — the block: plaza, café row, cart corner. Flat.
+  world/level2.js      LEVEL 2 — the roofline: yard, fire escape, terrace, roof. Vertical.
+  world/levels.js      the registry: goal, tasks, teach copy, bait rules, endings, per level
   world/collide.js     the collider format, and going round things (pure, unit tested)
   world/pickups.js     the money
   entities/crow.js     locomotion, flight, procedural rig
-  entities/human.js    three-state brain, and pigeons
+  entities/human.js    three-state brain, pigeons, and gulls
   ui/hud.js            money, tasks, sun dial, beak prompt, ending headline
   ui/words.js          money spelled out (pure, unit tested)
   ui/rank.js           end-of-run titles (pure, unit tested)
 docs/                  design brief + style guide — the spec, written to be checked against
                        lighting-brief.html — dusk lighting exploration, NOT implemented
+                       level-2-brief.html — the roofline: design, engine cost, what it caught
 ```
 
 Pure logic goes in its own module so `smoke.mjs` can test it without a DOM.
@@ -159,6 +168,45 @@ That's why `words.js` and `rank.js` are separate from `hud.js`.
   version, which is why `scripts/serve-static.mjs` exists — it serves
   `dir/index.html` in place like Vercel does.
 
+- **Everything quietly assumed `y = 0` until level 2.** Walkers, light pools and
+  the water body all measured from the world floor, which is the same statement
+  as "measure from your own deck" right up until there is more than one deck.
+  `blocksWalker`/`isFree`/`stepAround`/`resolveWalk` take a `floor`, `Human` and
+  `Pigeon` carry a `floorY`, and `NightLights.addPool` takes a `y`. Level 1
+  passes 0 everywhere and is unchanged.
+- **`c.bottom <= 0.01` is not "is this on the ground", it is "is this at y=0".**
+  The crow's scramble test used it, so the plunge pool — whose rim stands on a
+  terrace at 5.4 — could not be climbed out of at *any* heading. That is the
+  fountain-as-lobster-pot bug for the second time, from a completely different
+  direction. It now reads `c.bottom <= from + 0.01`, measured from the crow's own
+  feet, which says the same thing on every floor.
+- **`inWater` needs a floor as well as a ceiling.** "Inside the ring and below
+  the surface" is true of the entire column of air under a raised pool, so a crow
+  in the yard was swimming in a pool five metres over its head. Bounded both
+  ways, in `crow.js` and in `pickups.js`, and asserted from below.
+- **`stepAround` ran out of steering at 112°.** Enough to get round a fountain,
+  not enough to get round a 7.2m van: sliding along a wide face *away* from the
+  target rotates the target direction until every deflection under 112° still
+  points into the wall, the committed side has nothing free, and the walker turns
+  round. Deflections now go to 158°, and a committed side is held until 2.5m of
+  the straight line ahead is clear rather than until one step is.
+- **A concave notch deadlocks a walker.** The van's body and cab differed by 0.1
+  in `z`, and a walker steered into that 0.1m pocket could not commit its way
+  out. One obstacle, one outline.
+- **A dropped pickup lands at the beak, and the beak comes off the rig's world
+  matrix.** Teleporting the crow and dropping in the same tick tests the position
+  the crow used to be in. Let two frames pass first.
+- **The goal under the money counter was markup.** `index.html` said
+  "of $20.00" whatever the level asked for — the bar filled correctly and the
+  number beside it lied. `Hud` writes it now.
+- **Big dark surfaces fail the navigability floor, and no amount of lamps fix
+  it.** Level 2's first dusk measurement was 5th-percentile 6 against a floor of
+  24. The cause was four *materials*, not four missing lights: a 50m terracotta
+  wall facing away from the sun, a yard one paving step too dark, a navy van, and
+  six unlit teal windows that measured darker in daylight than the shadow they
+  sat in. Look at the frame and find the biggest dark thing before adding a lamp
+  — and never lower `duskMedianFloor`/`duskShadowFloor` to make a new block pass.
+
 ## Level-design rules (asserted, not aspirational)
 
 In `RULES` in `world/level.js`, enforced by `smoke.mjs`:
@@ -183,9 +231,46 @@ In `RULES` in `world/level.js`, enforced by `smoke.mjs`:
 - **The block stays navigable after dark.** `shoot` measures the rendered frame:
   median ≥ `RULES.duskMedianFloor`, 5th percentile ≥ `duskShadowFloor`. It fell
   to 19 and 8 before the dusk work.
-- **The sunset happens inside a session someone plays.** `RULES.lampsOnAt` ×
-  `sessionSeconds` must land after a fast run ends and well before the day does.
-  Asserted in *both* directions — see the one-direction trap above.
+- **The sunset happens inside a session someone plays.** `RULES.lampsOnAt` has to
+  be converted on to *this level's* clock first — a block may start partway into
+  the afternoon (`dayStart`), so the same 0.72 buys 5m46s on the block and 4m08s
+  on the roofline. Asserted in *both* directions — see the one-direction trap
+  above.
+- **No climb longer than `RULES.maxUnbrokenClimb` (9m) with nothing to land on.**
+  60% of what a full stamina bar buys, because nobody arrives at a climb with a
+  full bar. This is why the roofline is a staircase of decks and not a cliff.
+- **Everything is resting on a deck that exists.** Pickups, people and birds. On
+  a flat block this was unfalsifiable; with four decks it is the easiest mistake
+  in the file — write a terrace coordinate, forget the offset, and it hangs in
+  the air with nothing under it and no way to see that in review. One exemption,
+  declared in the level data: `hung: true` on the ten in the vendor's apron.
+- **There is somewhere legal to drop the bait.** The set piece has a deck
+  requirement and a distance requirement; if they ever conflict, the block's
+  marquee puzzle is quietly unsolvable.
+
+## Two levels
+
+`world/levels.js` is the registry. A level descriptor holds everything about a
+block that is not geometry: `goal`, `sessionSeconds`, `dayStart`, `spawn`, the
+task list (with `when` predicates for the ones that complete by observation),
+`bankTicks`, the teaching toasts, the `bait` set-piece rules, `chaseProbes` for
+smoke, and the ending copy. If a second block would need a different one, it is
+level data; if both need the same one, it is in `world/rules.js`.
+
+- **Level 1 — the block** (`level.js`). Flat, $20, starts at `dayStart: 0`.
+- **Level 2 — the roofline** (`level2.js`). Four decks (0 / 2.0 / 5.4 / 9.2, nest
+  at 12.35), $40, starts at `dayStart: 0.42` so the lamps catch at 4m08s.
+  `docs/level-2-brief.html` is the spec.
+
+Selection is `?level=2`, read once in `main.js`. **How the player actually gets
+from one block to the other is not decided yet** — that is a seam, not a join,
+and it was left open deliberately.
+
+`world/kit.js` holds anything a third block would otherwise copy-paste: tables,
+benches, lamps, bins, planters, the skyline, the nest, and the water body. A café
+table is kit; a war memorial with a nest on it is not. Level 1 was rebuilt on the
+kit and re-verified *before* level 2 was written, so the refactor and the new
+level never had to be debugged at the same time. Do that again.
 
 ## Art direction
 

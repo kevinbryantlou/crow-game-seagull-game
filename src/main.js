@@ -11,15 +11,24 @@ import { Input } from './core/input.js';
 import { Audio } from './core/audio.js';
 import { Hud, setEndingTitle } from './ui/hud.js';
 import { formatRankLine } from './ui/rank.js';
-import { buildLevel, RULES } from './world/level.js';
+import { getLevel } from './world/levels.js';
+import { RULES } from './world/rules.js';
 import { Crow } from './entities/crow.js';
-import { Human, Pigeon } from './entities/human.js';
-import { Pickup } from './world/pickups.js';
+import { Human, Pigeon, Gull } from './entities/human.js';
+import { Pickup, BAIT_KINDS } from './world/pickups.js';
 import { PAL } from './render/palette.js';
 
-const GOAL = 20.00;
 const STEP = 1 / 60;
 const REACH = 1.15;
+
+/**
+ * Which block to build.
+ *
+ * A URL parameter, on purpose and for now: how a player actually gets from the
+ * block to the roofline is a separate question and it is not answered here. This
+ * is the seam, not the join.
+ */
+const LEVEL_ID = Number(new URLSearchParams(location.search).get('level')) || 1;
 
 const _nestWorld = new THREE.Vector3();
 
@@ -36,20 +45,26 @@ const TEST_TRADE_PAYOUT = null;
 // Carries the same three tripwires as the payout cheat above.
 const TEST_SESSION_SECONDS = null;
 
-const SESSION_SECONDS = TEST_SESSION_SECONDS ?? RULES.sessionSeconds;
-
 class Game {
   constructor() {
+    /** Everything about this run that the block decides. See world/levels.js. */
+    this.level = getLevel(LEVEL_ID);
+    const GOAL = this.level.goal;
+    const SESSION_SECONDS = TEST_SESSION_SECONDS ?? this.level.sessionSeconds;
+    this.goal = GOAL;
+
     this.stage = new Stage(document.getElementById('c'));
     this.input = new Input();
     this.audio = new Audio();
     this.hud = new Hud(GOAL, SESSION_SECONDS);
 
-    this.world = buildLevel();
+    this.world = this.level.build();
     this.stage.scene.add(this.world.root);
     this.stage.registerOccluders([...new Set(this.world.occluders.filter((o) => o && o.isMesh))]);
 
     this.crow = new Crow(this.stage);
+    this.crow.pos.set(...this.level.spawn);
+    this.crow.root.position.copy(this.crow.pos);
     this.stage.scene.add(this.crow.root);
 
     this.pickups = this.world.pickups.map((spec) => {
@@ -64,14 +79,22 @@ class Game {
       return h;
     });
     this.kid = this.humans.find((h) => h.kid);
-    this.vendor = this.humans.find((h) => h.id === 'vendor');
+    this.baitGuard = this.humans.find((h) => h.id === this.level.bait.guard);
 
-    this.pigeons = [];
-    for (let i = 0; i < 7; i++) {
-      const p = new Pigeon(-20 + Math.random() * 14, 4 + Math.random() * 8);
+    this.pigeons = (this.world.pigeons || []).map((s) => {
+      const p = new Pigeon(s.x, s.z, s.y ?? 0);
       this.stage.scene.add(p.root);
-      this.pigeons.push(p);
-    }
+      return p;
+    });
+    // Gulls are pigeons that stay put and object to company. They are level 2's
+    // answer to a roof having no cover on it; the block has none.
+    this.gulls = (this.world.gulls || []).map((s) => {
+      const g = new Gull(s.x, s.z, s.y ?? 0);
+      this.stage.scene.add(g.root);
+      return g;
+    });
+    /** Everything with feathers that mobs food, which is both kinds. */
+    this.birds = [...this.pigeons, ...this.gulls];
 
     this.total = 0;
     this.banked = 0;
@@ -93,13 +116,7 @@ class Game {
     this._acc = 0;
     this._last = performance.now();
 
-    this.tasks = [
-      { id: 'dive',  text: 'Dive for the wishing coins', done: false },
-      { id: 'jar',   text: 'Rob the tip jar', done: false },
-      { id: 'trade', text: 'Trade something shiny', done: false },
-      { id: 'cart',  text: 'Make the vendor leave his cart', done: false },
-      { id: 'ten',   text: 'Get the ten', done: false },
-    ];
+    this.tasks = this.level.tasks.map((t) => ({ ...t, done: false }));
     this.hud.setTasks(this.tasks);
     this.hud.setMoney(0);
 
@@ -163,12 +180,13 @@ class Game {
       return { verb: 'DROP', noun: this.crow.carried.label, kind: 'drop' };
     }
 
-    // The saltshaker pins the café bill — a weighted object you must move first.
-    const salt = this.world.saltshaker;
-    if (salt.visible) {
-      const sp = salt.getWorldPosition(new THREE.Vector3());
+    // The weighted object pinning a bill — a saltshaker on the block, a candle
+    // lantern on the terrace. Move it before the money under it comes loose.
+    const pin = this.world.pin;
+    if (pin && pin.visible) {
+      const sp = pin.getWorldPosition(new THREE.Vector3());
       if (beak.distanceTo(sp) < REACH) {
-        return { verb: 'SHOVE', noun: 'SALTSHAKER', kind: 'salt' };
+        return { verb: 'SHOVE', noun: pin.userData.label || 'IT', kind: 'salt' };
       }
     }
 
@@ -181,10 +199,11 @@ class Game {
     }
     if (best) return { verb: 'TAKE', noun: best.label, kind: 'take', pickup: best };
 
-    // The pinned bill, before you have moved the shaker — tell the player why.
+    // The pinned bill, before you have moved the weight — tell the player why.
     for (const p of this.pickups) {
       if (p.pinned && !this.saltMoved && beak.distanceTo(p.root.position) < REACH + 0.3) {
-        return { verb: 'PINNED', noun: 'UNDER THE SALTSHAKER', kind: null };
+        const label = this.world.pin?.userData.label || 'IT';
+        return { verb: 'PINNED', noun: `UNDER ${label}`, kind: null };
       }
     }
     return null;
@@ -197,15 +216,16 @@ class Game {
         const p = a.pickup;
         p.setCarried(this.crow.grip);
         this.crow.carried = p;
-        this.audio.coin(this.total / GOAL);
+        this.audio.coin(this.total / this.goal);
+        const teach = this.level.teach;
         if (p.value > 0 && !this._taughtNest) {
           this._taughtNest = true;
-          this.hud.toast('Take it to your nest', 2.6);
+          this.hud.toast(teach.money, 2.6);
         } else if (p.kind === 'shiny' && !this._taughtTrade) {
           this._taughtTrade = true;
-          this.hud.toast('The kid on the bench will trade for that', 2.8);
-        } else if (p.kind === 'hotdog') {
-          this.hud.toast('A hot dog', 1.3);
+          this.hud.toast(teach.shiny, 2.8);
+        } else if (BAIT_KINDS.has(p.kind)) {
+          this.hud.toast(teach.bait, 1.6);
         }
         break;
       }
@@ -214,7 +234,7 @@ class Game {
         this.crow.carried = null;
         const beak = this.crow.beakWorld;
         p.setDropped(this.stage.scene, beak, new THREE.Vector3(this.crow.vel.x * 0.3, 0.6, this.crow.vel.z * 0.3));
-        this._checkHotdogDrop(p);
+        this._checkBaitDrop(p);
         break;
       }
       case 'bank': {
@@ -222,10 +242,11 @@ class Game {
         this.crow.carried = null;
         p.bank(this.world.root.userData.nestGroup, this.banked++);
         this.total += p.value;
-        this.audio.bank(this.total / GOAL);
+        this.audio.bank(this.total / this.goal);
         this.hud.setMoney(this.total);
-        if (p.kind === 'bill10') this._tick('ten');
-        if (this.total >= GOAL) this._finish(true);
+        const tick = this.level.bankTicks?.[p.kind];
+        if (tick) this._tick(tick);
+        if (this.total >= this.goal) this._finish(true);
         break;
       }
       case 'trade': {
@@ -255,32 +276,66 @@ class Game {
         break;
       }
       case 'salt': {
-        this.world.saltshaker.visible = false;
+        this.world.pin.visible = false;
         this.saltMoved = true;
         this.audio.step();
-        this.hud.toast('The bill is loose', 1.4);
+        this.hud.toast(this.level.pinToast, 1.4);
         break;
       }
     }
   }
 
   /**
-   * The marquee puzzle: a hot dog dropped away from the cart pulls the pigeons,
-   * and the vendor leaves his cart to shoo them. Twelve seconds of unguarded ten.
+   * The marquee puzzle, on both blocks: food dropped away from what it guards
+   * pulls every bird within reach, and the guard leaves his post to deal with
+   * them. Twelve seconds of an unguarded ten, or an unguarded twenty.
+   *
+   * Level 2 adds one condition and teaches it by failing: birds do not use
+   * stairs. Chips dropped in the yard feed the yard pigeons and change nothing
+   * five metres above them, which is the cheapest possible way to tell a player
+   * that this block has floors.
    */
-  _checkHotdogDrop(p) {
-    if (p.kind !== 'hotdog') return;
-    const d = Math.hypot(p.pos.x - this.world.cart.x, p.pos.z - this.world.cart.z);
-    if (d < 6.5) {
-      this.hud.toast('Too close to the cart', 1.6);
+  _checkBaitDrop(p) {
+    if (!BAIT_KINDS.has(p.kind)) return;
+    const bait = this.level.bait;
+
+    if (bait.deck != null && Math.abs(p.pos.y - bait.deck) > 1.6) {
+      this.hud.toast(bait.wrongDeck, 1.8);
       return;
     }
-    this.foodPos = { x: p.pos.x, z: p.pos.z };
-    this.foodUntil = this.elapsed + 13;
-    this.vendor.distract(new THREE.Vector3(p.pos.x, 0, p.pos.z), 12);
+    const anchor = bait.anchor(this.world);
+    if (Math.hypot(p.pos.x - anchor.x, p.pos.z - anchor.z) < bait.minDist) {
+      this.hud.toast(bait.tooClose, 1.6);
+      return;
+    }
+
+    this.foodPos = { x: p.pos.x, y: p.pos.y, z: p.pos.z };
+    this.foodUntil = this.elapsed + bait.mobFor;
+    this.baitGuard?.distract(new THREE.Vector3(p.pos.x, 0, p.pos.z), bait.seconds);
     this.audio.ding();
-    this.hud.toast('The pigeons have found it', 2.0);
-    this._tick('cart');
+    this.hud.toast(bait.onDrop, 2.0);
+    this._tick(bait.task);
+  }
+
+  /**
+   * A gull went off. Everyone who could have heard it looks that way, and the
+   * ones already half-suspicious get pushed the rest of the way.
+   *
+   * This is the whole of the gull mechanic on the game's side: the bird makes a
+   * noise and does not know what a person is. It reuses the plumbing a caw
+   * already runs through, which is deliberate — a gull is the crow's own trick
+   * used against it.
+   */
+  onGullAlarm(gull) {
+    this.audio.alert();
+    for (const h of this.humans) {
+      if (h.kid) continue;
+      const d = Math.hypot(h.pos.x - gull.pos.x, h.pos.z - gull.pos.z, h.floorY - gull.floorY);
+      if (d > 11) continue;
+      h.lookAt = new THREE.Vector3(gull.pos.x, gull.floorY, gull.pos.z);
+      h._suspicion += 0.34;
+      setTimeout(() => { if (h.lookAt && h.lookAt.x === gull.pos.x) h.lookAt = null; }, 2400);
+    }
   }
 
   _tick(id) {
@@ -321,10 +376,10 @@ class Game {
         setTimeout(() => { if (h.lookAt === at) h.lookAt = null; }, 2600);
       }
     }
-    for (const p of this.pigeons) {
+    for (const p of this.birds) {
       const d = Math.hypot(p.pos.x - at.x, p.pos.z - at.z);
-      if (d < 5) {
-        p.target.set(p.pos.x + (p.pos.x - at.x), 0, p.pos.z + (p.pos.z - at.z));
+      if (d < 5 && Math.abs(at.y - p.floorY) < 2) {
+        p.target.set(p.pos.x + (p.pos.x - at.x), p.floorY, p.pos.z + (p.pos.z - at.z));
       }
     }
   }
@@ -347,18 +402,13 @@ class Game {
       totalTasks: this.tasks.length,
     });
 
+    const copy = this.level.ending;
     if (won) {
       setEndingTitle(this.total);
-      body.innerHTML = 'The last coin lands in the nest and the weight of it goes through you '
-        + 'like a held breath let go. Fingers. Shoulders. The ache of standing up.<br><br>'
-        + 'The first thing you see, from the top of a war memorial you have no business being on, '
-        + 'is a kid on a bench — still holding out a bottle cap, for a bird that is not there any more.';
+      body.innerHTML = copy.won(this.total);
     } else {
-      title.innerHTML = 'The Light<span>Goes</span>';
-      body.innerHTML = `You got to $${this.total.toFixed(2)}. The sun is off the block now and the `
-        + 'shadows have gone violet all the way across the plaza.<br><br>'
-        + 'Still a crow. But the fountain is full of coins that nobody is watching, '
-        + 'and you have all night.';
+      title.innerHTML = copy.lostTitle;
+      body.innerHTML = copy.lost(this.total);
     }
     document.getElementById('ending').classList.remove('hidden');
   }
@@ -382,14 +432,19 @@ class Game {
     const food = (this.foodUntil && this.elapsed < this.foodUntil) ? this.foodPos : null;
     for (const h of this.humans) h.update(dt, this.crow, this);
     for (const p of this.pigeons) p.update(dt, food, this.crow, this.world);
+    for (const g of this.gulls) g.update(dt, food, this.crow, this.world, this);
 
-    // Tasks that complete by observation rather than by a discrete action.
-    if (!this.tasks[0].done && this.crow.inWater) this._tick('dive');
-    if (!this.tasks[1].done && this.crow.carried?.inJar) this._tick('jar');
+    // Tasks that complete by observation rather than by a discrete action. The
+    // predicate lives on the level, because what counts as an observation is the
+    // block's business — a dive is a dive, but "rob the tip jar" and "rob the
+    // window cleaner" are the same line of code about two different objects.
+    for (const t of this.tasks) {
+      if (!t.done && t.when && t.when(this)) this._tick(t.id);
+    }
 
     this.input.flush();
 
-    if (this.elapsed >= SESSION_SECONDS && !this.finished) this._finish(false);
+    if (this.elapsed >= this.sessionSeconds && !this.finished) this._finish(false);
   }
 
   /**
@@ -463,7 +518,13 @@ class Game {
       }
     }
 
-    const t = Math.min(1, this.elapsed / SESSION_SECONDS);
+    // Time of day, which is no longer the same number as progress through the
+    // run. A block may start partway into the afternoon — level 2 does, at 0.42 —
+    // so the light ramp is compressed into whatever is left of the day rather
+    // than replayed from noon.
+    const through = Math.min(1, this.elapsed / this.sessionSeconds);
+    const d0 = this.level.dayStart;
+    const t = d0 + (1 - d0) * through;
     this.stage.follow(this.crow.pos, dt);
     this.stage.setTimeOfDay(t);
     // Driven in real seconds, not in `t`: the catch-and-warm schedule has to
@@ -475,7 +536,7 @@ class Game {
     if (w) w.material.opacity = 0.80 + Math.sin(this.elapsed * 1.4) * 0.05;
 
     this.hud.update(dt);
-    this.hud.setTime(t);
+    this.hud.setTime(t, this.elapsed);
     this.hud.setCarry(this.crow.carried ? this.crow.carried.label : null);
     this.hud.setStamina(this.crow.stamina, !this.crow.grounded || this.crow.stamina < 0.98);
     this._updateNestPointer();
