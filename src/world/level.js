@@ -16,8 +16,26 @@ import { NightLights } from '../render/nightlights.js';
 export const BOUNDS = { minX: -31, maxX: 31, minZ: -15, maxZ: 15 };
 
 /**
- * Level-design invariants. These are asserted by scripts/smoke.mjs against the
- * built level, so a future block cannot quietly break them.
+ * Level-design invariants — the contract a future block has to keep.
+ *
+ * Eight rules are enforced. The ones with a number live here and are read by
+ * both the level and the harnesses, so there is one place to change them. The
+ * rest are structural and have nothing to tune; they are listed anyway, because
+ * this object is what someone reads to find out what the contract *is*, and for
+ * a while it held two of the eight while the other six were scattered through
+ * scripts/ as literals.
+ *
+ *   numeric, below
+ *     1. a nest's landing surface is ≥ 2× the nest        smoke
+ *     2. no two distinct pickups within a beak-length     smoke
+ *     3. the block is navigable after dark                shoot (luminance)
+ *     4. the street lights come on before it is a problem smoke + level
+ *
+ *   structural, asserted but nothing to tune
+ *     5. nothing is built inside the fountain             smoke
+ *     6. no pickup is buried, or hidden from the camera   smoke
+ *     7. every volume the crow can enter, it can leave    smoke + shoot
+ *     8. nobody stands or walks through solid geometry    smoke
  */
 export const RULES = {
   /**
@@ -32,6 +50,25 @@ export const RULES = {
    * beak grabs the nearest. Keep pickups further apart than the beak's reach.
    */
   minPickupSeparation: 1.2,
+  /**
+   * The block has to stay navigable after dark. Measured by scripts/shoot.mjs
+   * as the median and 5th-percentile luminance (sRGB 0–255) of the lower 58% of
+   * the frame with the HUD hidden. Before the dusk work these fell to 19 and 8,
+   * and the last third of the session — the guarded stretch the money layout
+   * deliberately saves for the end — was the least playable part of the game.
+   * docs/lighting-brief.html §1 guessed 55 and 35 before anything was built;
+   * these are what the shipped frames actually justify.
+   */
+  duskMedianFloor: 48,
+  duskShadowFloor: 24,
+  /**
+   * Time of day at which the street lights catch. Before the shadows go long
+   * enough to be a navigation problem, not after — light that arrives once the
+   * player is lost reads as a fix, light that arrives just before reads as a
+   * world. It is also the day's second clock, and the only one that is not a
+   * HUD widget. docs/lighting-brief.html §7.
+   */
+  lampsOnAt: 0.72,
 };
 
 export function buildLevel() {
@@ -39,10 +76,7 @@ export function buildLevel() {
   const colliders = [];
   const occluders = [];
   const perches = [];
-  // The block comes on at 72% of the day — while there is still light, the way
-  // real streetlights do, and just before the shadows go long enough to be a
-  // navigation problem. See docs/lighting-brief.html §7.
-  const night = new NightLights(0.72);
+  const night = new NightLights(RULES.lampsOnAt);
 
   /** Axis-aligned solid. `top` is landable; `bottom` lets the crow fly underneath. */
   const solid = (x, z, w, d, top, bottom = 0, opts = {}) => {

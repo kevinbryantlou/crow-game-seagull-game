@@ -424,6 +424,8 @@ console.log('\nlights at dusk');
   const output = (i) => (i.pool ? i.material.opacity : i.material.emissiveIntensity);
   const pools = night.items.filter((i) => i.pool);
 
+  check('the street lights catch at the documented hour',
+    night.trigger === RULES.lampsOnAt, `(${night.trigger} vs RULES ${RULES.lampsOnAt})`);
   check('the block registers night lights', night.items.length >= 8, `(${night.items.length})`);
   check('the block registers ground pools', pools.length >= 6, `(${pools.length})`);
   check('nothing is emitting during the day', night.items.every((i) => output(i) === 0));

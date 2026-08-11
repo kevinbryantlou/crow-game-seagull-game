@@ -15,6 +15,12 @@
 import puppeteer from 'puppeteer';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
+// The level module is pure at import time, but three.js and the shape kit both
+// reach for a canvas, so give them somewhere to reach. We only want RULES.
+globalThis.document ??= { createElement: () => ({ width: 0, height: 0, getContext: () => ({}), style: {} }) };
+globalThis.window ??= globalThis;
+const { RULES } = await import('../src/world/level.js');
+
 const URL = process.argv[2] || 'http://localhost:5173/';
 const OUT = 'shots';
 mkdirSync(OUT, { recursive: true });
@@ -297,14 +303,15 @@ if (trade && trade.strayOnGround) errors.push('trade reward was left on the grou
  * luminance fell to 19/255 and its 5th percentile to 8. Nobody noticed until a
  * playtest, because nothing measured it.
  *
- * Floors are 48 (median) and 24 (5th percentile) over the lower 58% of the
- * frame, HUD hidden. docs/lighting-brief.html §1 proposed 55 and 35 before
- * anything was built; those were revised down after looking at frames that hit
- * 53 and 29 and are plainly navigable. Pushing the last few points would mean
- * more ambient, and more ambient is how a sunset turns into grey wash.
+ * Floors come from RULES.duskMedianFloor / duskShadowFloor, measured over the
+ * lower 58% of the frame with the HUD hidden. docs/lighting-brief.html §1
+ * proposed 55 and 35 before anything was built; those were revised down after
+ * looking at frames that hit 53 and 29 and are plainly navigable. Pushing the
+ * last few points would mean more ambient, and more ambient is how a sunset
+ * turns into grey wash.
  */
 if (hasHandle) {
-  const DUSK_FLOOR = { p50: 48, p05: 24 };
+  const DUSK_FLOOR = { p50: RULES.duskMedianFloor, p05: RULES.duskShadowFloor };
   await page.evaluate(() => {
     document.getElementById('hud').style.display = 'none';
     const badge = document.getElementById('testmode');
