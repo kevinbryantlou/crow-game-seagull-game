@@ -39,6 +39,33 @@ function stutter(s) {
 }
 const STUTTER_FOR = 0.30;
 
+/**
+ * PROTOTYPE — tier 2. Not a decision, not committed.
+ *
+ * The pool texture: one soft radial falloff, generated once into a canvas at
+ * boot and shared by every pool. Same technique as the pickup glint, which has
+ * shipped since the beginning — which is the point. It is the honest version of
+ * "pre-baked light textures": precomputed, no asset, no UVs, no per-light
+ * shader work.
+ */
+let _poolTex = null;
+function poolTexture() {
+  if (_poolTex) return _poolTex;
+  const S = 128;
+  const cvs = document.createElement('canvas');
+  cvs.width = cvs.height = S;
+  const c = cvs.getContext('2d');
+  const g = c.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+  g.addColorStop(0.00, 'rgba(255,238,196,0.95)');
+  g.addColorStop(0.30, 'rgba(242,207,116,0.42)');
+  g.addColorStop(0.62, 'rgba(224,179,72,0.13)');
+  g.addColorStop(1.00, 'rgba(224,179,72,0)');
+  c.fillStyle = g;
+  c.fillRect(0, 0, S, S);
+  _poolTex = new THREE.CanvasTexture(cvs);
+  return _poolTex;
+}
+
 export class NightLights {
   /** @param {number} trigger time-of-day at which the block starts coming on */
   constructor(trigger = 0.72) {
@@ -75,6 +102,43 @@ export class NightLights {
     return item;
   }
 
+  /**
+   * PROTOTYPE — tier 2. A pool of light on the paving.
+   *
+   * A flat additive quad, no depth write, unlit and unfogged: it is light, not
+   * geometry that light falls on. It sits at y=0.05 to clear the paving slabs
+   * at 0.012, and because the crow stands on top of it and writes depth, the
+   * bird stays a silhouette in the pool rather than being lit by it — which is
+   * the whole reason this technique survives "the crow is the darkest thing on
+   * screen" where a real point light would not.
+   */
+  addPool(parent, x, z, radius, opts = {}) {
+    const material = new THREE.MeshBasicMaterial({
+      map: poolTexture(),
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      fog: false,
+    });
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(radius * 2, radius * 2), material);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set(x, 0.05, z);
+    mesh.renderOrder = 2;
+    parent.add(mesh);
+
+    const item = {
+      material, pool: true,
+      peak: opts.peak ?? 0.34,
+      delay: opts.delay ?? 0,
+      warm: opts.warm ?? 2.4,
+      flicker: opts.flicker ?? false,
+      level: 0,
+    };
+    this.items.push(item);
+    return item;
+  }
+
   /** Level 0..1 for one light, `s` seconds after the block started coming on. */
   static levelAt(item, s) {
     const own = s - item.delay;
@@ -97,7 +161,8 @@ export class NightLights {
       const level = NightLights.levelAt(item, this.since);
       if (level === item.level) continue;
       item.level = level;
-      item.material.emissiveIntensity = level * item.peak;
+      if (item.pool) item.material.opacity = level * item.peak;
+      else item.material.emissiveIntensity = level * item.peak;
     }
   }
 }
