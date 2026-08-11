@@ -295,23 +295,79 @@ const audio = new Proxy({}, { get: () => () => {} });
   check('the rim is a wall at every heading — you go in over the top, not through',
     leaks.length === 0, `(walked straight in at ${leaks.length} heading(s): ${leaks.slice(0, 8).join(', ')})`);
 
-  const trapped = [];
-  for (let deg = 0; deg < 360; deg += 45) {
-    for (const r of [0, 2.0, 4.2]) {
-      const a = (deg * Math.PI) / 180;
-      const c = new Crow(stage);
-      c.pos.set(F.x + Math.cos(a) * r, F.floor, F.z + Math.sin(a) * r);
-      const wet = { move: { x: 0, y: 0 }, flap: true };
-      let out = false;
-      for (let i = 0; i < 60 * 8; i++) {
-        c.update(1 / 60, wet, world, audio);
-        if (c.pos.y > F.rim + 0.25) { out = true; break; }
+  /**
+   * Escaping has to work from an empty stamina bar, not just a full one.
+   *
+   * The first version of this check only ever started at full stamina, so it
+   * passed while the basin was still a trap in practice: stamina regenerated
+   * only while `grounded`, and buoyancy means a crow in the water never is.
+   * You arrived wet, spent what you had, and floated there.
+   *
+   * `mashing` is the panic case — a player who holds flap down on an empty bar
+   * rather than releasing it. If regen waits for the key to come up, that reads
+   * as the game being broken.
+   */
+  const escape = (startStamina, mashing) => {
+    const stuck = [];
+    for (let deg = 0; deg < 360; deg += 45) {
+      for (const r of [0, 2.0, 4.2]) {
+        const a = (deg * Math.PI) / 180;
+        const c = new Crow(stage);
+        c.pos.set(F.x + Math.cos(a) * r, F.floor, F.z + Math.sin(a) * r);
+        c.stamina = startStamina;
+        let out = false, holding = false;
+        for (let i = 0; i < 60 * 12; i++) {
+          // Not mashing: float until the bar looks worth spending, then hold
+          // until it is gone — the way a player watching the bar would.
+          if (!mashing) {
+            if (!holding && c.stamina > 0.6) holding = true;
+            else if (holding && c.stamina <= 0.02) holding = false;
+          }
+          c.update(1 / 60, { move: { x: 0, y: 0 }, flap: mashing || holding }, world, audio);
+          if (c.pos.y > F.rim + 0.25) { out = true; break; }
+        }
+        if (!out) stuck.push(`${deg}° r${r}`);
       }
-      if (!out) trapped.push(`${deg}° r${r}`);
     }
+    return stuck;
+  };
+
+  for (const [label, stamina, mashing] of [
+    ['on a full bar', 1.0, true],
+    ['on an empty bar', 0, false],
+    ['on an empty bar with the flap key held down', 0, true],
+  ]) {
+    const stuck = escape(stamina, mashing);
+    check(`a crow in the water can flap back out ${label}`,
+      stuck.length === 0, `(stuck at ${stuck.join(', ')})`);
   }
-  check('a crow in the water can always flap back out',
-    trapped.length === 0, `(stuck at ${trapped.join(', ')})`);
+
+  // Regen is the whole fix, so state the rate rather than just the outcome.
+  const floating = new Crow(stage);
+  floating.pos.set(F.x, F.floor, F.z);
+  floating.stamina = 0;
+  for (let i = 0; i < 60; i++) floating.update(1 / 60, { move: { x: 0, y: 0 }, flap: false }, world, audio);
+  check('a second of floating gets most of the bar back',
+    floating.stamina > 0.5, `(${floating.stamina.toFixed(2)} after 1s)`);
+
+  // The buoyancy bob is the fountain's whole character — a crow sitting in
+  // water rides it rather than resting on it. It falls out of the 26 m/s²
+  // buoyancy impulse fighting gravity, so any tuning pass on either could
+  // flatten it into a crow standing in a puddle without anyone noticing.
+  const bobber = new Crow(stage);
+  bobber.pos.set(F.x + 2, F.floor, F.z);
+  let lo = Infinity, hi = -Infinity, bobs = 0, prevVel = 0;
+  for (let i = 0; i < 60 * 6; i++) {
+    bobber.update(1 / 60, { move: { x: 0, y: 0 }, flap: false }, world, audio);
+    if (i < 60) continue;                       // let it settle
+    lo = Math.min(lo, bobber.pos.y);
+    hi = Math.max(hi, bobber.pos.y);
+    if (prevVel < 0 && bobber.vel.y >= 0) bobs++;
+    prevVel = bobber.vel.y;
+  }
+  check('a crow left in the water still bobs',
+    hi - lo > 0.15 && bobs >= 4,
+    `(${(hi - lo).toFixed(2)}m over ${bobs} bobs in 5s)`);
 }
 
 console.log('\nwhere people stand');

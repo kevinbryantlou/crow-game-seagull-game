@@ -136,6 +136,9 @@ const basin = !hasHandle ? null : await page.evaluate(async () => {
   const frame = () => new Promise((r) => requestAnimationFrame(r));
   g.crow.pos.set(f.x, f.floor, f.z);
   g.crow.vel.set(0, 0, 0);
+  // Empty bar, key held down: the state a player is actually in by the time
+  // they decide the fountain is broken.
+  g.crow.stamina = 0;
   await frame(); await frame();
   const wet = g.crow.inWater;
 
@@ -144,7 +147,7 @@ const basin = !hasHandle ? null : await page.evaluate(async () => {
     g.crow.update(1 / 60, { move: { x: 0, y: 0 }, flap: true }, g.world, g.audio);
     peak = Math.max(peak, g.crow.pos.y);
   }
-  const out = { wet, peak, rim: f.rim, escaped: peak > f.rim + 0.25 };
+  const out = { wet, peak, rim: f.rim, escaped: peak > f.rim + 0.25, stamina: g.crow.stamina };
 
   // And the wall holds: walk hard at it from outside, all the way round.
   let leaks = 0;

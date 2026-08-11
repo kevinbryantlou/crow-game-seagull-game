@@ -205,7 +205,17 @@ export class Crow {
       if (this.vel.y < -14) this.vel.y = -14;
     }
 
-    if (this.grounded) {
+    // Regen used to require `grounded`, and buoyancy means a crow in the
+    // fountain is never grounded — so the basin only ever took stamina. Opening
+    // the rim was not enough on its own: the wall was climbable, but nobody
+    // arrived at it with anything left to climb with.
+    //
+    // In water it regenerates even while flapping, unlike on the ground. The
+    // crow is heaving off a basin floor a foot beneath it, not hovering, and
+    // net +0.20/s means you cannot strand yourself in ankle-deep water whatever
+    // you do with the key — including holding it down on an empty bar, which is
+    // exactly what a player does when they think they are stuck.
+    if (this.grounded || this.inWater) {
       this.stamina = Math.min(STAMINA_MAX, this.stamina + STAMINA_REGEN * dt);
     }
 
