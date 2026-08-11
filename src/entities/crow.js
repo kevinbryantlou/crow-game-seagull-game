@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import { PAL } from '../render/palette.js';
 import { box, cyl, cone, ico, at, group, mat } from '../render/shapes.js';
+import { overlaps } from '../world/collide.js';
 
 const GRAVITY = 19.0;
 const WALK_SPEED = 3.4;
@@ -21,6 +22,11 @@ const STAMINA_MAX = 1.0;
 const STAMINA_DRAIN = 0.42;   // per second of flapping
 const STAMINA_REGEN = 0.62;   // per second on the ground
 const RADIUS = 0.34;
+// Wet wings still work, just badly. Flight used to be disabled outright in
+// water, which combined with the fountain's leaky rim to make the basin a trap:
+// in from three headings, out from none. A soaked crow hauls itself over a
+// 0.62m rim at this fraction of full power, and it costs the same stamina.
+const WATER_FLAP = 0.62;
 
 export class Crow {
   constructor(stage) {
@@ -178,9 +184,10 @@ export class Crow {
 
     // ── flap / glide ────────────────────────────────────────────────────────
     const wantFlap = canControl && input.flap;
-    if (wantFlap && this.stamina > 0.02 && !this.inWater) {
+    if (wantFlap && this.stamina > 0.02) {
+      const power = this.inWater ? WATER_FLAP : 1;
       this.stamina = Math.max(0, this.stamina - STAMINA_DRAIN * dt);
-      if (this.vel.y < FLAP_MAX_RISE) this.vel.y += FLAP_ACCEL * dt;
+      if (this.vel.y < FLAP_MAX_RISE * power) this.vel.y += FLAP_ACCEL * power * dt;
       this.grounded = false;
       this._flapping = 1;
       // One beat per wing cycle, not one per takeoff.
@@ -240,9 +247,10 @@ export class Crow {
     const cols = world.colliders;
 
     // X then Z then Y, resolved separately — cheap, stable, and good enough for
-    // a block made entirely of axis-aligned boxes.
+    // a block made almost entirely of axis-aligned boxes.
     p.x += this.vel.x * dt;
     for (const c of cols) {
+      if (c.shape === 'ring') continue;
       if (p.y >= c.top - 0.02 || p.y + 0.5 <= c.bottom) continue;
       if (p.x + RADIUS > c.minX && p.x - RADIUS < c.maxX && p.z + RADIUS > c.minZ && p.z - RADIUS < c.maxZ) {
         p.x = this.vel.x > 0 ? c.minX - RADIUS : c.maxX + RADIUS;
@@ -252,11 +260,33 @@ export class Crow {
 
     p.z += this.vel.z * dt;
     for (const c of cols) {
+      if (c.shape === 'ring') continue;
       if (p.y >= c.top - 0.02 || p.y + 0.5 <= c.bottom) continue;
       if (p.x + RADIUS > c.minX && p.x - RADIUS < c.maxX && p.z + RADIUS > c.minZ && p.z - RADIUS < c.maxZ) {
         p.z = this.vel.z > 0 ? c.minZ - RADIUS : c.maxZ + RADIUS;
         this.vel.z = 0;
       }
+    }
+
+    // Rings resolve radially, after both axes. A circular wall has no axis to
+    // slide along, and the ring of boxes that used to stand in for one is
+    // exactly how the fountain ended up with three doors and no exits.
+    for (const c of cols) {
+      if (c.shape !== 'ring') continue;
+      if (p.y >= c.top - 0.02 || p.y + 0.5 <= c.bottom) continue;
+      const dx = p.x - c.cx, dz = p.z - c.cz;
+      const d = Math.hypot(dx, dz);
+      if (d + RADIUS <= c.rInner || d - RADIUS >= c.rOuter) continue;
+      const s = d || 1e-6;
+      // Nearer face wins, so you are let out of the basin as readily as in.
+      const to = d < (c.rInner + c.rOuter) / 2 ? c.rInner - RADIUS : c.rOuter + RADIUS;
+      p.x = c.cx + (dx / s) * to;
+      p.z = c.cz + (dz / s) * to;
+      // Kill only the radial part of the velocity — you keep sliding round it.
+      const nx = dx / s, nz = dz / s;
+      const radial = this.vel.x * nx + this.vel.z * nz;
+      this.vel.x -= radial * nx;
+      this.vel.z -= radial * nz;
     }
 
     const prevY = p.y;
@@ -266,8 +296,7 @@ export class Crow {
     let floor = 0;
     for (const c of cols) {
       if (!c.perch) continue;
-      if (p.x + RADIUS * 0.7 > c.minX && p.x - RADIUS * 0.7 < c.maxX &&
-          p.z + RADIUS * 0.7 > c.minZ && p.z - RADIUS * 0.7 < c.maxZ) {
+      if (overlaps(c, p.x, p.z, RADIUS * 0.7)) {
         // Land only when falling onto it from above.
         if (prevY >= c.top - 0.06 && c.top > floor) floor = c.top;
         // Head bonk on an underside.

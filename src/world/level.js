@@ -49,6 +49,21 @@ export function buildLevel() {
     });
   };
 
+  /**
+   * A hollow circular wall — the fountain, and nothing else. `minX`…`maxZ` are
+   * the ring's bounding square, so code that only wants rough bounds still has
+   * them; anything that cares tests `shape === 'ring'`. See world/collide.js.
+   */
+  const ring = (cx, cz, rInner, rOuter, top, opts = {}) => {
+    colliders.push({
+      shape: 'ring', cx, cz, rInner, rOuter,
+      minX: cx - rOuter, maxX: cx + rOuter,
+      minZ: cz - rOuter, maxZ: cz + rOuter,
+      top, bottom: 0, perch: opts.perch !== false,
+      tag: opts.tag || null,
+    });
+  };
+
   // ── ground ────────────────────────────────────────────────────────────────
   const ground = plane(120, 90, PAL.paving, { receive: true });
   ground.position.y = 0;
@@ -160,13 +175,16 @@ export function buildLevel() {
     g.position.set(FOUNTAIN.x, 0, FOUNTAIN.z);
     root.add(g);
 
-    // The rim is a ring of solids so the crow can perch on it and hop in.
-    const N = 12;
-    for (let i = 0; i < N; i++) {
-      const a = (i / N) * Math.PI * 2;
-      solid(FOUNTAIN.x + Math.cos(a) * (FOUNTAIN.r - 0.28), FOUNTAIN.z + Math.sin(a) * (FOUNTAIN.r - 0.28),
-        1.6, 1.6, FOUNTAIN.rim, 0, { tag: 'fountain-rim' });
-    }
+    // The rim is one ring collider, matching the stone exactly, so the crow can
+    // perch on it and hop in.
+    //
+    // It used to be twelve 1.6m boxes laid round the circle, and that was the
+    // worst bug on the block: the boxes only met at their corners, so the basin
+    // was walk-in-able at three headings out of 180 — and since flapping was
+    // disabled in water, a crow that got in anywhere else could never get out.
+    // The boxes also reached to r=3.78, nearly a metre inside the stone they
+    // were standing in for. A circle costs one collider to test exactly.
+    ring(FOUNTAIN.x, FOUNTAIN.z, RI, R + 0.3, FOUNTAIN.rim, { tag: 'fountain-rim' });
     perches.push({ x: FOUNTAIN.x, y: FOUNTAIN.rim + 2.3, z: FOUNTAIN.z });
     g.userData.water = water;
     root.userData.fountainWater = water;
@@ -424,7 +442,10 @@ export function buildLevel() {
     root.add(g);
     solid(11, 7.5, 3.4, 1.8, 2.2);
     solid(11, 6.35, 3.8, 2.6, 3.13, 2.97);
-    perches.push({ x: 11, y: 3.13, z: 6.35 });
+    // The display counter, which had no collider at all. That omission is how
+    // the newsagent came to be standing inside his own magazine rack.
+    solid(11, 8.5, 3.0, 0.7, 1.40, 1.30);
+    perches.push({ x: 11, y: 3.13, z: 6.35 }, { x: 11, y: 1.40, z: 8.5 });
   }
 
   // Bins
@@ -575,7 +596,9 @@ function humanPlacements({ CART, CASE }) {
     {
       id: 'waiter', name: 'waiter', cloth: 0, skin: 1, hair: 0,
       pos: [-1, 0, 7.5], home: [-1, 0, 7.5],
-      patrol: [[-7.5, 7.0], [3.5, 4.5], [6.5, 9.0], [-1.0, 10.5]],
+      // (6.5, 9.0) was inside the café table at (6, 8.2) — harmless while
+      // people were ghosts, a place to stand and shove once they were not.
+      patrol: [[-7.5, 7.0], [3.5, 4.5], [7.4, 9.6], [-1.0, 10.5]],
       speed: 1.5, chaseSpeed: 4.3, viewDist: 9.5, viewCos: 0.35, guardRadius: 3.2, alertness: 1.0,
     },
     {
@@ -592,14 +615,24 @@ function humanPlacements({ CART, CASE }) {
     },
     {
       id: 'newsagent', name: 'newsagent', cloth: 4, skin: 3, hair: 3,
-      pos: [12.3, 0, 8.6], home: [12.3, 0, 8.6],
+      // At the end of his counter, not inside it. He used to stand at
+      // (12.3, 8.6), which is within the stand's body *and* its magazine rack,
+      // so from the camera he read as a head growing out of the shelf.
+      // Behind the stand is where a newsagent belongs, but the stand is 2.2
+      // tall and he is 1.75 — from a fixed 38° camera he would be gone.
+      pos: [13.5, 0, 8.0], home: [13.5, 0, 8.0],
       patrol: null, speed: 1.2, chaseSpeed: 3.6, viewDist: 8, viewCos: 0.3, guardRadius: 3.0, alertness: 0.9,
-      faces: [-0.5, -1],
+      faces: [-1, 0],
     },
     {
       id: 'phone', name: 'someone on their phone', cloth: 2, skin: 0, hair: 1,
       pos: [-10, 0, 12], home: [-10, 0, 12],
-      patrol: [[-24, 13], [-24, -1], [-9, -2], [6, 1], [14, 6], [2, 13]],
+      // A lap of the block that goes *round* the fountain. The old route ran
+      // due south down x=-24 and spent 15% of its length inside the basin,
+      // which is how you got people wading through the water. Collision now
+      // stops that anyway, but a route that walks into a wall every lap only
+      // trades one bad look for another.
+      patrol: [[-27, 12], [-29.5, 5], [-28, -6], [-17.5, -11], [-6, -12], [4, -6], [12, 1], [14, 7], [4.5, 11]],
       speed: 1.35, chaseSpeed: 3.2, viewDist: 3.0, viewCos: 0.8, guardRadius: 1.6, alertness: 0.25,
       oblivious: true,
     },

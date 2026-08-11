@@ -121,6 +121,55 @@ await look('06-newsstand', 11, 2.2, 10.5);
 await look('07-cart', 15, 2.0, -2.0);
 await look('08-nest', -12.5, 5.0, -6.5);
 await look('09-kid', -17.5, 0, 11.5);
+// The fountain is the one thing on the block that is not a box, and the only
+// collider with its own shape. Both sides of its wall get photographed.
+await look('09a-fountain-rim', -22, 0.62, 5.2);
+// Off the middle, or the pedestal stands in front of the bird.
+await look('09b-fountain-in', -19.6, 0.06, 1.6);
+
+// Functional check: the basin is a room with a door in the ceiling. It used to
+// be a lobster pot — the rim leaked at three headings and flight was disabled
+// in water, so a crow that got in could not get out. Fly out of it for real.
+const basin = !hasHandle ? null : await page.evaluate(async () => {
+  const g = window.__game;
+  const f = g.world.fountain;
+  const frame = () => new Promise((r) => requestAnimationFrame(r));
+  g.crow.pos.set(f.x, f.floor, f.z);
+  g.crow.vel.set(0, 0, 0);
+  await frame(); await frame();
+  const wet = g.crow.inWater;
+
+  let peak = -Infinity;
+  for (let i = 0; i < 240; i++) {
+    g.crow.update(1 / 60, { move: { x: 0, y: 0 }, flap: true }, g.world, g.audio);
+    peak = Math.max(peak, g.crow.pos.y);
+  }
+  const out = { wet, peak, rim: f.rim, escaped: peak > f.rim + 0.25 };
+
+  // And the wall holds: walk hard at it from outside, all the way round.
+  let leaks = 0;
+  for (let deg = 0; deg < 360; deg += 10) {
+    const a = (deg * Math.PI) / 180;
+    g.crow.pos.set(f.x + Math.cos(a) * 8, 0, f.z + Math.sin(a) * 8);
+    g.crow.vel.set(0, 0, 0);
+    g.crow.inWater = false;
+    const move = { x: -Math.cos(a), y: Math.sin(a) };
+    for (let i = 0; i < 400 && !g.crow.inWater; i++) {
+      g.crow.update(1 / 60, { move, flap: false }, g.world, g.audio);
+    }
+    if (g.crow.inWater) leaks++;
+  }
+  out.leaks = leaks;
+  g.crow.pos.set(-24, 0, 6);
+  g.crow.vel.set(0, 0, 0);
+  return out;
+});
+if (basin) console.log('  fountain:', JSON.stringify(basin));
+if (basin && !basin.wet) errors.push('crow on the basin floor is not in the water');
+if (basin && !basin.escaped) {
+  errors.push(`crow cannot flap out of the fountain (peak y ${basin.peak.toFixed(2)}, rim ${basin.rim})`);
+}
+if (basin && basin.leaks) errors.push(`rim leaks: walked into the basin from ${basin.leaks} heading(s)`);
 
 // Functional check: the nest pointer appears only while carrying unbanked
 // money, and retires for good after the first stash.

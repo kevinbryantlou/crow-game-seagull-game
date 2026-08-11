@@ -62,6 +62,7 @@ src/
   render/shapes.js     primitive kit + three-tone face tinting
   render/stage.js      renderer, fixed camera, sunset light rig, occlusion fade
   world/level.js       the authored block: geometry, colliders, placements, RULES
+  world/collide.js     the collider format, and going round things (pure, unit tested)
   world/pickups.js     the money
   entities/crow.js     locomotion, flight, procedural rig
   entities/human.js    three-state brain, and pigeons
@@ -84,6 +85,17 @@ That's why `words.js` and `rank.js` are separate from `hud.js`.
   `Object.assign` — assigning to a getter-only property throws in strict mode.
 - **Touch detection must happen up front.** `#touch` is `display:none` until
   `body.touch` is set, so waiting for a touch event to set it is circular.
+- **A circle approximated by boxes is a lie with gaps in it.** The fountain rim
+  was twelve 1.6m boxes on a circle; they met only at their corners, so the crow
+  walked in at three headings and nowhere else, and they reached a metre further
+  into the basin than the stone did. Rings are now a real collider shape
+  (`world/collide.js`), resolved radially. Don't add a second one lightly, but
+  don't fake the next one either.
+- **Pushing a walker out of a wall is not pathing.** It puts them back exactly
+  where they were, so anyone walking straight at a wall deadlocks there forever.
+  Steps have to be *steered* around obstacles, and the chosen side has to be held
+  until the straight line clears — re-deciding each frame parks the walker at the
+  point of the wall nearest its target, shuffling.
 - **Raycasting headless needs `updateMatrixWorld(true)`** first, or every hit is
   computed against an identity transform and the results are silently wrong.
 - **The camera never rotates**, so occlusion is a fixed property of position and
@@ -123,6 +135,14 @@ In `RULES` in `world/level.js`, enforced by `smoke.mjs`:
 - **No pickup buried in solid geometry**, and none hidden from the fixed camera.
 - Anything takeable **carries a glint**. It is the game's only "you can take this"
   signal — including the hot dog, which is not money but unlocks Cart Corner.
+- **Every volume the crow can get into, it can get out of.** Asserted both ways
+  for the fountain: the rim is a wall at all 180 headings, and from 24 points on
+  the basin floor the crow can always flap out.
+- **Nobody stands inside anything, and no route walks through anything.** No
+  human spawn or patrol waypoint inside a solid, and no patrol leg across the
+  fountain.
+- **A chase can get round every large solid.** Shooing steers at the crow and the
+  crow can stand anywhere, so this cannot be authored — it has to be pathing.
 
 ## Art direction
 
@@ -150,10 +170,17 @@ pair — same deadpan register, no repeated words between them.
 
 ## Test hooks
 
-`TEST_TRADE_PAYOUT` in `main.js` overrides the kid's trade payout so one trade
-clears the goal. `null` in normal play. While set it shows a red TEST MODE badge,
-prints a banner in `smoke`, and logs a startup warning — three tripwires so it
-cannot ship by accident. Leave all three in place.
+Two constants at the top of `main.js`, both `null` in normal play:
+
+- `TEST_TRADE_PAYOUT` overrides the kid's trade payout so one trade clears the goal.
+- `TEST_SESSION_SECONDS` shortens the day. Everything about sundown — the light
+  rig, the sun dial, the out-of-time ending — runs off `elapsed / SESSION_SECONDS`,
+  so `60` gives a full dusk in a minute.
+
+Either one shows a red TEST MODE badge, prints a banner in `smoke`, and logs a
+startup warning — three tripwires so neither can ship by accident. The smoke
+banner matches any `TEST_*` constant, so a new hook is covered automatically.
+Leave all three tripwires in place.
 
 ## Conventions
 

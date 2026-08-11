@@ -33,6 +33,7 @@ globalThis.window = globalThis;
 // Node 26 ships a read-only `navigator`; nothing under test reads it, so leave it.
 
 const { buildLevel, RULES } = await import('../src/world/level.js');
+const { overlaps, blocksWalker, WALKER_RADIUS } = await import('../src/world/collide.js');
 const { Crow } = await import('../src/entities/crow.js');
 const { Human, Pigeon } = await import('../src/entities/human.js');
 const { Pickup } = await import('../src/world/pickups.js');
@@ -144,7 +145,7 @@ console.log('\nlevel-design rules');
 // once, and it was only caught because a human happened to fly over it.
 const F = world.fountain;
 const inFountain = world.colliders.filter((c) => {
-  if (c.tag === 'fountain-rim') return false;
+  if (c.shape === 'ring') return false;
   const cx = Math.max(c.minX, Math.min(F.x, c.maxX));
   const cz = Math.max(c.minZ, Math.min(F.z, c.maxZ));
   return Math.hypot(cx - F.x, cz - F.z) < F.r - 0.8;
@@ -188,13 +189,13 @@ for (let i = 0; i < pickups.length; i++) {
 check('no two distinct pickups sit within one beak-length', tooClose.length === 0,
   `(${tooClose.join('; ')})`);
 
-// A pickup inside a collider's blocking volume cannot be reached at all.
-const buried = pickups.filter((p) => world.colliders.some((c) => {
-  if (c.tag === 'fountain-rim') return false;
-  return p.home.x > c.minX && p.home.x < c.maxX
-      && p.home.z > c.minZ && p.home.z < c.maxZ
-      && p.home.y > c.bottom + 0.02 && p.home.y < c.top - 0.02;
-}));
+// A pickup inside a collider's blocking volume cannot be reached at all. The
+// fountain rim used to be exempt from this, because the ring of boxes standing
+// in for it swallowed a wishing coin. The real ring does not, so the exemption
+// is gone and the coins are checked like everything else.
+const buried = pickups.filter((p) => world.colliders.some((c) =>
+  overlaps(c, p.home.x, p.home.z)
+    && p.home.y > c.bottom + 0.02 && p.home.y < c.top - 0.02));
 check('no pickup is buried inside solid geometry', buried.length === 0,
   `(${buried.map((p) => p.label).join(', ')})`);
 
@@ -267,16 +268,139 @@ const crow = new Crow(stage);
 check('crow constructs', !!crow.root);
 check('beak resolves to a world point', finite(crow.beakWorld));
 
-console.log('\nsimulating');
+console.log('\nthe fountain');
 const audio = new Proxy({}, { get: () => () => {} });
+
+/**
+ * The basin is a room with one door in the ceiling, and it has to behave like
+ * one from every angle.
+ *
+ * It used to behave like a lobster pot. The rim was twelve boxes laid round a
+ * circle, which met only at their corners, so the crow could walk in at three
+ * headings out of 180 — and because flapping was disabled in water, a crow that
+ * got in by any other route could never get out again. Both halves are asserted
+ * here: the wall is continuous, and the sky is always open.
+ */
+{
+  const dry = { move: { x: 0, y: 0 }, flap: false };
+  const leaks = [];
+  for (let deg = 0; deg < 360; deg += 2) {
+    const a = (deg * Math.PI) / 180;
+    const c = new Crow(stage);
+    c.pos.set(F.x + Math.cos(a) * 8, 0, F.z + Math.sin(a) * 8);
+    dry.move.x = -Math.cos(a); dry.move.y = Math.sin(a);   // straight at the middle
+    for (let i = 0; i < 60 * 8 && !c.inWater; i++) c.update(1 / 60, dry, world, audio);
+    if (c.inWater) leaks.push(deg);
+  }
+  check('the rim is a wall at every heading — you go in over the top, not through',
+    leaks.length === 0, `(walked straight in at ${leaks.length} heading(s): ${leaks.slice(0, 8).join(', ')})`);
+
+  const trapped = [];
+  for (let deg = 0; deg < 360; deg += 45) {
+    for (const r of [0, 2.0, 4.2]) {
+      const a = (deg * Math.PI) / 180;
+      const c = new Crow(stage);
+      c.pos.set(F.x + Math.cos(a) * r, F.floor, F.z + Math.sin(a) * r);
+      const wet = { move: { x: 0, y: 0 }, flap: true };
+      let out = false;
+      for (let i = 0; i < 60 * 8; i++) {
+        c.update(1 / 60, wet, world, audio);
+        if (c.pos.y > F.rim + 0.25) { out = true; break; }
+      }
+      if (!out) trapped.push(`${deg}° r${r}`);
+    }
+  }
+  check('a crow in the water can always flap back out',
+    trapped.length === 0, `(stuck at ${trapped.join(', ')})`);
+}
+
+console.log('\nwhere people stand');
+
+// A person standing inside a magazine rack is not a rendering bug, it is a
+// placement bug, and it shipped. Nobody spawns inside anything solid, and no
+// patrol waypoint sits inside anything either.
+const solidToWalkers = world.colliders.filter((c) => blocksWalker(c));
+const inside = (x, z) => solidToWalkers.filter((c) => overlaps(c, x, z, WALKER_RADIUS));
+
+const embedded = world.humans
+  .filter((h) => inside(h.pos[0], h.pos[2]).length)
+  .map((h) => `${h.id} at (${h.pos[0]}, ${h.pos[2]})`);
+check('no one spawns inside solid geometry', embedded.length === 0, `(${embedded.join('; ')})`);
+
+const badWaypoints = [];
+for (const h of world.humans) {
+  for (const [x, z] of h.patrol || []) {
+    if (inside(x, z).length) badWaypoints.push(`${h.id} → (${x}, ${z})`);
+  }
+}
+check('no patrol waypoint sits inside solid geometry', badWaypoints.length === 0,
+  `(${badWaypoints.join('; ')})`);
+
+// Collision stops people wading, but a route that walks into the fountain every
+// lap only trades a person in the water for a person grinding along a wall.
+const wading = [];
+for (const h of world.humans) {
+  if (!h.patrol) continue;
+  for (let i = 0; i < h.patrol.length; i++) {
+    const [ax, az] = h.patrol[i];
+    const [bx, bz] = h.patrol[(i + 1) % h.patrol.length];
+    for (let t = 0; t <= 1; t += 0.004) {
+      const d = Math.hypot(ax + (bx - ax) * t - F.x, az + (bz - az) * t - F.z);
+      if (d < F.r + WALKER_RADIUS) { wading.push(`${h.id} leg ${i}`); break; }
+    }
+  }
+}
+check('no patrol route walks through the fountain', wading.length === 0,
+  `(${[...new Set(wading)].join('; ')})`);
+
+/**
+ * Chases cannot be authored around anything: SHOOING steers straight at the
+ * crow, and the crow can stand behind whatever it likes. So a walker has to be
+ * able to get to a point on the far side of every large solid on the block.
+ *
+ * Making people solid without this deadlocked two of them immediately — pushing
+ * someone out of a wall they are walking into just puts them back where they
+ * were, forever. The waiter spent a whole run pressed against a café table.
+ */
+{
+  const stranded = [];
+  for (const [name, from, to] of [
+    ['the fountain, north to south', [F.x, 0, F.z - 9], [F.x, F.z + 9]],
+    ['the fountain, corner to corner', [F.x - 7, 0, F.z - 7], [F.x + 7, F.z + 7]],
+    ['the memorial', [world.nest.x, 0, world.nest.z - 5.5], [world.nest.x, world.nest.z + 5.5]],
+    ['the newsstand', [11, 0, 11], [11, 4]],
+    ['the café tables', [-8, 0, 2], [8, 10]],
+    ['the hot dog cart', [world.cart.x, 0, world.cart.z - 5], [world.cart.x, world.cart.z + 5]],
+  ]) {
+    const walker = new Human({
+      id: 'probe', cloth: 0, skin: 0, hair: 0, pos: from, home: from, patrol: null,
+      speed: 0, chaseSpeed: 0, viewDist: 0, viewCos: 1, guardRadius: 0, alertness: 0,
+    });
+    walker._cols = world.colliders;
+    const target = new THREE.Vector3(to[0], 0, to[1]);
+    let arrived = false;
+    for (let i = 0; i < 60 * 20 && !arrived; i++) {
+      walker._moveToward(target, 1 / 60, 4.0);
+      arrived = Math.hypot(walker.pos.x - to[0], walker.pos.z - to[1]) < 0.8;
+    }
+    if (!arrived) stranded.push(`${name} (gave up at ${walker.pos.x.toFixed(1)}, ${walker.pos.z.toFixed(1)})`);
+  }
+  check('a chase can get round every large solid on the block',
+    stranded.length === 0, `(${stranded.join('; ')})`);
+}
+
+console.log('\nsimulating');
 const game = {
-  audio, pickups, elapsed: 0,
+  audio, pickups, elapsed: 0, world,
   onShooed: () => { game.shooCount = (game.shooCount || 0) + 1; },
 };
 
 const input = { move: { x: 0, y: 0 }, flap: false };
 const STEP = 1 / 60;
 let minY = Infinity, maxY = -Infinity, escaped = false;
+// Solid people can wedge where ghosts could not, so count waypoints as we go.
+const reached = new Map();
+const lastIndex = new Map(humans.map((h) => [h.id, h.patrolIndex]));
 
 for (let i = 0; i < 60 * 60; i++) {
   // Wander: change direction periodically, flap in bursts, so we exercise
@@ -291,7 +415,12 @@ for (let i = 0; i < 60 * 60; i++) {
   crow.update(STEP, input, world, audio);
   for (const p of pickups) p.update(STEP, world, null);
   for (const h of humans) h.update(STEP, crow, game);
-  for (const p of pigeons) p.update(STEP, null, crow);
+  for (const p of pigeons) p.update(STEP, null, crow, world);
+  for (const h of humans) {
+    if (!h.patrol || h.patrolIndex === lastIndex.get(h.id)) continue;
+    lastIndex.set(h.id, h.patrolIndex);
+    reached.set(h.id, (reached.get(h.id) || 0) + 1);
+  }
 
   if (!finite(crow.pos) || !finite(crow.vel)) { escaped = true; break; }
   minY = Math.min(minY, crow.pos.y);
@@ -308,6 +437,22 @@ check('crow stayed inside the block',
 check('humans stayed finite', humans.every((h) => finite(h.pos)));
 check('humans stayed near the block', humans.every((h) => Math.abs(h.pos.x) < 40 && Math.abs(h.pos.z) < 25));
 
+// Solid people can get wedged where ghosts could not, so the sim has to prove
+// they did not: nobody ends the minute inside anything, and everyone with a
+// route is still walking it.
+const stuckIn = humans
+  .filter((h) => inside(h.pos.x, h.pos.z).length)
+  .map((h) => `${h.id} at (${h.pos.x.toFixed(1)}, ${h.pos.z.toFixed(1)})`);
+check('no one ended up inside solid geometry', stuckIn.length === 0, `(${stuckIn.join('; ')})`);
+
+const stalled = humans.filter((h) => h.patrol && (reached.get(h.id) || 0) < 2);
+check('everyone with a route got round at least two waypoints in the minute',
+  stalled.length === 0,
+  `(${humans.filter((h) => h.patrol).map((h) => `${h.id} ${reached.get(h.id) || 0}`).join(', ')})`);
+
+const paddling = pigeons.filter((p) => Math.hypot(p.pos.x - F.x, p.pos.z - F.z) < F.r);
+check('no pigeon is standing in the fountain', paddling.length === 0, `(${paddling.length})`);
+
 console.log('\ncarry / bank');
 const coin = pickups.find((p) => p.kind === 'quarter');
 coin.setCarried(crow.grip);
@@ -320,10 +465,11 @@ check('banked item is marked taken', coin.taken === true);
 
 // Loud warning if a temporary test cheat is still wired in.
 const mainSrc = await import('node:fs').then((fs) => fs.readFileSync('src/main.js', 'utf8'));
-const cheat = mainSrc.match(/const TEST_TRADE_PAYOUT = ([^;]+);/);
-if (cheat && cheat[1].trim() !== 'null') {
+const active = [...mainSrc.matchAll(/const (TEST_\w+) = ([^;]+);/g)]
+  .filter((m) => m[2].trim() !== 'null');
+if (active.length) {
   console.log(`\n  ${'!'.repeat(60)}`);
-  console.log(`  TEST CHEAT ACTIVE — TEST_TRADE_PAYOUT = ${cheat[1].trim()}`);
+  for (const m of active) console.log(`  TEST CHEAT ACTIVE — ${m[1]} = ${m[2].trim()}`);
   console.log('  Set it back to null in src/main.js before shipping.');
   console.log(`  ${'!'.repeat(60)}`);
 }

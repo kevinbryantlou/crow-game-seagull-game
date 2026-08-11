@@ -644,6 +644,22 @@
           volume the player is meant to move through.</li>
         <li><strong>No pickup sits inside solid geometry.</strong> An object embedded in a
           collider cannot be reached at all, and nothing on screen says so.</li>
+        <li><strong>Every place the crow can get into, it can get out of.</strong> The
+          fountain basin failed this for the whole of its first life. Its rim was a circle
+          approximated by twelve boxes that met only at their corners, so the crow could
+          walk in from three headings out of a hundred and eighty — and because flapping
+          was disabled in water, a crow that got in by any other route could never leave.
+          Both halves are now asserted: the wall is continuous at every heading, and from
+          twenty-four starting points on the basin floor the crow can always flap out.</li>
+        <li><strong>Nobody stands inside anything, and no route walks through anything.</strong>
+          People are solid against the block. Nobody spawns embedded in geometry, no patrol
+          waypoint sits inside a solid, and no patrol route crosses the fountain. The
+          newsagent stood inside his own magazine rack for weeks, which reads from the fixed
+          camera as a head growing out of a shelf.</li>
+        <li><strong>A chase can get round every large solid.</strong> Shooing steers
+          straight at the crow, and the crow can stand behind whatever it likes, so no route
+          authoring can cover this. Pushing a walker out of a wall they are walking into
+          just puts them back where they were: they have to be able to go <em>around</em>.</li>
       </ul>
 
       <div class="note">

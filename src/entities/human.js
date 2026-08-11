@@ -11,6 +11,10 @@
 import * as THREE from 'three';
 import { PAL } from '../render/palette.js';
 import { box, cyl, ico, at, mat } from '../render/shapes.js';
+import {
+  resolveWalk, stepAround,
+  WALKER_RADIUS, PIGEON_RADIUS, PIGEON_HEIGHT, PIGEON_STEP_OVER,
+} from '../world/collide.js';
 
 const CALM = 'calm', SUSPICIOUS = 'suspicious', SHOOING = 'shooing',
       RETURNING = 'returning', DISTRACTED = 'distracted';
@@ -30,6 +34,8 @@ export class Human {
     this.distractPos = null;
     this._walk = 0;
     this._suspicion = 0;
+    this._cols = [];         // the block's colliders, handed over each update
+    this._skirt = 0;         // which way round the last obstacle we went
     this.buskerEyes = 0;     // busker plays with eyes shut, opens between songs
 
     this.root = new THREE.Group();
@@ -158,6 +164,7 @@ export class Human {
 
   update(dt, crow, game) {
     const audio = game.audio;
+    this._cols = game.world.colliders;
     this.stateT += dt;
     if (this.cooldown > 0) this.cooldown -= dt;
 
@@ -243,6 +250,12 @@ export class Human {
       this._face(this.lookAt, dt, 5);
     }
 
+    // People are solid against the block, in every state. Without this a chase
+    // walked straight through the fountain, the café tables and the newsstand —
+    // and no amount of route authoring fixes it, because SHOOING steers at the
+    // crow and the crow can stand anywhere.
+    resolveWalk(game.world.colliders, this.pos, WALKER_RADIUS);
+
     const speed = this._lastSpeed || 0;
     this._animate(dt, speed);
     this.root.position.copy(this.pos);
@@ -319,13 +332,14 @@ export class Human {
 
   _moveToward(target, dt, speed) {
     if (!target || speed <= 0) { this._lastSpeed = 0; return; }
-    const dx = target.x - this.pos.x, dz = target.z - this.pos.z;
-    const d = Math.hypot(dx, dz);
+    const d = Math.hypot(target.x - this.pos.x, target.z - this.pos.z);
     if (d < 0.05) { this._lastSpeed = 0; return; }
     const step = Math.min(d, speed * dt);
-    this.pos.x += (dx / d) * step;
-    this.pos.z += (dz / d) * step;
-    this._lastSpeed = speed;
+    const side = stepAround(this._cols, this.pos, target.x, target.z, step, WALKER_RADIUS, this._skirt);
+    // Remember which way round we went, so the next frame commits to the same
+    // side of the obstacle instead of re-deciding from scratch.
+    this._skirt = side ?? 0;
+    this._lastSpeed = side === null ? 0 : speed;
   }
 
   _animate(dt, speed) {
@@ -398,7 +412,7 @@ export class Pigeon {
     this.root.position.copy(this.pos);
   }
 
-  update(dt, food, crow) {
+  update(dt, food, crow, world) {
     // Food beats everything; a nearby crow scatters them.
     const scared = Math.hypot(crow.pos.x - this.pos.x, crow.pos.z - this.pos.z) < 1.6 && crow.pos.y < 1.2;
 
@@ -427,8 +441,15 @@ export class Pigeon {
     const speed = scared ? 3.4 : this.mobbing ? 1.9 : 0.85;
     if (d > 0.18) {
       const step = Math.min(d, speed * dt);
-      this.pos.x += (dx / d) * step;
-      this.pos.z += (dz / d) * step;
+      // Ankle height, so a pigeon shelters under a café table but is still
+      // turned back by its pedestal — and by the fountain it used to paddle in.
+      if (world) {
+        this._skirt = stepAround(world.colliders, this.pos, this.target.x, this.target.z,
+          step, PIGEON_RADIUS, this._skirt, PIGEON_HEIGHT, PIGEON_STEP_OVER) ?? 0;
+      } else {
+        this.pos.x += (dx / d) * step;
+        this.pos.z += (dz / d) * step;
+      }
       const want = Math.atan2(-dz, dx);
       let a = want - this.heading;
       while (a > Math.PI) a -= Math.PI * 2;
@@ -440,6 +461,8 @@ export class Pigeon {
       this._walk += dt * 1.5;
       this.root.position.y = 0;
     }
+
+    if (world) resolveWalk(world.colliders, this.pos, PIGEON_RADIUS, PIGEON_HEIGHT, PIGEON_STEP_OVER);
 
     this.root.position.x = this.pos.x;
     this.root.position.z = this.pos.z;

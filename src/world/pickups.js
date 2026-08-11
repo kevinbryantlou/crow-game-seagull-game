@@ -9,6 +9,7 @@
 import * as THREE from 'three';
 import { PAL } from '../render/palette.js';
 import { box, cyl, ico, at, group, mat } from '../render/shapes.js';
+import { overlaps } from './collide.js';
 
 export const KIND_LABEL = {
   penny: 'PENNY', nickel: 'NICKEL', dime: 'DIME', quarter: 'QUARTER',
@@ -207,7 +208,7 @@ export class Pickup {
       let floor = 0;
       for (const c of world.colliders) {
         if (!c.perch) continue;
-        if (this.pos.x > c.minX && this.pos.x < c.maxX && this.pos.z > c.minZ && this.pos.z < c.maxZ) {
+        if (overlaps(c, this.pos.x, this.pos.z)) {
           if (this.pos.y >= c.top - 0.2 && c.top > floor) floor = c.top;
         }
       }

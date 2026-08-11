@@ -18,7 +18,6 @@ import { Pickup } from './world/pickups.js';
 import { PAL } from './render/palette.js';
 
 const GOAL = 20.00;
-const SESSION_SECONDS = 18 * 60;
 const STEP = 1 / 60;
 const REACH = 1.15;
 
@@ -30,6 +29,14 @@ const _nestWorld = new THREE.Vector3();
 // shows a TEST MODE badge, `npm run smoke` prints a banner and startup logs a
 // warning, so it cannot be shipped by accident.
 const TEST_TRADE_PAYOUT = null;
+
+// Test hook: shorten the day. The whole light rig, the sun dial and the
+// out-of-time ending are all driven by elapsed/SESSION_SECONDS, so setting this
+// to 60 runs a full dawn-to-dusk in a minute. Null means the real 18 minutes.
+// Carries the same three tripwires as the payout cheat above.
+const TEST_SESSION_SECONDS = null;
+
+const SESSION_SECONDS = TEST_SESSION_SECONDS ?? 18 * 60;
 
 class Game {
   constructor() {
@@ -91,11 +98,14 @@ class Game {
     this.hud.setTasks(this.tasks);
     this.hud.setMoney(0);
 
-    if (TEST_TRADE_PAYOUT != null) {
+    const cheats = [];
+    if (TEST_TRADE_PAYOUT != null) cheats.push(`trade pays $${TEST_TRADE_PAYOUT.toFixed(2)}`);
+    if (TEST_SESSION_SECONDS != null) cheats.push(`day lasts ${TEST_SESSION_SECONDS}s`);
+    if (cheats.length) {
       const badge = document.getElementById('testmode');
-      badge.textContent = `Test mode · trade pays $${TEST_TRADE_PAYOUT.toFixed(2)}`;
+      badge.textContent = `Test mode · ${cheats.join(' · ')}`;
       badge.hidden = false;
-      console.warn(`[Small Change] TEST CHEAT ACTIVE: trade pays $${TEST_TRADE_PAYOUT}`);
+      console.warn(`[Small Change] TEST CHEAT ACTIVE: ${cheats.join('; ')}`);
     }
 
     this._bindUi();
@@ -366,7 +376,7 @@ class Game {
 
     const food = (this.foodUntil && this.elapsed < this.foodUntil) ? this.foodPos : null;
     for (const h of this.humans) h.update(dt, this.crow, this);
-    for (const p of this.pigeons) p.update(dt, food, this.crow);
+    for (const p of this.pigeons) p.update(dt, food, this.crow, this.world);
 
     // Tasks that complete by observation rather than by a discrete action.
     if (!this.tasks[0].done && this.crow.inWater) this._tick('dive');
