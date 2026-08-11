@@ -48,22 +48,57 @@ const STUTTER_FOR = 0.30;
  * "pre-baked light textures": precomputed, no asset, no UVs, no per-light
  * shader work.
  */
-let _poolTex = null;
-function poolTexture() {
-  if (_poolTex) return _poolTex;
+/**
+ * Two falloff profiles, because a lamppost and a stall are not the same light.
+ *
+ * Colour first: additive blending raises all three channels, so a warm *white*
+ * core can only ever trend grey. The first pass used rgba(255,238,196) — blue at
+ * 77% of red — and measured R−B of +2 inside the pool against +3 on bare paving:
+ * 40% brighter and not one bit warmer, with saturation *dropping* from 32% to
+ * 26%. Sodium wants blue nearer 30% of red, and a lower alpha, so the light adds
+ * hue instead of washing it out.
+ *
+ * Then shape. A bulb 4.6 m up a pole is a point source: hot core, long falloff.
+ * A bulb under a stall canopy is an area source a metre wide, and giving it the
+ * lamppost's spike is what made the stands read as cheap — a bright dot with a
+ * halo rather than a lit counter. The stall profile is a plateau: nearly flat
+ * out to 45% of the radius, then a soft shoulder.
+ */
+const PROFILES = {
+  lamp: [
+    [0.00, '255,200,110', 0.50],
+    [0.32, '246,178,84', 0.36],
+    [0.68, '220,150,58', 0.13],
+    [1.00, '205,138,52', 0],
+  ],
+  stall: [
+    [0.00, '255,204,124', 0.34],
+    [0.45, '250,192,106', 0.30],
+    [0.74, '226,164,76', 0.12],
+    [1.00, '210,150,66', 0],
+  ],
+};
+
+const _poolTex = {};
+function poolTexture(profile = 'lamp') {
+  if (_poolTex[profile]) return _poolTex[profile];
   const S = 128;
   const cvs = document.createElement('canvas');
   cvs.width = cvs.height = S;
   const c = cvs.getContext('2d');
   const g = c.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
-  g.addColorStop(0.00, 'rgba(255,238,196,0.95)');
-  g.addColorStop(0.30, 'rgba(242,207,116,0.42)');
-  g.addColorStop(0.62, 'rgba(224,179,72,0.13)');
-  g.addColorStop(1.00, 'rgba(224,179,72,0)');
+  for (const [stop, rgb, a] of PROFILES[profile]) g.addColorStop(stop, `rgba(${rgb},${a})`);
   c.fillStyle = g;
   c.fillRect(0, 0, S, S);
-  _poolTex = new THREE.CanvasTexture(cvs);
-  return _poolTex;
+  const tex = new THREE.CanvasTexture(cvs);
+  // Without this the gradient is treated as linear data while the renderer
+  // outputs sRGB, so an amber authored as (255,206,120) reaches the screen as
+  // roughly (255,234,183) — a near-white cream. That, not the hex values, is
+  // why the first pass measured a pool 40% brighter and 0% warmer, and no
+  // amount of retinting the stops would have fixed it.
+  tex.colorSpace = THREE.SRGBColorSpace;
+  _poolTex[profile] = tex;
+  return tex;
 }
 
 export class NightLights {
@@ -114,7 +149,7 @@ export class NightLights {
    */
   addPool(parent, x, z, radius, opts = {}) {
     const material = new THREE.MeshBasicMaterial({
-      map: poolTexture(),
+      map: poolTexture(opts.profile ?? 'lamp'),
       transparent: true,
       opacity: 0,
       depthWrite: false,
