@@ -418,9 +418,15 @@ console.log('\nlights at dusk');
   const { mat } = await import('../src/render/shapes.js');
   const night = world.nightLights;
 
+  // A pool drives `opacity` on a MeshBasicMaterial; an emissive source drives
+  // `emissiveIntensity`. Everything that asks "is it off?" has to read whichever
+  // one this light actually uses.
+  const output = (i) => (i.pool ? i.material.opacity : i.material.emissiveIntensity);
+  const pools = night.items.filter((i) => i.pool);
+
   check('the block registers night lights', night.items.length >= 8, `(${night.items.length})`);
-  check('nothing is emitting during the day',
-    night.items.every((i) => i.material.emissiveIntensity === 0));
+  check('the block registers ground pools', pools.length >= 6, `(${pools.length})`);
+  check('nothing is emitting during the day', night.items.every((i) => output(i) === 0));
 
   /**
    * The cache trap, asserted. `shapes.mat()` hands the same material to every
@@ -441,8 +447,7 @@ console.log('\nlights at dusk');
 
   // Before the trigger nothing is on, however long the frame.
   night.update(0.5, 10);
-  check('nothing comes on before the trigger',
-    night.items.every((i) => i.material.emissiveIntensity === 0));
+  check('nothing comes on before the trigger', night.items.every((i) => output(i) === 0));
 
   // A lamp that flickers must actually flicker: bright, dark, bright.
   const lamp = night.items.find((i) => i.flicker && i.delay === 0);
@@ -454,7 +459,7 @@ console.log('\nlights at dusk');
   // And everything reaches full, in order, within a sensible wall-clock time.
   const slowest = Math.max(...night.items.map((i) => i.delay + i.warm));
   night.update(0.99, slowest + 1.5);
-  const short = night.items.filter((i) => i.material.emissiveIntensity < i.peak - 1e-6);
+  const short = night.items.filter((i) => output(i) < i.peak - 1e-6);
   check(`every light reaches full by ${(slowest + 1.5).toFixed(1)}s after sundown`,
     short.length === 0, `(${short.length} still ramping)`);
 
@@ -462,7 +467,30 @@ console.log('\nlights at dusk');
   // lit in daylight — which is exactly what a debug session or a replay does.
   night.update(0.1, 0.016);
   check('winding the clock back turns the block off again',
-    night.items.every((i) => i.material.emissiveIntensity === 0));
+    night.items.every((i) => output(i) === 0));
+
+  /**
+   * The bug that cost a whole round of tuning. A CanvasTexture defaults to
+   * NoColorSpace, so three.js reads the gradient as linear data while the
+   * renderer outputs sRGB — an amber authored as (255,206,120) reaches the
+   * screen as roughly (255,234,183), a near-white cream. It measured as a pool
+   * 40% brighter and 0% warmer, and no amount of retinting the stops would have
+   * fixed it. Asserted because it is invisible in code review and only shows up
+   * as "the light looks a bit washed out".
+   */
+  check('pool textures are tagged sRGB, not left linear',
+    pools.every((i) => i.material.map && i.material.map.colorSpace === THREE.SRGBColorSpace),
+    `(${pools.map((i) => i.material.map?.colorSpace || 'none').join(', ')})`);
+
+  /**
+   * A pool is light, not geometry that light falls on — and specifically it must
+   * not write depth. That is what lets the crow stand on top of one and stay a
+   * silhouette, which is how "the crow is the darkest thing on screen" survives
+   * putting light on the ground it walks over.
+   */
+  check('pools are additive and write no depth',
+    pools.every((i) => i.material.blending === THREE.AdditiveBlending
+      && i.material.depthWrite === false && i.material.fog === false));
 
   /**
    * Shade is violet, never grey — and after the fill colour was split off the

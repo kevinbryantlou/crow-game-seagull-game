@@ -299,7 +299,6 @@ export function buildLevel() {
     // Each lamp on its own clone and its own clock. They catch a beat apart,
     // which is the difference between a light switch and a street waking up.
     night.add(bulb, PAL.goldLit, { peak: 1.0, delay: lampIndex * 0.45, warm: 1.6, flicker: true });
-    // PROTOTYPE tier 2
     night.addPool(root, x, z, 5.2, { peak: 0.68, delay: lampIndex * 0.45, warm: 1.6, flicker: true });
     lampIndex++;
     g.position.set(x, 0, z);
@@ -363,7 +362,7 @@ export function buildLevel() {
     // windows — a lit room seen through a door is mostly doorframe.
     night.add(cafeWindows, PAL.goldLit, { peak: 0.62, warm: 3.2, delay: 0.9 });
     night.add(door, 0xd8a256, { peak: 0.30, warm: 3.6, delay: 1.4 });
-    // PROTOTYPE tier 2 — three overlapping pools; a 17m shopfront is not a circle.
+    // Three overlapping pools; a 17m shopfront is not a circle.
     for (const px of [-6, 0.5, 6.4]) {
       night.addPool(root, px, 9.6, 4.8, { profile: 'stall', peak: 0.46, warm: 3.2, delay: 1.1 });
     }
@@ -442,7 +441,8 @@ export function buildLevel() {
     // A hot plate, not a lamp — deep orange and dimmer than anything on a pole.
     // Cart Corner is the endgame and the darkest district on the block.
     night.add(griddle, 0xd8632c, { peak: 0.50, warm: 4.0, delay: 1.2 });
-    // PROTOTYPE tier 2 — offset toward the serving side.
+    // Offset toward the serving side, so the vendor has somewhere lit to stand
+    // and somewhere dark to be lured away from.
     night.addPool(root, CART.x - 0.4, CART.z + 1.6, 4.8, { profile: 'stall', peak: 0.70, warm: 4.0, delay: 1.2 });
     // Parasol
     g.add(at(cyl(0.06, 0.06, 2.2, 6, PAL.steelDark), 0.4, 2.9, 0));
@@ -480,7 +480,8 @@ export function buildLevel() {
     stallLamp.material = mat(PAL.goldLit);
     g.add(stallLamp);
     night.add(stallLamp, PAL.goldLit, { peak: 0.95, warm: 1.4, delay: 1.9, flicker: true });
-    // PROTOTYPE tier 2 — the reported symptom: the lamp read as a sticker.
+    // Without this the stall lamp read as a sticker on a dark box — the whole
+    // reason tier 2 exists. Stall profile: a plateau, not a spike.
     night.addPool(root, 11, 9.5, 4.4, { profile: 'stall', peak: 0.72, warm: 1.4, delay: 1.9, flicker: true });
     // The till, moved off the hot dog cart.
     g.add(at(box(0.52, 0.26, 0.38, PAL.steelDark, { up: PAL.steel, down: PAL.shade }), 1.0, 2.33, -0.55));

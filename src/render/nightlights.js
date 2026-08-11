@@ -40,16 +40,14 @@ function stutter(s) {
 const STUTTER_FOR = 0.30;
 
 /**
- * PROTOTYPE — tier 2. Not a decision, not committed.
+ * Pool falloffs — tier 2 of docs/lighting-brief.html.
  *
- * The pool texture: one soft radial falloff, generated once into a canvas at
- * boot and shared by every pool. Same technique as the pickup glint, which has
- * shipped since the beginning — which is the point. It is the honest version of
- * "pre-baked light textures": precomputed, no asset, no UVs, no per-light
- * shader work.
- */
-/**
- * Two falloff profiles, because a lamppost and a stall are not the same light.
+ * One soft radial gradient per profile, generated into a canvas at boot and
+ * shared by every pool that uses it. Same technique as the pickup glint, which
+ * has shipped since the beginning, and the honest version of "pre-baked light
+ * textures": precomputed, no asset, no second UV set, no per-light shader work.
+ *
+ * There are two profiles, because a lamppost and a stall are not the same light.
  *
  * Colour first: additive blending raises all three channels, so a warm *white*
  * core can only ever trend grey. The first pass used rgba(255,238,196) — blue at
@@ -138,7 +136,7 @@ export class NightLights {
   }
 
   /**
-   * PROTOTYPE — tier 2. A pool of light on the paving.
+   * A pool of light on the paving.
    *
    * A flat additive quad, no depth write, unlit and unfogged: it is light, not
    * geometry that light falls on. It sits at y=0.05 to clear the paving slabs
