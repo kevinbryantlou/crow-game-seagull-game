@@ -15,6 +15,15 @@ import puppeteer from 'puppeteer';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const URL = process.argv[2] || 'http://localhost:5173/';
+
+/**
+ * The line under the wordmark. It sits directly beside the og:description in a
+ * link preview, so it should share that voice — flat, declarative, deadpan —
+ * without repeating it word for word. Override for comparison:
+ *   node scripts/preview.mjs <url> "some other line"
+ */
+const SUBTITLE = process.argv[3] || 'You are a crow. You need twenty dollars. Steal it.';
+const ONLY = process.env.ONLY || null;
 mkdirSync('public', { recursive: true });
 mkdirSync('shots', { recursive: true });
 
@@ -47,7 +56,7 @@ await page.click('#start');
 await new Promise((r) => setTimeout(r, 800));
 
 // Strip the interface and lay the wordmark over the scene.
-await page.evaluate(() => {
+await page.evaluate((subtitle) => {
   document.getElementById('hud').style.display = 'none';
   document.getElementById('touch').style.display = 'none';
   const card = document.createElement('div');
@@ -56,7 +65,7 @@ await page.evaluate(() => {
     <div class="card-wash"></div>
     <div class="card-text">
       <h1>Small<span>Change</span></h1>
-      <p>Twenty dollars, in the nest, by sundown.</p>
+      <p>__SUBTITLE__</p>
     </div>`;
   const css = document.createElement('style');
   css.textContent = `
@@ -83,10 +92,11 @@ await page.evaluate(() => {
       text-shadow: 0 2px 12px rgba(10,20,16,.7);
     }`;
   document.head.appendChild(css);
+  card.querySelector('.card-text p').textContent = subtitle;
   document.body.appendChild(card);
-});
+}, SUBTITLE);
 
-for (const s of SHOTS) {
+for (const s of SHOTS.filter((x) => !ONLY || x.name === ONLY)) {
   await page.evaluate(([x, y, z]) => {
     const g = window.__game;
     g.crow.pos.set(x, y, z);
