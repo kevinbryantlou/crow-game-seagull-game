@@ -180,6 +180,12 @@ In `RULES` in `world/level.js`, enforced by `smoke.mjs`:
   fountain.
 - **A chase can get round every large solid.** Shooing steers at the crow and the
   crow can stand anywhere, so this cannot be authored — it has to be pathing.
+- **The block stays navigable after dark.** `shoot` measures the rendered frame:
+  median ≥ `RULES.duskMedianFloor`, 5th percentile ≥ `duskShadowFloor`. It fell
+  to 19 and 8 before the dusk work.
+- **The sunset happens inside a session someone plays.** `RULES.lampsOnAt` ×
+  `sessionSeconds` must land after a fast run ends and well before the day does.
+  Asserted in *both* directions — see the one-direction trap above.
 
 ## Art direction
 
