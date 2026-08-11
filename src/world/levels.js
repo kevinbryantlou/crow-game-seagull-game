@@ -104,9 +104,18 @@ export const LEVELS = [
     id: 2,
     slug: 'the-roofline',
     build: buildRoofline,
-    title: 'Second Storey',
-    district: 'The Vantage Hotel',
-    goal: 40.00,
+    title: 'The Hotel (Outside)',
+    district: 'The Vantage',
+    /**
+     * $30, not $40.
+     *
+     * The playtest read of this block was "too much of a scale leap from level
+     * 1", and it is going to sit later in the order — level 3 or 4 — once the
+     * blocks between it and the first one exist. So the goal has to be above
+     * the block's $20 and below the $40 it was first built at: a step on the
+     * ladder rather than a doubling.
+     */
+    goal: 30.00,
     sessionSeconds: RULES.sessionSeconds,
     /**
      * The roofline starts in the late afternoon and gets the back 58% of the
@@ -121,7 +130,7 @@ export const LEVELS = [
     spawn: [-1, 0, 9.5],
 
     tasks: [
-      { id: 'dive', text: 'Dive the plunge pool', when: (g) => g.crow.inWater },
+      { id: 'dive', text: 'Dive the fountain', when: (g) => g.crow.inWater },
       { id: 'cradle', text: 'Rob the window cleaner', when: (g) => !!g.crow.carried?.inCradle },
       { id: 'trade', text: 'Trade something shiny' },
       { id: 'gulls', text: 'Get the gulls off the terrace' },
@@ -131,7 +140,7 @@ export const LEVELS = [
 
     teach: {
       money: 'Take it to your nest',
-      shiny: 'The kid on the fire escape will trade for that',
+      shiny: 'The kid on the terrace will trade for that',
       bait: 'Chips. Gulls like chips.',
     },
 
@@ -160,27 +169,30 @@ export const LEVELS = [
      * on and each of them has something big in the middle of it: a van, a pool,
      * a water tank.
      */
-    chaseProbes: () => [
-      ['the yard, round the van', 0, [9, 14], [9, 6]],
-      ['the yard, round the loading dock', 0, [-18, 10], [-18, 2.5]],
-      ['the yard, bins to the middle', 0, [-2, 14], [6, 9]],
-      ['the terrace, round the plunge pool', 5.4, [13, 0], [13, -10]],
+    chaseProbes: (w) => [
+      ['the forecourt, round the fountain', 0, [w.fountain.x, 3.2], [w.fountain.x, 14.0]],
+      ['the forecourt, corner to corner', 0, [-19, 3.2], [-3, 14.0]],
+      ['the loading end, round the van', 0, [17, 14.6], [17, 8.5]],
+      ['the loading end, round the dock', 0, [18, 8.8], [18, 2.6]],
       ['the terrace, through the tables', 5.4, [-12, -0.5], [6, -4]],
-      ["the terrace, past the stand", 5.4, [-22.5, -3.5], [-8, -4]],
+      ['the terrace, past the stand', 5.4, [-22.5, -3.5], [-8, -4]],
+      ['the terrace, the far end', 5.4, [14, 0], [14, -10]],
       ['the roof, round the water tank', 9.2, [-20, -7], [-11, -10.5]],
     ],
 
     ending: {
       lostTitle: 'Last<span>Orders</span>',
       won: () =>
-        'Forty dollars, in a nest, on top of a water tank, at the exact moment the '
-        + 'festoon lights come on underneath you.<br><br>'
-        + 'You come back all at once — knees first, which is unfair — standing on a lid '
-        + 'two and a half metres across with no way off it that a person can take. '
-        + 'The window cleaner has been up here all afternoon. He has questions.',
+        'The last note lands in the nest at the exact moment the festoon lights come '
+        + 'on two floors underneath you.<br><br>'
+        + 'You come back all at once — knees first, which is unfair — standing on a '
+        + 'water tank lid two and a half metres across, with no way off it that a '
+        + 'person can take. Somewhere below, a kid on a terrace is still holding out '
+        + 'a marble for a bird that is not there any more.',
       lost: (total) =>
-        `You got to $${total.toFixed(2)}. The terrace has gone to candles and the yard `
-        + 'below has gone to nothing at all.<br><br>'
+        `You got to $${total.toFixed(2)}. The terrace has gone to candles and the `
+        + 'forecourt fountain is lit from underneath and full of other people\'s wishes.'
+        + '<br><br>'
         + 'Still a crow. But there is a whole roof up here that nobody comes to after '
         + 'dark, and the gulls have all gone home.',
     },

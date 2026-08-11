@@ -458,11 +458,11 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
   await shoot2('20-l2-spawn');
   // One shot per deck, bottom to top. If a deck is empty in the frame, it is
   // because nothing was built on it — which is exactly what these are for.
-  await look2('21-l2-yard', 4, 0, 8);
-  await look2('22-l2-fire-escape', -5, 2.0, 2.3);
+  await look2('21-l2-forecourt', -11, 0, 13.5);
+  await look2('22-l2-loading-end', 17, 0, 8);
   await look2('23-l2-cradle', 14, 4.0, 2.4);
   await look2('24-l2-terrace', -6, 5.4, -2);
-  await look2('25-l2-plunge-pool', 13, 5.4, -1.4);
+  await look2('25-l2-kid', -5, 5.4, 0.6);
   await look2('26-l2-lectern', -15.5, 5.4, -1.5);
   await look2('27-l2-roof', -12, 9.2, -8);
   await look2('28-l2-nest', -16, 12.4, -9);
@@ -501,19 +501,24 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
       out[nm] = escaped;
     }
 
-    // And the trap unique to a pool that is not on the ground: standing in the
-    // yard underneath it must not count as being in it.
-    g.crow.pos.set(f.x, 0, f.z);
-    g.crow.vel.set(0, 0, 0);
-    g.crow.inWater = false;
-    g.crow.update(1 / 60, { move: { x: 0, y: 0 }, flap: false }, g.world, g.audio);
-    out.wetFromBelow = g.crow.inWater;
+    // The trap unique to a pool that is *not* on the ground: the column of air
+    // beneath it must not count as being in it. Only meaningful while some block
+    // has a raised one — this one's fountain went back to the forecourt — but
+    // the guard stays, because the bug it watches for is in the crow, not in the
+    // level.
+    if (g.world.waterDeck > 1) {
+      g.crow.pos.set(f.x, 0, f.z);
+      g.crow.vel.set(0, 0, 0);
+      g.crow.inWater = false;
+      g.crow.update(1 / 60, { move: { x: 0, y: 0 }, flap: false }, g.world, g.audio);
+      out.wetFromBelow = g.crow.inWater;
+    }
 
     g.crow.pos.set(-1, 0, 9.5);
     g.crow.vel.set(0, 0, 0);
     return out;
   });
-  if (pool) console.log('  plunge pool:', JSON.stringify(pool));
+  if (pool) console.log('  water:', JSON.stringify(pool));
   if (pool && !pool.wet) errors.push('L2: crow on the pool floor is not in the water');
   if (pool) {
     const failed = ['hold', 'tap', 'walk'].filter((k) => !pool[k]);
@@ -550,7 +555,7 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
       return toast();
     };
 
-    out.inTheYard = await dropAt(6, 0, 9);
+    out.inTheYard = await dropAt(4, 0, 10);
     out.movedYard = !!(g.foodUntil && g.foodUntil > g.elapsed);
     out.tooNear = await dropAt(-13, 5.4, -3.5);
     out.onTheTerrace = await dropAt(6, 5.4, -3);
@@ -658,7 +663,7 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
     };
 
     let late = null;
-    for (const [where, pos] of [['yard', [4, 0, 8]], ['terrace', [-6, 5.4, -2]]]) {
+    for (const [where, pos] of [['forecourt', [-11, 0, 12]], ['terrace', [-6, 5.4, -2]]]) {
       for (const [through, settle] of [[0.30, 500], [0.62, 9000], [0.98, 700]]) {
         const m = await measure2(through, settle, pos);
         const key = `l2-dusk-${where}-${String(Math.round(through * 100))}`;
@@ -678,7 +683,7 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
   // The ending, with the level's own copy and an awkward amount.
   const end2 = !has2 ? null : await p2.evaluate(() => {
     const g = window.__game;
-    g.total = 41.35; g.elapsed = 268; g.finished = false; g.running = true;
+    g.total = 31.35; g.elapsed = 268; g.finished = false; g.running = true;
     g._finish(true);
     return {
       title: document.getElementById('ending-title').textContent.replace(/\s+/g, ' ').trim(),
@@ -687,8 +692,8 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
     };
   });
   if (end2) console.log('  L2 ending:', JSON.stringify(end2));
-  if (end2 && end2.goal !== 40) errors.push(`L2 goal is ${end2.goal}, expected 40`);
-  if (end2 && !/forty-one dollars thirty-five cents/i.test(end2.title)) {
+  if (end2 && end2.goal !== 30) errors.push(`L2 goal is ${end2.goal}, expected 30`);
+  if (end2 && !/thirty-one dollars thirty-five cents/i.test(end2.title)) {
     errors.push(`L2 ending headline wrong: "${end2.title}"`);
   }
   if (end2) { await new Promise((r) => setTimeout(r, 1400)); await shoot2('29-l2-ending'); }

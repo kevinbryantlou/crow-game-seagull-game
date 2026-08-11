@@ -12,7 +12,7 @@ import * as THREE from 'three';
 import { PAL } from '../render/palette.js';
 import { box, cyl, ico, at, mat } from '../render/shapes.js';
 import {
-  resolveWalk, stepAround,
+  resolveWalk, stepAround, deckAt,
   WALKER_RADIUS, WALKER_HEIGHT, WALKER_STEP_OVER,
   PIGEON_RADIUS, PIGEON_HEIGHT, PIGEON_STEP_OVER,
 } from '../world/collide.js';
@@ -445,7 +445,21 @@ export class Pigeon {
     this.root.add(beak);
   }
 
+  /**
+   * Is (x, z) actually on this bird's deck?
+   *
+   * Birds do not fall — their y is authored and never integrated — which was
+   * invisible for as long as every bird stood on a plaza, because a plaza is
+   * everywhere. Put one on a parapet 0.6m deep and it walks calmly off the side
+   * and hovers over the yard six metres up.
+   */
+  _onDeck(world, x, z) {
+    if (!world || this.floorY < 0.01) return true;
+    return Math.abs(deckAt(world.colliders, x, z, this.floorY + 0.05) - this.floorY) < 0.3;
+  }
+
   update(dt, food, crow, world) {
+    const heldX = this.pos.x, heldZ = this.pos.z;
     // Food beats everything; a nearby crow scatters them.
     const scared = Math.hypot(crow.pos.x - this.pos.x, crow.pos.z - this.pos.z) < 1.6
       && Math.abs(crow.pos.y - this.floorY) < 1.2;
@@ -469,11 +483,13 @@ export class Pigeon {
       this.waitT -= dt;
       if (this.waitT <= 0) {
         this.waitT = 1.2 + Math.random() * 3;
-        this.target.set(
-          this.home.x + (Math.random() - 0.5) * this.range,
-          this.floorY,
-          this.home.z + (Math.random() - 0.5) * this.range,
-        );
+        const tx = this.home.x + (Math.random() - 0.5) * this.range;
+        const tz = this.home.z + (Math.random() - 0.5) * this.range;
+        // Never wander at somewhere there is no floor. Cheaper than walking
+        // there and being pulled back, and it stops a gull on a narrow parapet
+        // spending its whole life pressed against the edge.
+        if (this._onDeck(world, tx, tz)) this.target.set(tx, this.floorY, tz);
+        else this.target.copy(this.home);
       }
     }
 
@@ -506,6 +522,13 @@ export class Pigeon {
     if (world) {
       resolveWalk(world.colliders, this.pos, PIGEON_RADIUS,
         PIGEON_HEIGHT, PIGEON_STEP_OVER, this.floorY);
+      // The deck is a leash. Any step that leaves it is undone, and the bird is
+      // sent home rather than left shuffling at the brink.
+      if (!this._onDeck(world, this.pos.x, this.pos.z)) {
+        this.pos.x = heldX;
+        this.pos.z = heldZ;
+        this.target.copy(this.home);
+      }
     }
 
     this.root.position.x = this.pos.x;

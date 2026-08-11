@@ -331,13 +331,49 @@ export class Crow {
     const scrambles = (c) => canScramble && c.bottom <= from + 0.01 && c.top - from <= STEP_UP;
     let stepTo = -Infinity;
 
+    /**
+     * Head bonk, resolved before the lateral passes rather than after them.
+     *
+     * The X and Z passes decide which colliders the crow is level with using its
+     * *current* y, so a crow rising into the underside of a platform spends one
+     * frame reading as "inside" and gets shoved sideways out of it instead of
+     * stopped underneath it. On a fire escape — three landings 0.25m thick,
+     * stacked, with air under each — that fired on nearly every climb and threw
+     * the bird a metre and a half across the yard.
+     *
+     * Only things with air beneath them can be bonked, which is the correct set:
+     * landings, the cradle, café awnings, scaffold decks, tabletops, the water
+     * tank on its legs. Anything sitting on a floor has `bottom` at or below it
+     * and is never a ceiling.
+     */
+    if (this.vel.y > 0) {
+      const nextY = p.y + this.vel.y * dt;
+      for (const c of cols) {
+        if (!c.perch || c.shape === 'ring' || c.bottom <= 0.01) continue;
+        if (p.y + 0.42 > c.bottom || nextY + 0.42 <= c.bottom) continue;
+        if (overlaps(c, p.x, p.z, SUPPORT)) { this.vel.y = 0; break; }
+      }
+    }
+
     // X then Z then Y, resolved separately — cheap, stable, and good enough for
     // a block made almost entirely of axis-aligned boxes.
+    //
+    // Each axis only resolves overlaps *it* caused. Without that, a crow moving
+    // purely along z would enter a box's footprint, and the x pass — which runs
+    // first and sees a full 2-D overlap — would shove it sideways out of a wall
+    // it had not touched, by however far the nearer face happened to be. That is
+    // the "clipping through the fire escape" report: three stacked landings,
+    // approached head-on, each one flinging the bird a metre across the yard.
+    const x0 = p.x, z0 = p.z;
+    const heldX = (c) => x0 + RADIUS > c.minX && x0 - RADIUS < c.maxX;
+    const heldZ = (c) => z0 + RADIUS > c.minZ && z0 - RADIUS < c.maxZ;
+
     p.x += this.vel.x * dt;
     for (const c of cols) {
       if (c.shape === 'ring') continue;
       if (p.y >= c.top - 0.02 || p.y + 0.5 <= c.bottom) continue;
       if (p.x + RADIUS > c.minX && p.x - RADIUS < c.maxX && p.z + RADIUS > c.minZ && p.z - RADIUS < c.maxZ) {
+        if (heldX(c)) continue;      // x was already inside; z is the culprit
         if (scrambles(c)) {
           // Carry on over it, but far enough in that the Y pass will find a
           // floor. Stopping at the face leaves the crow overhanging its own
@@ -348,7 +384,18 @@ export class Crow {
             : Math.min(p.x, c.maxX + SUPPORT - 0.02);
           continue;
         }
-        p.x = this.vel.x > 0 ? c.minX - RADIUS : c.maxX + RADIUS;
+        // Out through the nearer face, not the one the sign of the velocity
+        // implies. Those are the same face whenever the crow walked into a wall,
+        // and wildly different when it rose into the *side* of something thin
+        // with no lateral speed at all: `vel.x > 0` is then false, so the crow
+        // was ejected east however deep inside it was and whichever side it came
+        // from. On the fire escape — three stacked landings 0.25m thick — that
+        // fired constantly and threw the bird up to 3.2m sideways, sometimes
+        // straight through the block's edge. resolveWalk has always picked the
+        // shallowest axis for exactly this reason; this is the same rule.
+        p.x = p.x - (c.minX - RADIUS) < (c.maxX + RADIUS) - p.x
+          ? c.minX - RADIUS
+          : c.maxX + RADIUS;
         this.vel.x = 0;
       }
     }
@@ -358,6 +405,7 @@ export class Crow {
       if (c.shape === 'ring') continue;
       if (p.y >= c.top - 0.02 || p.y + 0.5 <= c.bottom) continue;
       if (p.x + RADIUS > c.minX && p.x - RADIUS < c.maxX && p.z + RADIUS > c.minZ && p.z - RADIUS < c.maxZ) {
+        if (heldZ(c)) continue;      // z was already inside; x was the culprit
         if (scrambles(c)) {
           stepTo = Math.max(stepTo, c.top);
           p.z = this.vel.z > 0
@@ -365,7 +413,9 @@ export class Crow {
             : Math.min(p.z, c.maxZ + SUPPORT - 0.02);
           continue;
         }
-        p.z = this.vel.z > 0 ? c.minZ - RADIUS : c.maxZ + RADIUS;
+        p.z = p.z - (c.minZ - RADIUS) < (c.maxZ + RADIUS) - p.z
+          ? c.minZ - RADIUS
+          : c.maxZ + RADIUS;
         this.vel.z = 0;
       }
     }

@@ -69,7 +69,7 @@ src/
   world/rules.js       RULES — the level-design contract, shared by both blocks
   world/kit.js         the shared prop kit: tables, lamps, bins, the nest, the pool
   world/level.js       LEVEL 1 — the block: plaza, café row, cart corner. Flat.
-  world/level2.js      LEVEL 2 — the roofline: yard, fire escape, terrace, roof. Vertical.
+  world/level2.js      LEVEL 2 — The Hotel (Outside): forecourt, fire escape, terrace, roof
   world/levels.js      the registry: goal, tasks, teach copy, bait rules, endings, per level
   world/collide.js     the collider format, and going round things (pure, unit tested)
   world/pickups.js     the money
@@ -207,6 +207,29 @@ That's why `words.js` and `rank.js` are separate from `hud.js`.
   sat in. Look at the frame and find the biggest dark thing before adding a lamp
   — and never lower `duskMedianFloor`/`duskShadowFloor` to make a new block pass.
 
+- **The crow's lateral collision resolved the wrong thing, three ways.** Reported
+  from a playtest as "clipping through the fire escape — resets me outside the
+  playable area", and it was three faults compounding on any geometry with air
+  underneath it. It ejected toward the face implied by the *sign of the
+  velocity*, which is the face you came from only if you were moving on that axis
+  at all; it resolved *any* footprint overlap it could see, so flying straight
+  along z produced a shove along x; and the head bonk ran *after* the lateral
+  passes, so rising into the underside of a platform read as being inside it.
+  Three stacked 0.25m landings triggered all three on nearly every climb and
+  moved the bird up to 3.2m, sometimes through the edge of the block. Now: nearer
+  face, only the axis that caused the overlap, bonk first. Asserted — worst
+  single-frame move must stay under 0.55m, tested against every overhang.
+- **Nothing with feathers falls.** A bird's `y` is authored and never integrated,
+  which is invisible while every bird stands on a plaza, because a plaza is
+  everywhere. On a 0.6m parapet a gull walks calmly off the side and hovers over
+  the forecourt. `Pigeon._onDeck` makes the deck a leash: a step that leaves it is
+  undone and the bird is sent home. Asserted after a simulated minute.
+- **Low scenery still buries pickups.** The forecourt's garden beds are 0.3 tall,
+  under both the crow's 0.34 scramble and a walker's 0.45 step, so they block
+  nobody and are pure silhouette — and they will still swallow a coin, because
+  "buried" is a volume test and does not care whether anything can be stopped by
+  it. Put nothing takeable inside one.
+
 ## Level-design rules (asserted, not aspirational)
 
 In `RULES` in `world/level.js`, enforced by `smoke.mjs`:
@@ -244,6 +267,9 @@ In `RULES` in `world/level.js`, enforced by `smoke.mjs`:
   in the file — write a terrace coordinate, forget the offset, and it hangs in
   the air with nothing under it and no way to see that in review. One exemption,
   declared in the level data: `hung: true` on the ten in the vendor's apron.
+- **Nothing shoves the crow more than 0.55m in a frame.** The clipping report,
+  made falsifiable: every collider with air under it, from eight headings at
+  three heights.
 - **There is somewhere legal to drop the bait.** The set piece has a deck
   requirement and a distance requirement; if they ever conflict, the block's
   marquee puzzle is quietly unsolvable.
@@ -258,9 +284,14 @@ smoke, and the ending copy. If a second block would need a different one, it is
 level data; if both need the same one, it is in `world/rules.js`.
 
 - **Level 1 — the block** (`level.js`). Flat, $20, starts at `dayStart: 0`.
-- **Level 2 — the roofline** (`level2.js`). Four decks (0 / 2.0 / 5.4 / 9.2, nest
-  at 12.35), $40, starts at `dayStart: 0.42` so the lamps catch at 4m08s.
-  `docs/level-2-brief.html` is the spec.
+- **Level 2 — The Hotel (Outside)** (`level2.js`). Four decks (0 / 2.0 / 5.4 /
+  9.2, nest at 12.35), $30, starts at `dayStart: 0.42` so the lamps catch at
+  4m08s. `docs/level-2-brief.html` is the spec.
+
+  Playtested and revised once: it reads as **too big a scale leap to follow the
+  block directly**, so it is parked for slot 3 or 4. That is why the goal is $30
+  and not $40 — above the block, below a doubling. Do not renumber the file; the
+  order is a registry question, not a filename one.
 
 Selection is `?level=2`, read once in `main.js`. **How the player actually gets
 from one block to the other is not decided yet** — that is a seam, not a join,

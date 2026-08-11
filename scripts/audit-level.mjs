@@ -377,6 +377,66 @@ export function auditLevel({ level, world, check, deps }) {
     }
   }
 
+  /**
+   * Nothing may move the crow further in one frame than it could fly.
+   *
+   * This is the "clipping through the fire escape" report, made falsifiable. The
+   * lateral collision passes used to resolve *any* footprint overlap they could
+   * see, on both axes, ejecting toward whichever face the sign of the velocity
+   * implied — so a crow flying straight at a stack of thin platforms was thrown
+   * sideways by up to 3.2m, sometimes clean through the edge of the block.
+   *
+   * Three separate faults, all of which only show up on geometry with air
+   * underneath it: resolve the nearer face rather than the signed one, resolve
+   * only the axis that actually caused the overlap, and bonk the crow's head
+   * before the lateral passes rather than after them.
+   *
+   * Aimed at the things that can be flown under — anything whose `bottom` is off
+   * the floor — because those are the only shapes that can produce it.
+   */
+  {
+    const overhangs = world.colliders.filter((c) => c.shape !== 'ring' && c.bottom > 0.01
+      && c.top - c.bottom < 2.0 && c.maxX - c.minX < 30);
+    const MAX_STEP = 0.55;           // a scramble is the largest legitimate jump
+    const jumps = [];
+    // A start point has to be somewhere the crow could actually be. Flying at a
+    // sun lounger on a roof terrace from four metres away and one metre down
+    // starts you inside the building the terrace is on top of, and being pushed
+    // out of that is correct behaviour rather than a bug.
+    const embedded = (x, y, z) => world.colliders.some((c) => c.shape !== 'ring'
+      && y > c.bottom + 0.02 && y < c.top - 0.02
+      && x + 0.34 > c.minX && x - 0.34 < c.maxX && z + 0.34 > c.minZ && z - 0.34 < c.maxZ);
+    for (const c of overhangs.slice(0, 24)) {
+      const cx = (c.minX + c.maxX) / 2, cz = (c.minZ + c.maxZ) / 2;
+      const reach = Math.max(c.maxX - c.minX, c.maxZ - c.minZ) / 2 + 3;
+      for (const dy of [-1.1, -0.4, 0.15]) {
+        for (let deg = 0; deg < 360 && jumps.length < 6; deg += 45) {
+          const a = (deg * Math.PI) / 180;
+          const sx = cx + Math.cos(a) * reach;
+          const sy = Math.max(0, c.bottom + dy);
+          const sz = cz + Math.sin(a) * reach;
+          if (embedded(sx, sy, sz)) continue;
+          const k = new Crow(stage);
+          k.pos.set(sx, sy, sz);
+          const move = { x: -Math.cos(a), y: Math.sin(a) };
+          const prev = k.pos.clone();
+          for (let i = 0; i < 150; i++) {
+            k.update(1 / 60, { move, flap: i % 20 < 9 }, world, audio);
+            const d = k.pos.distanceTo(prev);
+            if (d > MAX_STEP) {
+              jumps.push(`${d.toFixed(1)}m at (${k.pos.x.toFixed(1)}, ${k.pos.y.toFixed(1)}, `
+                + `${k.pos.z.toFixed(1)}) flying at the solid on ${cz.toFixed(1)}/${c.top.toFixed(1)}`);
+              break;
+            }
+            prev.copy(k.pos);
+          }
+        }
+      }
+    }
+    check(say(`nothing shoves the crow more than ${MAX_STEP}m in a frame`),
+      jumps.length === 0, `(${overhangs.length} overhangs; ${jumps.join('; ')})`);
+  }
+
   // ── where people stand ────────────────────────────────────────────────────
   const solidTo = (floor) => world.colliders.filter((c) => blocksWalker(c, undefined, undefined, floor));
   const inside = (x, z, floor = 0) =>
@@ -547,6 +607,20 @@ export function auditLevel({ level, world, check, deps }) {
   const drifted = gulls.filter((g) => g.pos.distanceTo(g.home) > 2.6);
   check(say('gulls hold their pitch'), drifted.length === 0,
     `(${drifted.map((g) => g.pos.distanceTo(g.home).toFixed(1)).join(', ')})`);
+
+  /**
+   * And they stay on the thing they are standing on. A bird's y is authored and
+   * never integrated — nothing with feathers falls — so a gull put on a parapet
+   * 0.6m deep walked straight off the side and hovered over the yard six metres
+   * up, which is what a playtest reported. The deck is a leash now; this is the
+   * check that says so.
+   */
+  const offDeck = [...pigeons, ...gulls]
+    .filter((b) => Math.abs(deckAt(world.colliders, b.pos.x, b.pos.z, b.floorY + 0.05) - b.floorY) > 0.3)
+    .map((b) => `(${b.pos.x.toFixed(1)}, ${b.pos.z.toFixed(1)}) on ${b.floorY} over `
+      + `${deckAt(world.colliders, b.pos.x, b.pos.z, b.floorY + 0.05).toFixed(1)}`);
+  check(say('no bird walked off the deck it was standing on'), offDeck.length === 0,
+    `(${offDeck.join('; ')})`);
 
   // And it has to actually go off when the crow lands next to it.
   if (gulls.length) {

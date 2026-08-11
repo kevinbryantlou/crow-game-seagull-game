@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
-<title>Small Change — Level 2: Second Storey</title>
+<title>Small Change — The Hotel (Outside)</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <style>
   html { -webkit-text-size-adjust: 100%; }
@@ -256,42 +256,60 @@
 
 <header class="band">
   <div class="band-inner">
-    <div class="eyebrow">Level Design Brief &nbsp;·&nbsp; Level 2 &nbsp;·&nbsp; Built &amp; verified</div>
-    <h1 class="title">Second<br>Storey<span class="thin">A crow's ladder</span></h1>
-    <p class="deck">The back of a hotel, from the bins to the water tank. Same crow, same beak,
-      same one thing at a time — but the money is above you now, and everything it costs to get
-      is measured in altitude.</p>
+    <div class="eyebrow">Level Design Brief &nbsp;·&nbsp; The Hotel (Outside) &nbsp;·&nbsp; Built, played, revised</div>
+    <h1 class="title">The<br>Hotel<span class="thin">Outside</span></h1>
+    <p class="deck">A hotel from the forecourt to the water tank. Same crow, same beak, same one
+      thing at a time — but the money is above you now, and everything it costs to get is
+      measured in altitude.</p>
     <dl class="facts">
-      <div><dt>District</dt><dd>The Vantage Hotel</dd></div>
-      <div><dt>Goal</dt><dd>$40.00</dd></div>
+      <div><dt>Setting</dt><dd>The Vantage, exterior</dd></div>
+      <div><dt>Goal</dt><dd>$30.00</dd></div>
       <div><dt>Decks</dt><dd>Four — 0 / 2.0 / 5.4 / 9.2 m</dd></div>
       <div><dt>Session</dt><dd>8 min, starting at t=0.42</dd></div>
-      <div><dt>New mechanics</dt><dd>None for the player</dd></div>
+      <div><dt>Slot</dt><dd>Level 3 or 4, not 2</dd></div>
     </dl>
   </div>
 </header>
 
 <main>
 
-  <section id="why">
-    <h2><span class="sec">§1</span> What level 1 never used</h2>
+  <section id="status">
+    <h2><span class="sec">§0</span> Where this stands</h2>
     <div class="col">
-      <p>The block is a good level and it is flat. Three districts run left to right, money
-      density falls as you go, guard density rises, and the whole thing happens between
-      y&nbsp;=&nbsp;0 and y&nbsp;=&nbsp;5.35. The crow has wings, a stamina bar, a glide, and a
-      list of authored perches, and almost none of it is load-bearing: you can play a competent
-      2m07s run and never climb higher than the memorial you bank on.</p>
+      <p>Built, played, and revised once against playtest notes. The headline note was that it is
+      <strong>too big a scale leap to follow the block directly</strong> — so it is parked as a
+      later level, three or four, once the blocks between exist. Everything else on this page
+      assumes that.</p>
+      <p>The one number that moved because of it is the goal: <strong>$30</strong>, above the
+      block's $20 and below the $40 it was first built at. A step on the ladder rather than a
+      doubling.</p>
+      <div class="note">
+        <span class="lbl">What the revision changed</span>
+        The fountain came down off the roof and into a forecourt garden. The kid moved off the
+        fire escape and onto the terrace. The pigeon loft went entirely. The terrace got doors.
+        And two real bugs got fixed — see §9.
+      </div>
+    </div>
+  </section>
 
-      <p>So the second block does not add a verb. It takes the one system the first block
-      installed and never spent — <em class="term">altitude</em> — and makes it the price of
-      everything.</p>
+  <section id="why">
+    <h2><span class="sec">§1</span> What the block never used</h2>
+    <div class="col">
+      <p>Level 1 is a good level and it is flat. Three districts run left to right, money density
+      falls as you go, guard density rises, and the whole thing happens between y&nbsp;=&nbsp;0
+      and y&nbsp;=&nbsp;5.35. The crow has wings, a stamina bar, a glide and a list of authored
+      perches, and almost none of it is load-bearing: you can play a competent 2m07s run and never
+      climb higher than the memorial you bank on.</p>
+
+      <p>So this block does not add a verb. It takes the one system the first block installed and
+      never spent — <em class="term">altitude</em> — and makes it the price of everything.</p>
 
       <div class="note">
         <span class="lbl">The constraint, stated up front</span>
         No new player mechanics. Fly, take one thing, bank it, shove the weight off the bill,
         bait a guard with food, trade a shiny with a kid. Every one of those is level 1's, taught
         on level 1, and charged for differently here. The only new <em>entity</em> is a gull, and
-        §6 argues for it.
+        §7 argues for it.
       </div>
     </div>
   </section>
@@ -302,8 +320,8 @@
       <p>On the block, a penny cost you a short walk and a ten cost you a plan. The denominations
       did the pricing and the geography was nearly free.</p>
 
-      <p>Up here the geography does the pricing. The nest is on a water tank twelve metres above
-      the yard. A penny in the yard is worth one cent and costs a twelve-metre climb to bank,
+      <p>Here the geography does the pricing. The nest is on a water tank twelve metres above the
+      forecourt. A penny by the fountain is worth one cent and costs a twelve-metre climb to bank,
       which is a bad trade and is <em>supposed</em> to be a bad trade. Nobody says so. There is no
       tooltip and no tutorial beat. The player works it out the first time they haul a nickel up
       four decks and watch the counter move by five cents.</p>
@@ -313,55 +331,49 @@
 
     <div class="exhibit">
       <div class="plate">
-        <svg viewBox="0 0 900 430" role="img" aria-label="Elevation of the four decks: yard at 0m, fire escape at 2m, terrace at 5.4m, roof at 9.2m, nest at 12.35m">
-          <g font-family="Menlo, monospace" font-size="10.5" fill="currentColor">
-            <!-- deck rules -->
-            <g stroke="currentColor" stroke-width="1.4">
-              <line x1="120" y1="390" x2="860" y2="390"/>
-              <line x1="120" y1="330" x2="330" y2="330"/>
-              <line x1="120" y1="240" x2="860" y2="240"/>
-              <line x1="120" y1="150" x2="430" y2="150"/>
-              <line x1="215" y1="90" x2="300" y2="90" stroke-width="2.4"/>
-            </g>
-            <!-- the tank -->
-            <g stroke="currentColor" stroke-width="1.2" fill="none" opacity=".75">
-              <path d="M222 150 L222 96 M293 150 L293 96"/>
-              <rect x="215" y="96" width="85" height="6"/>
-            </g>
-            <!-- climb arrows -->
-            <g stroke="currentColor" stroke-width="1.3" opacity=".55" marker-end="url(#a2)">
-              <path d="M470 388 L470 244"/>
-              <path d="M360 328 L360 244"/>
-              <path d="M170 238 L170 154"/>
-              <path d="M258 148 L258 96"/>
-              <path d="M600 388 L600 334"/>
-            </g>
-            <defs>
-              <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
-              </marker>
-            </defs>
-            <!-- labels -->
-            <g text-anchor="end" opacity=".62">
-              <text x="112" y="394">0.0 m</text>
-              <text x="112" y="334">2.0 m</text>
-              <text x="112" y="244">5.4 m</text>
-              <text x="112" y="154">9.2 m</text>
-              <text x="112" y="94">12.35 m</text>
-            </g>
+        <svg viewBox="0 0 900 430" role="img" aria-label="Elevation of the four decks: forecourt at 0m, fire escape at 2m, terrace at 5.4m, roof at 9.2m, nest at 12.35m">
+          <defs>
+            <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+            </marker>
+          </defs>
+          <g stroke="currentColor" stroke-width="1.4">
+            <line x1="120" y1="390" x2="860" y2="390"/>
+            <line x1="120" y1="330" x2="330" y2="330"/>
+            <line x1="120" y1="240" x2="860" y2="240"/>
+            <line x1="120" y1="150" x2="430" y2="150"/>
+            <line x1="215" y1="90" x2="300" y2="90" stroke-width="2.4"/>
+          </g>
+          <g stroke="currentColor" stroke-width="1.2" fill="none" opacity=".75">
+            <path d="M222 150 L222 96 M293 150 L293 96"/>
+            <rect x="215" y="96" width="85" height="6"/>
+          </g>
+          <g stroke="currentColor" stroke-width="1.3" opacity=".55" marker-end="url(#a2)" fill="none">
+            <path d="M470 388 L470 244"/>
+            <path d="M360 328 L360 244"/>
+            <path d="M170 238 L170 154"/>
+            <path d="M258 148 L258 96"/>
+            <path d="M600 388 L600 334"/>
+          </g>
+          <g font-family="Menlo, monospace" font-size="10.5" fill="currentColor" text-anchor="end" opacity=".62">
+            <text x="112" y="394">0.0 m</text>
+            <text x="112" y="334">2.0 m</text>
+            <text x="112" y="244">5.4 m</text>
+            <text x="112" y="154">9.2 m</text>
+            <text x="112" y="94">12.35 m</text>
           </g>
           <g font-family="'Avenir Next Condensed','Arial Narrow',sans-serif" font-weight="700" font-size="17" fill="currentColor" letter-spacing=".5">
-            <text x="128" y="382">THE YARD</text>
+            <text x="128" y="382">THE FORECOURT</text>
             <text x="128" y="322">FIRE ESCAPE</text>
             <text x="128" y="232">THE TERRACE</text>
             <text x="128" y="142">CHIMNEY ROW</text>
             <text x="310" y="88">THE NEST</text>
           </g>
           <g font-family="Charter, Georgia, serif" font-size="12" fill="currentColor" opacity=".72">
-            <text x="240" y="382">bins, crates, a van, a loading dock — $1.25 of small change</text>
-            <text x="270" y="322">the kid who trades · $0.80 · a landing every 1.7 m</text>
-            <text x="290" y="232">five tables, the plunge pool, the wallet, the bill-fold — $46.15</text>
-            <text x="290" y="142">the pigeon loft, the feed tin, the window cleaner — $2.00</text>
+            <text x="290" y="382">garden, fountain, entrance canopy — and the loading end</text>
+            <text x="270" y="322">optional now. $0.80 for anyone who climbs it anyway</text>
+            <text x="290" y="232">five tables, the kid, the wallet, the bill-fold — $46.15</text>
+            <text x="290" y="142">chimney pots, an aerial, the water tank. Nothing else.</text>
           </g>
           <g font-family="Menlo, monospace" font-size="10" fill="currentColor" opacity=".5">
             <text x="480" y="320">5.4 m</text>
@@ -383,24 +395,49 @@
       it for a player who arrives at the bottom of every climb with a full bar — which is exactly
       the player who does not exist, because you arrive at a climb having just flown away from
       somebody.</p>
-      <p>So the tallest single hop on the block is <strong>5.4&nbsp;m</strong>, and even that one is
-      broken up further: the fire escape has landings at 2.0, 3.65 and 5.25, the van roof is at
-      2.55, the loading dock at 1.15. Climbing is a rhythm of short hops and rests, and stamina
-      regenerates while grounded — so a perch is the first thing on this block that is genuinely
+      <p>So the tallest single hop is <strong>5.4&nbsp;m</strong>, and even that one is broken up:
+      the fire escape has landings at 2.0, 3.65 and 5.25, the van roof is at 2.55, the loading
+      dock at 1.15, the entrance canopy at 3.42. Climbing is a rhythm of short hops and rests, and
+      stamina regenerates while grounded — so a perch is the first thing in this game that is
       functional rather than scenery.</p>
     </div>
   </section>
 
-  <section id="money">
-    <h2><span class="sec">§3</span> The money</h2>
+  <section id="ground">
+    <h2><span class="sec">§3</span> The forecourt, and why it is not a yard</h2>
     <div class="col">
-      <p>$56.70 on the block against a $40 goal. Of that, <strong>$7.05</strong> is unguarded and
-      dry — and almost all of it is coins in a yard twelve metres under the nest. The endgame is
-      the terrace, in every possible order of play, and no difficulty tuning produces that: the
+      <p>The ground floor was a service yard: bins, crates, a van, a loading dock, and nothing a
+      person would walk into on purpose. It measured fine and it read as nowhere.</p>
+
+      <p>It is now the front of a hotel. A fountain in a garden ring, a striped entrance canopy,
+      benches, lampposts, a plane tree, a guest waiting for a car. The right-hand third is still
+      back-of-house — a service door, the chef on his break, crates, the dock and the van — because
+      the crow needs one stretch of the block that is not a garden, and because the chef has to be
+      standing in something.</p>
+
+      <h3>The fountain came down off the roof</h3>
+      <p>It spent a version of this level on the terrace as a plunge pool. That was a good excuse
+      to prove the water code works at height — and it did, and the bug it found is in §9 — but it
+      was bad level design: it put the dive, the money and both guards on the same deck, and left
+      the ground floor with no reason to exist. A hotel puts its fountain at the front. So does
+      this one.</p>
+
+      <p>The side effect is that the level now has a reason to send you <em>down</em>. The dive is
+      at the bottom, the twenty is in the middle, the nest is at the top, and no single trip
+      collects more than one of them.</p>
+    </div>
+  </section>
+
+  <section id="money">
+    <h2><span class="sec">§4</span> The money</h2>
+    <div class="col">
+      <p>$54.70 on the block against a $30 goal. Of that, <strong>$7.05</strong> is unguarded and
+      dry — and almost all of it is coins in a forecourt twelve metres under the nest. The endgame
+      is the terrace, in every possible order of play, and no difficulty tuning produces that: the
       layout does.</p>
-      <p>The twenty is new. Level 1's top prize was a ten against a twenty; this is a twenty
-      against a forty, which is the same ratio and a bigger number, and it means the folded note
-      in the maître d's bill-fold is worth half the level on its own.</p>
+      <p>The twenty is new to the game. Level 1's top prize was a ten; this is a twenty, and at
+      two thirds of the goal the folded note in the maître d's bill-fold is the single most
+      valuable object in either block.</p>
     </div>
 
     <div class="exhibit table-wrap">
@@ -409,19 +446,18 @@
           <tr><th>Deck</th><th>What is there</th><th>Value</th><th>Guarded by</th></tr>
         </thead>
         <tbody>
-          <tr><td>Yard</td><td>Ten pennies, five nickels, four dimes, two quarters in the drain</td><td class="val">$1.25</td><td>Nobody — and the climb</td></tr>
-          <tr><td>Yard</td><td>Loose change in an open crate</td><td class="val">$1.20</td><td>The porter</td></tr>
-          <tr><td>Yard</td><td>The tin by the kitchen door</td><td class="val">$5.00</td><td>The chef</td></tr>
+          <tr><td>Forecourt</td><td>Ten pennies, five nickels, four dimes, two quarters in a grate</td><td class="val">$1.25</td><td>Nobody — and the climb</td></tr>
+          <tr><td>Forecourt</td><td>Six quarters on the fountain floor</td><td class="val">$1.50</td><td>The water</td></tr>
+          <tr><td>Loading end</td><td>Loose change in an open crate</td><td class="val">$1.20</td><td>The porter</td></tr>
+          <tr><td>Loading end</td><td>The tin by the service door</td><td class="val">$5.00</td><td>The chef</td></tr>
           <tr><td>Fire escape</td><td>Coins on the first landing, a dime on the second</td><td class="val">$0.80</td><td>Nobody</td></tr>
           <tr><td>Cradle (4.0 m)</td><td>The window cleaner's five</td><td class="val">$5.00</td><td>Nobody — it is the geometry</td></tr>
           <tr><td>Terrace</td><td>Table change, two tables</td><td class="val">$1.95</td><td>The busser</td></tr>
           <tr><td>Terrace</td><td>The tip glass — three singles</td><td class="val">$3.00</td><td>The busser</td></tr>
           <tr><td>Terrace</td><td>The check, under the candle lantern</td><td class="val">$5.00</td><td>The busser, and a weight</td></tr>
-          <tr><td>Terrace</td><td>Six quarters on the floor of the plunge pool</td><td class="val">$1.50</td><td>The water</td></tr>
           <tr><td>Terrace</td><td>A wallet on a lounger</td><td class="val">$10.00</td><td>The maître d'</td></tr>
           <tr><td>Terrace</td><td><strong>The bill-fold</strong></td><td class="val">$20.00</td><td>The maître d', and six gulls</td></tr>
-          <tr><td>Roof</td><td>The loft's feed tin</td><td class="val">$2.00</td><td>The window cleaner</td></tr>
-          <tr><td>Everywhere</td><td>Four shinies — foil, a corkscrew, a money clip, a room fob</td><td class="val">trade</td><td>The kid on the fire escape</td></tr>
+          <tr><td>Everywhere</td><td>Five shinies — foil, a corkscrew, a money clip, a room fob, a marble</td><td class="val">trade</td><td>The kid on the terrace</td></tr>
         </tbody>
       </table>
       <div class="exhibit-cap">Exhibit B — one idea per surface. Five tables, five stories, no table with two takeables on it.</div>
@@ -437,67 +473,74 @@
   </section>
 
   <section id="decks">
-    <h2><span class="sec">§4</span> The four decks</h2>
+    <h2><span class="sec">§5</span> The four decks</h2>
     <div class="col">
-      <h3>The yard (y = 0)</h3>
-      <p>Bins, crates, a delivery van, a loading dock, a drain. It is the bottom of a light well
-      and the cheapest place on the block. Two things make it worth entering at all: the chef's
-      tin by the kitchen door, and the fact that it is the only deck the chips can be wasted on.</p>
+      <h3>The forecourt (y = 0)</h3>
+      <p>Fountain, garden, canopy, benches, lamps — and a loading end. The cheapest money in the
+      game is lying all over it, which is the joke: it is the most pleasant place on the block and
+      the least worth your time.</p>
 
       <h3>The fire escape (2.0 / 3.65 / 5.25)</h3>
-      <p>The authored route up, and the only part of the level that rewards not flying. The kid
-      who trades shinies sits on the first landing — deliberately halfway, so a trade is always
-      on the way to somewhere rather than a detour to the bottom.</p>
+      <p>Kept, and no longer required. It used to hold the kid, which put the core loop — trade a
+      shiny, get cash — on a 3&nbsp;×&nbsp;1.8&nbsp;m steel platform three metres up a wall, the
+      most awkward landing surface on the block. It now holds $0.80 and a corkscrew: worth the
+      climb if you are passing, never the only way up.</p>
 
       <h3>The terrace (5.4)</h3>
-      <p>Four fifths of the money, two guards, six gulls, five tables and a plunge pool. It is
-      also the only deck with a parapet, which is a wall to a walker and a perch to a crow — and
-      it has a deliberate gap in it at the head of the fire escape, because a 0.7&nbsp;m lip is
-      over the crow's 0.34&nbsp;m scramble and without the gap every stair climb would end in one
-      pointless extra flap.</p>
+      <p>Four fifths of the money, two guards, the kid, six gulls and five tables. It has a
+      parapet, which is a wall to a walker and a perch to a crow, with a deliberate gap at the
+      head of the fire escape — a 0.7&nbsp;m lip is over the crow's 0.34&nbsp;m scramble, and
+      without the gap every stair climb would end in one pointless extra flap. It also has
+      <strong>doors</strong>: one into the upper storey, one on the plant room. A terrace with
+      staff on it and no way in says everybody climbed the fire escape.</p>
 
       <h3>Chimney Row (9.2), and the tank (12.35)</h3>
-      <p>The crow's own territory: pots, an aerial, a pigeon loft, a window cleaner on his break,
-      and the water tank with the nest on its lid. The lid is round and its collider is the square
-      inside it, so the crow can never stand on a corner with nothing underneath — and at
-      3.35&nbsp;m against a 1.5&nbsp;m twig ring it clears the nest-platform rule with room to
-      spare, which matters more here than on the memorial because you arrive at this one out of
-      breath.</p>
+      <p>Pots, an aerial, the water tank with the nest on its lid, and deliberately nothing else.
+      There was a pigeon loft with a feed tin on it; it was clutter on the one deck that should
+      read as the crow's own, and the tin hung off the edge of the roof. Both are gone. The lid is
+      round and its collider is the square inside it, so the crow can never stand on a corner with
+      nothing underneath — and at 3.35&nbsp;m against a 1.5&nbsp;m twig ring it clears the
+      nest-platform rule with room to spare, which matters more here than on the memorial because
+      you arrive at this one out of breath.</p>
     </div>
   </section>
 
   <section id="cast">
-    <h2><span class="sec">§5</span> The cast</h2>
+    <h2><span class="sec">§6</span> The cast</h2>
     <div class="exhibit table-wrap">
       <table>
         <thead><tr><th>Who</th><th>Deck</th><th>Owns</th><th>Behaviour</th></tr></thead>
         <tbody>
           <tr><td>The maître d'</td><td class="num">5.4</td><td>The wallet, the bill-fold</td><td>Patrols the terrace. The most alert person in the game.</td></tr>
           <tr><td>The busser</td><td class="num">5.4</td><td>Table change, the tip glass, the check</td><td>Fast, wide route, clearing tables.</td></tr>
-          <tr><td>The chef</td><td class="num">0</td><td>The tin</td><td>Static in the doorway. Narrow cone; he is not really looking.</td></tr>
+          <tr><td>The chef</td><td class="num">0</td><td>The tin</td><td>Static in the service doorway. Narrow cone; he is not really looking.</td></tr>
           <tr><td>The porter</td><td class="num">0</td><td>The crate change</td><td>Oblivious. A moving obstacle rather than a threat.</td></tr>
-          <tr><td>The window cleaner</td><td class="num">9.2</td><td>The feed tin</td><td>Static on the roof, between you and the nest.</td></tr>
-          <tr><td>The kid</td><td class="num">2.0</td><td>—</td><td>Trades shinies for cash. $1.00 / $1.50 / $2.00 / $3.00.</td></tr>
+          <tr><td>A guest</td><td class="num">0</td><td>—</td><td>Waiting for a car. Owns nothing, notices nothing, stands in the way.</td></tr>
+          <tr><td>The kid</td><td class="num">5.4</td><td>—</td><td>On a bench a step inside the parapet gap. Trades shinies: $1.00 / $1.50 / $2.00 / $3.00.</td></tr>
         </tbody>
       </table>
-      <div class="exhibit-cap">Exhibit C — six people on three floors. Nobody uses stairs; everybody is solid.</div>
+      <div class="exhibit-cap">Exhibit C — six people on two floors. Nobody uses stairs; everybody is solid.</div>
+    </div>
+    <div class="col">
+      <p>The window cleaner used to stand on the roof guarding the loft's feed tin. Both went with
+      the loft. His cradle and his five are still hanging off the terrace parapet at 4.0&nbsp;m,
+      unguarded and awkward, which is the more interesting half of him anyway.</p>
     </div>
   </section>
 
   <section id="gulls">
-    <h2><span class="sec">§6</span> The gulls, and why they are allowed</h2>
+    <h2><span class="sec">§7</span> The gulls, and why they are allowed</h2>
     <div class="col">
       <p>A roof has no cover on it. On the block you could put a plane tree between yourself and
       the waiter, or take the awning, or drop behind the fountain. On a fifty-metre terrace there
       is nothing to put anywhere, and a level whose whole pitch is "the money is up here" cannot
       also be a level where being up here is free.</p>
 
-      <p>So the danger is authored as birds. Six gulls hold fixed pitches — two on the parapet
-      either side of the maître d's stand, one by the pool, two on the roof. Land inside one's
-      patch and it shrieks; every person within eleven metres turns to look and gets a shove of
-      suspicion. Fly <em>over</em> it and nothing happens, because a gull does not care about a
-      bird two metres above its head and because punishing flight would punish the one thing the
-      level is trying to teach.</p>
+      <p>So the danger is authored as birds. Six gulls hold fixed pitches — three on the parapet,
+      one by the plant room, two on the roof. Land inside one's patch and it shrieks; every person
+      within eleven metres turns to look and gets a shove of suspicion. Fly <em>over</em> it and
+      nothing happens, because a gull does not care about a bird two metres above its head and
+      because punishing flight would punish the one thing the level is trying to teach.</p>
 
       <p>They are markers that say <em class="term">not here</em>. Unlike a guard they cannot be
       outrun — only avoided, or moved.</p>
@@ -519,7 +562,7 @@
   </section>
 
   <section id="setpiece">
-    <h2><span class="sec">§7</span> The set piece</h2>
+    <h2><span class="sec">§8</span> The set piece</h2>
     <div class="col">
       <p>Level 1's marquee puzzle is a hot dog: drop it away from the cart, the pigeons mob it,
       the vendor leaves, and there are twelve seconds of unguarded ten. This block runs the same
@@ -534,9 +577,9 @@
           unguarded.</li>
       </ul>
 
-      <p>Drop it in the yard instead and the yard's pigeons get a meal and the terrace carries on
-      exactly as it was. That failure is the level's one deliberate teaching beat, and it is
-      taught by failing rather than by a toast that arrives before you have done anything:
+      <p>Drop it in the forecourt instead and the fountain pigeons get a meal and the terrace
+      carries on exactly as it was. That failure is the level's one deliberate teaching beat, and
+      it is taught by failing rather than by a toast that arrives before you have done anything:
       <strong>birds do not use stairs</strong>. It is the cheapest possible way to tell a player
       that this block has floors.</p>
 
@@ -548,62 +591,65 @@
   </section>
 
   <section id="engine">
-    <h2><span class="sec">§8</span> What a second floor cost the engine</h2>
+    <h2><span class="sec">§9</span> What a second floor cost the engine</h2>
     <div class="col">
-      <p>Almost everything in the game quietly assumed <span class="mono">y = 0</span>. Four
-      generalisations were needed, all small, all of which leave level 1 bit-for-bit identical
-      because it passes 0 everywhere.</p>
-      <ul>
-        <li><strong>Walkers have a floor.</strong> <span class="mono">blocksWalker</span> and
-          friends take the deck the walker is standing on. Without it, a maître d' on a roof
-          terrace is permanently inside the 5.4&nbsp;m solid he is standing on and cannot take a
-          step in any direction.</li>
-        <li><strong>People and birds have a <span class="mono">floorY</span>.</strong> Reach,
-          sightlines and rendering all measure from it. A person also sees height at a discount,
-          so roof staff do not spend the session shooing at a crow five metres below their feet
-          they could not reach if they wanted to.</li>
-        <li><strong>Light pools have a y.</strong> A lamp on a terrace has to put its light on the
-          terrace, not on the yard six metres below it.</li>
-        <li><strong>Water has a floor as well as a surface.</strong> See below.</li>
-      </ul>
+      <p>Almost everything in the game quietly assumed <span class="mono">y&nbsp;=&nbsp;0</span>.
+      Four generalisations were needed, all small, all of which leave level 1 bit-for-bit identical
+      because it passes 0 everywhere: walkers take a floor, people and birds carry a
+      <span class="mono">floorY</span>, light pools take a <span class="mono">y</span>, and the
+      water body has a floor as well as a surface.</p>
 
-      <h3>Two real bugs, found by building on top of things</h3>
-      <p>Both are the kind that could not exist on a flat block and are invisible in review on a
-      tall one.</p>
+      <h3>Five real bugs</h3>
+      <p>Three could only exist on a tall block. Two were always there and nobody had built the
+      shape that exposes them.</p>
       <ul>
-        <li><strong>The pool was a lobster pot again.</strong> The crow's scramble test read
-          <span class="mono">c.bottom &lt;= 0.01</span> — "is this thing standing on the ground?"
-          — which is the right question asked the wrong way. The plunge pool's rim stands on a
-          terrace, so its bottom is 5.4, so a crow floating in it could not climb out at any
-          heading at all. It now measures from the crow's own feet, which says the same thing on
-          every floor. The fountain's basin was a trap once before for a completely different
-          reason; this is the second time and the last, because the rule is now about a
-          relationship rather than about zero.</li>
+        <li><strong>The crow was thrown sideways off the fire escape.</strong> Reported from a
+          playtest as "clipping — resets me outside the playable area", and it was three faults at
+          once. The lateral collision passes ejected toward whichever face the <em>sign of the
+          velocity</em> implied, which is the face you came from only if you were moving on that
+          axis at all; they resolved <em>any</em> footprint overlap they could see, so flying
+          straight along z produced a shove along x; and the head bonk ran after them, so rising
+          into the underside of a platform read as being inside it. Three stacked landings
+          0.25&nbsp;m thick triggered all three on nearly every climb, moving the bird up to
+          3.2&nbsp;m and sometimes clean through the edge of the block. Now: nearer face, only the
+          axis that caused the overlap, and bonk first. Worst single-frame move went from
+          <strong>3.24&nbsp;m to 0.20&nbsp;m</strong>.</li>
+        <li><strong>Gulls floated off the roof.</strong> Also from the playtest. A bird's y is
+          authored and never integrated — nothing with feathers falls — which was invisible for as
+          long as every bird stood on a plaza, because a plaza is everywhere. Put one on a parapet
+          0.6&nbsp;m deep and it walks calmly off the side and hovers over the forecourt. The deck
+          is a leash now: a step that leaves it is undone and the bird is sent home.</li>
+        <li><strong>The pool was a lobster pot, again.</strong> The crow's scramble test read
+          <span class="mono">c.bottom &lt;= 0.01</span> — which means "at y&nbsp;=&nbsp;0", not "on
+          the ground". A rim standing on a terrace could not be climbed out of at any heading. It
+          now measures from the crow's own feet, which says the same thing on every floor. The
+          fountain's basin was a trap once before for a completely different reason; this is the
+          second time and the last, because the rule is now about a relationship rather than about
+          zero.</li>
         <li><strong>You could swim in a pool five metres over your head.</strong>
           <span class="mono">inWater</span> was "inside the ring and below the surface", which is
-          true of the entire column of air underneath a raised pool. Bounded below as well as
-          above, and asserted from the yard.</li>
+          true of the entire column of air underneath a raised pool.</li>
+        <li><strong>Pathing ran out of steering.</strong>
+          <span class="mono">stepAround</span> deflected a blocked step by up to 112°, enough to
+          get round a fountain and not enough to get round a seven-metre van: as a walker slides
+          along a wide face <em>away</em> from its target, the direction to the target keeps
+          rotating until every deflection under 112° still points into the wall. The committed side
+          then has nothing free, the other side does, and the walker turns round — the old shuffle,
+          arrived at from the opposite direction.</li>
       </ul>
-
-      <h3>And one that was already there</h3>
-      <p>Pathing ran out of steering. <span class="mono">stepAround</span> deflected a blocked step
-      by up to 112°, which is enough to get round a fountain and not enough to get round a
-      seven-metre van: as a walker slides along a wide face <em>away</em> from its target, the
-      direction to the target keeps rotating until every deflection under 112° still points into
-      the wall. The committed side then has nothing free, the other side does, and the walker turns
-      round — the old shuffle, arrived at from the opposite direction. Two wider angles were added,
-      and a committed side is now held until two and a half metres of the road ahead are clear
-      rather than until one step is.</p>
+      <p>The fountain went back to the ground afterwards, for design reasons that have nothing to
+      do with either water bug. Both fixes stayed, and so did both assertions: the bug is in the
+      crow, not in the level, and the next block that puts water on a roof should not have to find
+      it again.</p>
     </div>
   </section>
 
   <section id="rules">
-    <h2><span class="sec">§9</span> Three new rules</h2>
+    <h2><span class="sec">§10</span> Three new rules</h2>
     <div class="col">
       <p>The contract moved out of <span class="mono">world/level.js</span> and into
       <span class="mono">world/rules.js</span>, because a rule that lives inside the level it
-      constrains is not a contract, it is a comment. Every rule now runs against both blocks.
-      Three are new, and all three are what a level with floors needs.</p>
+      constrains is not a contract, it is a comment. Every rule now runs against both blocks.</p>
     </div>
 
     <div class="exhibit table-wrap">
@@ -611,11 +657,13 @@
         <thead><tr><th>#</th><th>Rule</th><th>Why it exists</th></tr></thead>
         <tbody>
           <tr><td class="num">9</td><td>No climb longer than <span class="mono">maxUnbrokenClimb</span> = 9 m with nothing to land on</td>
-            <td>60% of what a full bar buys, so it clears on a bar that is two thirds empty. This is why the roofline is a staircase.</td></tr>
-          <tr><td class="num">11</td><td>Every pickup, person and bird is resting on a deck that exists</td>
+            <td>60% of what a full bar buys, so it clears on a bar that is two thirds empty. This is why the level is a staircase.</td></tr>
+          <tr><td class="num">11</td><td>Every pickup, person and bird rests on a deck that exists — and stays on it</td>
             <td>Unfalsifiable on a flat block and the easiest mistake on a tall one: write a terrace coordinate, forget the offset, and it hangs in the air with nothing under it and no way to see that from the source.</td></tr>
-          <tr><td class="num">12</td><td>There is somewhere legal to drop the bait</td>
-            <td>The set piece has a deck requirement and a distance requirement. If they ever conflict, the level's marquee puzzle is quietly unsolvable.</td></tr>
+          <tr><td class="num">12</td><td>Nothing shoves the crow more than 0.55 m in a frame</td>
+            <td>The clipping report, made falsifiable. Aimed at every collider with air underneath it, from eight headings at three heights.</td></tr>
+          <tr><td class="num">13</td><td>There is somewhere legal to drop the bait</td>
+            <td>The set piece has a deck requirement and a distance requirement. If they ever conflict, the block's marquee puzzle is quietly unsolvable.</td></tr>
         </tbody>
       </table>
       <div class="exhibit-cap">Exhibit D — rules 1–8 are level 1's, unchanged, and now enforced on both.</div>
@@ -629,7 +677,7 @@
   </section>
 
   <section id="light">
-    <h2><span class="sec">§10</span> The light, and what it caught</h2>
+    <h2><span class="sec">§11</span> The light, and what it caught</h2>
     <div class="col">
       <p>This block starts at <span class="mono">dayStart = 0.42</span> and gets the back 58% of
       the sunset ramp. Same eight minutes, less daylight in them: the lamps catch at
@@ -637,94 +685,84 @@
       working rather than as a consolation for being slow.</p>
 
       <p>That meant time-of-day is no longer the same number as progress through the run, which is
-      exactly the class of arithmetic that has bitten this project twice. The HUD's sun dial is
-      now handed elapsed seconds separately, and the lamp-timing assertion converts the trigger on
-      to each level's own clock before comparing it to the rank ladder — in both directions, as
-      the existing note demands.</p>
+      exactly the class of arithmetic that has bitten this project twice. The HUD's sun dial is now
+      handed elapsed seconds separately, and the lamp-timing assertion converts the trigger on to
+      each level's own clock before comparing it to the rank ladder — in both directions, as the
+      existing note demands.</p>
 
       <h3>The navigability floor did its job</h3>
       <p>The block must stay playable after dark: median luminance ≥ 48, 5th percentile ≥ 24,
-      measured off the rendered frame with the HUD hidden. Level 2 failed it badly on the first
+      measured off the rendered frame with the HUD hidden. It failed badly on the first
       measurement — 5th percentile of <strong>6</strong> — and the fix was not more light. It was
-      four materials.</p>
-      <ul>
-        <li>The hotel wall was terracotta. Fifty metres of it, facing away from a sun that comes
-          from behind the block: it filled a third of the frame, was most of the darkest 5%, and
-          dragged the whole dusk average red at the hour the palette says shade goes violet. Both
-          failures, one material.</li>
-        <li>The yard was one step darker than the plaza — "wet asphalt, the bottom of a light
-          well". It is the largest surface in frame from every camera position on the level, and
-          the fiction was not worth the median.</li>
-        <li>The van was navy. A seven-metre navy box is a lot of dark.</li>
-        <li>Six service windows were unlit teal, and measured <em>darker in daylight than the
-          shadow they sat in</em> — which is also just wrong. Glass seen from outside on a sunny
-          afternoon is a mirror of the sky, not a hole.</li>
-      </ul>
+      four materials: a fifty-metre terracotta wall facing away from a sun that comes from behind
+      the block; a ground floor one paving step too dark for the sake of a "wet asphalt" fiction;
+      a navy van; and six unlit teal windows that measured <em>darker in daylight than the shadow
+      they sat in</em>, which is also just wrong — glass seen from outside on a sunny afternoon is
+      a mirror of the sky, not a hole.</p>
       <p>Shipped figures, over six samples from two camera positions across the session:
-      median <strong>51–127</strong>, 5th percentile <strong>27–41</strong>, and blue beats red in
+      median <strong>53–127</strong>, 5th percentile <strong>27–49</strong>, and blue beats red in
       the frame average at dusk. The floors were not touched — lowering a shared threshold to make
       a new level pass is the failure mode this repo has a whole note about.</p>
     </div>
   </section>
 
   <section id="perf">
-    <h2><span class="sec">§11</span> What it costs to run</h2>
+    <h2><span class="sec">§12</span> What it costs to run</h2>
     <div class="exhibit table-wrap">
       <table>
-        <thead><tr><th></th><th>Level 1 — the block</th><th>Level 2 — the roofline</th></tr></thead>
+        <thead><tr><th></th><th>Level 1 — the block</th><th>The Hotel (Outside)</th></tr></thead>
         <tbody>
-          <tr><td>Meshes</td><td class="num">375</td><td class="num">383</td></tr>
-          <tr><td>Colliders</td><td class="num">52</td><td class="num">47</td></tr>
+          <tr><td>Meshes</td><td class="num">~375</td><td class="num">~424</td></tr>
+          <tr><td>Colliders</td><td class="num">52</td><td class="num">57</td></tr>
           <tr><td>People</td><td class="num">6</td><td class="num">6</td></tr>
           <tr><td>Birds</td><td class="num">7 pigeons</td><td class="num">5 pigeons + 6 gulls</td></tr>
-          <tr><td>Night lights</td><td class="num">11 sources, 9 pools</td><td class="num">12 sources, 9 pools</td></tr>
-          <tr><td>Money on the block</td><td class="val">$33.95</td><td class="val">$56.70</td></tr>
+          <tr><td>Money on the block</td><td class="val">$33.95</td><td class="val">$54.70</td></tr>
           <tr><td>Unguarded and dry</td><td class="val">$0.75</td><td class="val">$7.05</td></tr>
+          <tr><td>Goal</td><td class="val">$20.00</td><td class="val">$30.00</td></tr>
         </tbody>
       </table>
       <div class="exhibit-cap">Exhibit E — the two blocks, side by side. Printed by <span class="mono">npm run smoke</span> on every run.</div>
     </div>
     <div class="col">
       <p>One level is built at a time, so nothing above is additive at runtime. The whole cost of a
-      second block is what it adds to the bundle: <strong>164.6&nbsp;kB gzipped</strong>, against
-      roughly 155 before — about <strong>9&nbsp;kB</strong>, nearly all of it geometry described in
-      source. There is still no asset pipeline, nothing to download, and no new draw-call class:
+      second block is what it adds to the bundle: <strong>165.1&nbsp;kB gzipped</strong>, against
+      roughly 155 before — about <strong>10&nbsp;kB</strong>, nearly all of it geometry described
+      in source. There is still no asset pipeline, nothing to download, and no new draw-call class:
       the gulls are pigeons, the pools are the same additive quads, and the terrace tables are the
       café tables from <span class="mono">world/kit.js</span>.</p>
 
       <div class="note">
         <span class="lbl">Where the shared parts live now</span>
-        <span class="mono">world/kit.js</span> holds anything a second block would otherwise
-        copy-paste — tables, benches, lamps, bins, planters, the skyline, the nest, and the pool.
-        A café table is kit. A war memorial with a nest on it is not. Level 1 was rebuilt on the
-        kit first and re-verified before level 2 was written, so the refactor and the new level
-        never had to be debugged at the same time.
+        <span class="mono">world/kit.js</span> holds anything a third block would otherwise
+        copy-paste — tables, benches, lamps, bins, planters, the skyline, the nest, and the water
+        body. A café table is kit. A war memorial with a nest on it is not. Level 1 was rebuilt on
+        the kit first and re-verified before this block was written, so the refactor and the new
+        level never had to be debugged at the same time. Do that again.
       </div>
     </div>
   </section>
 
   <section id="open">
-    <h2><span class="sec">§12</span> Deliberately not here</h2>
+    <h2><span class="sec">§13</span> Deliberately not here</h2>
     <div class="col">
       <ul>
-        <li><strong>How you get from one block to the other.</strong> Selection is
+        <li><strong>How you get from one block to another.</strong> Selection is
           <span class="mono">?level=2</span> and <span class="mono">main.js</span> is the only
           thing that reads it. That is a seam, not a join, and it is left open on purpose.</li>
         <li><strong>Carrying anything between levels.</strong> No money, no rank, no state. Each
           block is a session.</li>
-        <li><strong>A story that commits.</strong> The endings are written to stand alone. Level
-          1's win turns you back into a person on top of a war memorial; level 2's turns you back
-          on top of a water tank, in front of a window cleaner who has questions. Neither depends
-          on the other having happened.</li>
-        <li><strong>New verbs.</strong> Still none. If a third block needs one, it should be
-          because a third block's pacing demands it — not because the second one set a precedent.</li>
+        <li><strong>The inside of the hotel.</strong> The name commits to there being one. That is
+          a different level and a different set of problems — interiors mean ceilings, and this
+          engine has never had one.</li>
+        <li><strong>New verbs.</strong> Still none. If a later block needs one, it should be
+          because that block's pacing demands it — not because this one set a precedent.</li>
       </ul>
     </div>
   </section>
 
   <footer>
-    <span>Small Change — level 2 brief</span>
-    <span>Second Storey · $40.00 · four decks</span>
+    <span>Small Change — The Hotel (Outside)</span>
+    <span>$30.00 · four decks · slot 3–4</span>
   </footer>
 
 </main>
