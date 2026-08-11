@@ -254,7 +254,7 @@
 
 <header class="band">
   <div class="band-inner">
-    <div class="eyebrow">Design exploration &nbsp;·&nbsp; v1.0 &nbsp;·&nbsp; Tiers 0, 1 and 2 shipped</div>
+    <div class="eyebrow">Design exploration &nbsp;·&nbsp; v1.1 &nbsp;·&nbsp; Tiers 0–2 shipped, 2.5 and 3 parked</div>
     <h1 class="title">Lighting<br>At Dusk<span class="thin">Making the last third playable</span></h1>
     <p class="deck">From about 70% of the day the block stopped being readable. What the
       darkness measured, what the style guide would and would not allow, four techniques
@@ -262,7 +262,7 @@
       <strong>Tiers 0, 1 and 2 are now in the game</strong> — §6 records what each one
       actually bought, and §11 the two rounds of playtest that got tier 2 right.</p>
     <dl class="facts">
-      <div><dt>Status</dt><dd>Tiers 0–2 shipped; tier 3 open</dd></div>
+      <div><dt>Status</dt><dd>Tiers 0–2 shipped; 2.5 and 3 parked</dd></div>
       <div><dt>Trigger</dt><dd>Playtest, 2026-08-10</dd></div>
       <div><dt>Current rig</dt><dd>2 lights, 362 meshes, 22 materials</dd></div>
       <div><dt>Budget</dt><dd>~155 kB gzip, 60 Hz on a phone</dd></div>
@@ -997,6 +997,37 @@
         <li><strong>Does the crow get lit at the cart?</strong> A rule against a good image.
           Only matters if tier 3 happens — pools sidestep it entirely, because the bird
           occludes the quad it is standing on. See §11.</li>
+        <li><strong>Tier 3 — parked, and it is the only expensive one.</strong> Worth being
+          precise about why, because the first three tiers were cheap for structural reasons
+          rather than by luck. Tier 0 is four numbers. Tier 1 is <span class="mono">emissive</span>,
+          a constant term in a fragment shader that already runs. Tier 2 is nine unlit quads —
+          nine draw calls and a little overdraw. A <span class="mono">PointLight</span> is
+          different in kind: it recompiles all thirty lit materials with
+          <span class="mono">NUM_POINT_LIGHTS=N</span> and then pays per-fragment lighting for
+          N lights on <em>every lit pixel of every frame</em>, near a lamp or not. It is the
+          only option whose cost scales with resolution, which is why it bites hardest on a
+          phone.
+          <br><br>
+          Three shadowless point lights on Lambert is <em>probably</em> fine, and "probably" is
+          doing real work in that sentence. It cannot be settled from the harness:
+          <span class="mono">shoot.mjs</span> runs SwiftShader, a software renderer, so its
+          frame times say nothing about a real GPU. The measurement is about ten minutes — add
+          the lights at runtime from the console on a real phone, watch frame time, decide. No
+          code change needed to get the number.</li>
+
+        <li><strong>Tier 2.5 — the cheap version of tier 3, untested.</strong> What tier 3
+          actually buys is <em>people</em> lit at their stalls: the newsagent behind his
+          counter, and the vendor walking out of his own light during the pigeon distraction,
+          which is the best thing that could happen to Cart Corner after dark. That might not
+          need real lights at all. Warm-tinting a human's material while they stand inside a
+          stall's radius is a per-entity tweak on six characters rather than per-fragment work
+          on every pixel, and it sidesteps the crow-lighting question in §8 entirely.
+          <br><br>
+          Cruder, and at this camera distance possibly indistinguishable. Worth trying before
+          tier 3, because if it works the expensive tier never has to happen. It inherits the
+          same trap as everything else here — <span class="mono">shapes.mat()</span> caches by
+          colour, so the humans would need cloned materials first.</li>
+
         <li><strong>How far do we take the night?</strong> Deferred until Tiers 0 and 1 have
           been played. There is a version of this where
           <span class="mono">t=0.95</span> is genuinely dark and the game becomes a different
@@ -1231,7 +1262,7 @@
 
 <footer>
   <span>Small Change — lighting at dusk</span>
-  <span>v1.0 · tiers 0–2 shipped · tier 3 open</span>
+  <span>v1.1 · tiers 0–2 shipped · 2.5 and 3 parked</span>
 </footer>
 
 </body>
