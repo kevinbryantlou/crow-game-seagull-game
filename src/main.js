@@ -109,6 +109,9 @@ class Game {
       this.running = true;
       this._last = performance.now();
       this.hud.beginControlsCountdown(10);
+      // On touch the list is a real share of a small screen, so it introduces
+      // itself and then folds down to a count. On desktop it stays open.
+      if (this.input.hasTouch) this.hud.enableTaskAutoCollapse(12);
       setTimeout(() => { if (this.running) this.hud.toast('Collect money', 2.2); }, 900);
     };
     document.getElementById('start').addEventListener('click', start);

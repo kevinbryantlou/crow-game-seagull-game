@@ -255,6 +255,70 @@ if (ending && !/twenty-two dollars sixty-six cents/i.test(ending.title)) {
 if (ending && /\$/.test(ending.rank)) errors.push(`amount still in the eyebrow: "${ending.rank}"`);
 if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-ending'); }
 
+// ── mobile pass ──────────────────────────────────────────────────────────────
+// Phone layout cannot be eyeballed any other way, and the bottom-right corner
+// is contested there: the sun dial and the touch buttons both want it.
+const mob = await browser.newPage();
+mob.on('pageerror', (e) => errors.push(`mobile uncaught: ${e.message}`));
+mob.on('console', (m) => { if (m.type() === 'error') errors.push(`mobile console: ${m.text()}`); });
+await mob.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+// puppeteer's emulateMediaFeatures whitelist has no 'pointer', so go via CDP.
+// Without this the page never sets body.touch and the on-screen controls stay
+// hidden, which is precisely the layout under test.
+const mobCdp = await mob.createCDPSession();
+await mobCdp.send('Emulation.setEmulatedMedia', {
+  features: [{ name: 'pointer', value: 'coarse' }, { name: 'any-pointer', value: 'coarse' }],
+});
+await mob.goto(URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+await mob.waitForFunction(
+  () => document.getElementById('loading')?.classList.contains('hidden'),
+  { timeout: 20000 },
+).catch(() => errors.push('mobile: game never booted'));
+
+const touchLayout = await mob.evaluate(() => ({ touchClass: document.body.classList.contains('touch') }));
+if (!touchLayout.touchClass) errors.push('mobile: touch layout did not activate');
+
+await mob.tap('#start');
+await new Promise((r) => setTimeout(r, 1500));
+writeFileSync(`${OUT}/12-mobile.png`, await mob.screenshot({ type: 'png' }));
+console.log(`  wrote ${OUT}/12-mobile.png`);
+
+// Overlap check: no HUD element may intersect the touch buttons.
+const overlap = await mob.evaluate(() => {
+  const box = (id) => {
+    const el = document.getElementById(id);
+    if (!el || el.hidden) return null;
+    const r = el.getBoundingClientRect();
+    return r.width && r.height ? r : null;
+  };
+  const hits = (a, b) => a && b
+    && a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+  const buttons = box('buttons');
+  const out = [];
+  for (const id of ['sun', 'stam', 'money', 'tasks', 'carry']) {
+    if (hits(box(id), buttons)) out.push(id);
+  }
+  const b = box('buttons'), sun = box('sun'), tasks = box('tasks');
+  return {
+    collides: out,
+    tasksCollapsed: document.getElementById('tasks').classList.contains('collapsed'),
+    sunAboveButtonsBy: b && sun ? Math.round(b.top - sun.bottom) : null,
+    headerLines: tasks ? Math.round(document.getElementById('tasks-toggle').getBoundingClientRect().height) : null,
+  };
+});
+console.log('  mobile layout:', JSON.stringify(overlap));
+if (overlap.collides.length) {
+  errors.push(`mobile: ${overlap.collides.join(', ')} overlapping the touch buttons`);
+}
+
+// The task list should fold down to a count once it has introduced itself.
+await new Promise((r) => setTimeout(r, 12000));
+const folded = await mob.evaluate(() =>
+  document.getElementById('tasks').classList.contains('collapsed'));
+if (!folded) errors.push('mobile: task list never collapsed');
+writeFileSync(`${OUT}/13-mobile-collapsed.png`, await mob.screenshot({ type: 'png' }));
+console.log(`  wrote ${OUT}/13-mobile-collapsed.png (tasks collapsed: ${folded})`);
+
 await browser.close();
 
 console.log('');

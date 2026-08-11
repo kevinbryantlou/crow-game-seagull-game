@@ -664,7 +664,11 @@
           it, tabular numerals so the digits never jitter. It is the only element that
           animates: a coin lands and the number rolls.</li>
         <li><strong>Task list</strong> — top right, small, struck through when done. Never
-          more than five lines.</li>
+          more than five lines, and it carries its own progress count. On touch it
+          introduces itself, folds down to that count after twelve seconds, and reopens on
+          a tap — or by itself, briefly, whenever something is ticked off. On a phone the
+          expanded list is about a third of the upper screen; on a desktop it costs
+          nothing, so it stays open there.</li>
         <li><strong>Sun dial</strong> — a thin arc, bottom right, one dot travelling it.
           No numbers. Time should be felt, not read.</li>
         <li><strong>Context prompt</strong> — floats at the beak, names the verb and the
@@ -684,8 +688,8 @@
         <thead><tr><th>Element</th><th>Anchor</th><th>Colour</th><th>Rule</th></tr></thead>
         <tbody>
           <tr><td>Money counter</td><td class="k">top-left, safe-area</td><td class="k">#1F4D3D / #E0B348</td><td>Always visible. The only number that matters.</td></tr>
-          <tr><td>Task list</td><td class="k">top-right</td><td class="k">#1F4D3D / #E9E5DA</td><td>Collapses to a count on narrow portrait.</td></tr>
-          <tr><td>Sun dial</td><td class="k">bottom-right</td><td class="k">#E0B348 on rule</td><td>Hidden during the first 30 seconds.</td></tr>
+          <tr><td>Task list</td><td class="k">top-right</td><td class="k">#1F4D3D / #E9E5DA</td><td>Folds to a count on touch after 12s; tap to reopen. Shorter label on narrow screens.</td></tr>
+          <tr><td>Sun dial</td><td class="k">bottom-right</td><td class="k">#E0B348 on rule</td><td>Hidden during the first 30 seconds. The bottom-right corner belongs to the thumb cluster on touch, so the dial moves above it.</td></tr>
           <tr><td>Context prompt</td><td class="k">world-space, at beak</td><td class="k">#E8E2D2 on #0F0D14</td><td>One line. Verb, then noun.</td></tr>
           <tr><td>Touch stick</td><td class="k">bottom-left, dynamic</td><td class="k">#E9E5DA 30% alpha</td><td>Spawns where the thumb lands, not fixed.</td></tr>
           <tr><td>Touch buttons</td><td class="k">bottom-right stack</td><td class="k">#E9E5DA 30% alpha</td><td>Min 56pt targets, thumb-arc placement.</td></tr>
@@ -696,6 +700,16 @@
     <div class="exhibit-cap">Exhibit F — HUD inventory. Six permanent elements, plus one that retires itself.</div>
 
     <div class="col">
+      <div class="note">
+        <span class="lbl">Phone layout is its own design</span>
+        Two elements move on touch rather than merely shrinking. The sun dial leaves the
+        bottom-right corner entirely, because that corner belongs to the thumb cluster and
+        nothing else may sit there. The task list stops being permanent furniture: it says
+        its piece, folds to a count, and comes back when asked or when something is ticked
+        off. The rule underneath both — on a small screen, anything not needed
+        <em class="term">right now</em> should be recoverable rather than resident.
+      </div>
+
       <div class="note">
         <span class="lbl">On the seventh element</span>
         This page used to say there were six, and that anything a seventh would need to

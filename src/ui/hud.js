@@ -52,6 +52,12 @@ export class Hud {
     this.amt = $('amt');
     this.barFill = $('bar-fill');
     this.taskList = $('task-list');
+    this.tasks = $('tasks');
+    this.tasksToggle = $('tasks-toggle');
+    this.tasksCount = $('tasks-count');
+    this._doneIds = new Set();
+    this._tasksT = 0;
+    this._tasksAuto = false;
     this.prompt = $('prompt');
     this.toastEl = $('toast');
     this.carryEl = $('carry');
@@ -71,6 +77,7 @@ export class Hud {
     this.controlsToggle = $('controls-toggle');
     this._controlsT = 0;
     this.controlsToggle.addEventListener('click', () => this.toggleControls());
+    this.tasksToggle.addEventListener('click', () => this.toggleTasks());
   }
 
   toggleControls(force) {
@@ -98,6 +105,8 @@ export class Hud {
   }
 
   setTasks(tasks) {
+    let done = 0;
+    let newlyDone = false;
     for (const t of tasks) {
       let el = this._taskEls.get(t.id);
       if (!el) {
@@ -107,7 +116,38 @@ export class Hud {
         this._taskEls.set(t.id, el);
       }
       el.classList.toggle('done', !!t.done);
+      if (t.done) {
+        done++;
+        if (!this._doneIds.has(t.id)) { this._doneIds.add(t.id); newlyDone = true; }
+      }
     }
+    this.tasksCount.textContent = `${done}/${tasks.length}`;
+
+    // Ticking something off while collapsed is worth seeing, so the list opens
+    // for a moment and then gets out of the way again.
+    if (newlyDone && this._tasksAuto) this.toggleTasks(true, 4);
+  }
+
+  /**
+   * @param {boolean} [open]     force a state; omit to flip
+   * @param {number}  [recollapse] seconds until it auto-collapses again
+   */
+  toggleTasks(open, recollapse) {
+    const collapsed = open === undefined
+      ? !this.tasks.classList.contains('collapsed')
+      : !open;
+    this.tasks.classList.toggle('collapsed', collapsed);
+    this.tasksToggle.setAttribute('aria-expanded', String(!collapsed));
+    this._tasksT = collapsed ? 0 : (recollapse ?? 0);
+  }
+
+  /**
+   * Auto-collapse only where the space actually matters. On a phone the list is
+   * a meaningful share of the screen; on a desktop it costs nothing.
+   */
+  enableTaskAutoCollapse(seconds = 12) {
+    this._tasksAuto = true;
+    this._tasksT = seconds;
   }
 
   setCarry(label) {
@@ -180,6 +220,13 @@ export class Hud {
       if (this._controlsT <= 0) {
         this.controls.classList.add('collapsed');
         this.controlsToggle.setAttribute('aria-expanded', 'false');
+      }
+    }
+    if (this._tasksT > 0) {
+      this._tasksT -= dt;
+      if (this._tasksT <= 0) {
+        this.tasks.classList.add('collapsed');
+        this.tasksToggle.setAttribute('aria-expanded', 'false');
       }
     }
   }

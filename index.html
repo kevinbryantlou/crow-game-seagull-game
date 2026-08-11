@@ -80,10 +80,19 @@
     background: rgba(31,77,61,.92); border-bottom: 3px solid var(--brass);
     padding: 9px 13px 10px; max-width: 250px; box-shadow: 0 3px 0 rgba(0,0,0,.22);
   }
-  #tasks h2 {
+  #tasks { pointer-events: auto; }
+  #tasks-toggle {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    width: 100%; background: none; border: 0; cursor: pointer; text-align: left;
     font-family: var(--mono); font-size: 9px; letter-spacing: .2em;
-    text-transform: uppercase; color: #9fb5ab; margin: 0 0 6px; font-weight: 400;
+    text-transform: uppercase; color: #9fb5ab; padding: 0 0 6px;
   }
+  #tasks-toggle:hover { color: var(--paper); }
+  #tasks-toggle:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  #tasks-count { color: var(--brass); font-weight: 700; letter-spacing: .1em; flex: none; }
+  .t-short { display: none; }
+  #tasks.collapsed #task-list { display: none; }
+  #tasks.collapsed #tasks-toggle { padding-bottom: 0; }
   #tasks ul { margin: 0; padding: 0; list-style: none; }
   #tasks li {
     font-size: 13px; letter-spacing: .02em; line-height: 1.34; margin: 3px 0;
@@ -99,6 +108,11 @@
     width: 108px; height: 58px; opacity: 0; transition: opacity .8s ease;
   }
   #sun.on { opacity: .9; }
+  /* On touch the bottom-right corner belongs to the buttons; the dial sits
+     above the cluster (which is 148px tall from a 26px offset). */
+  body.touch #sun {
+    bottom: calc(var(--safe-b) + 190px); right: calc(var(--safe-r) + 22px);
+  }
 
   /* ── stamina ───────────────────────────────────────────────────────────── */
   #stam {
@@ -336,8 +350,13 @@
     * { transition-duration: .01ms !important; }
   }
   @media (max-width: 560px) {
-    #tasks { max-width: 168px; padding: 7px 10px 8px; }
+    /* The full label wraps to two lines in a chip this narrow, so it swaps for
+       a shorter one rather than being squeezed. */
+    #tasks { max-width: 172px; padding: 7px 10px 8px; }
     #tasks li { font-size: 11.5px; }
+    #tasks-toggle { font-size: 8.5px; letter-spacing: .12em; }
+    .t-full { display: none; }
+    .t-short { display: inline; }
     #money { min-width: 124px; padding: 6px 11px 5px; }
     #money .amt { font-size: 22px; }
     #sun { width: 84px; height: 46px; }
@@ -359,7 +378,9 @@
   <div id="carry"></div>
 
   <div id="tasks">
-    <h2>Things a crow could try</h2>
+    <button id="tasks-toggle" type="button" aria-expanded="true" aria-controls="task-list">
+      <span class="t-full">Things a crow could try</span><span class="t-short">Things to try</span><span id="tasks-count">0/5</span>
+    </button>
     <ul id="task-list"></ul>
   </div>
 
