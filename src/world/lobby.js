@@ -91,6 +91,12 @@ const TROLLEY = { x: -12.5, z: -10.2 };
  * the test embedded in it.
  */
 const KID = { x: 6.8, z: 6.6 };
+/**
+ * The grand stair, named up here because the gallery's rail has to line its
+ * opening up with it — and a rail that types those numbers in itself gets them
+ * wrong, which it did, by 0.2 m one way and 0.8 m the other.
+ */
+const STAIR = { x: -19.9, w: 3.0, botZ: 2.6, topZ: -7.2, steps: 14 };
 
 export function buildLevel() {
   const root = new THREE.Group();
@@ -394,25 +400,47 @@ export function buildLevel() {
      * to fly — over a stair whose entire reason for existing is that you do not
      * have to. A staircase has an opening at its head; so does this one now.
      */
-    const bal = box(37.4, 0.9, 0.25, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
-    bal.position.set(1.3, DECK.mezzanine + 0.45, -7.32);
-    root.add(bal);
-    solid(1.3, -7.32, 37.4, 0.25, DECK.mezzanine + 0.9, DECK.mezzanine);
-    for (let x = -16.8; x <= 19; x += 1.6) {
-      root.add(at(cyl(0.05, 0.05, 0.86, 5, PAL.gold, { up: PAL.goldLit, down: PAL.shade }),
-        x, DECK.mezzanine + 0.43, -7.32));
+    /**
+     * The opening is the stair's own width, and both edges are read off the
+     * stair rather than typed in.
+     *
+     * They were typed in, and the numbers were 0.2 m and 0.8 m wrong in
+     * opposite directions — so the west newel stood *on* the top step and the
+     * gap ran 0.8 m past the east side of the stair into open gallery with no
+     * rail on it. Neither is visible in the source, because the stair is
+     * eighty lines further down the file and its width is a different literal.
+     * A player walking up met a post; a player on the gallery could walk off a
+     * railed edge that had a hole in it.
+     */
+    const caps = [];
+    const gapW = STAIR.x - STAIR.w / 2 - 0.2;      // west edge of the opening
+    const gapE = STAIR.x + STAIR.w / 2 + 0.2;      // east edge
+    for (const [cx, w] of [
+      [(-22 + gapW) / 2, gapW + 22],               // the stub west of the stair
+      [(gapE + 20) / 2, 20 - gapE],                // and the long run east of it
+    ]) {
+      if (w < 0.2) continue;
+      const b = box(w, 0.9, 0.25, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
+      b.position.set(cx, DECK.mezzanine + 0.45, -7.32);
+      root.add(b);
+      solid(cx, -7.32, w, 0.25, DECK.mezzanine + 0.9, DECK.mezzanine);
+      const cap = box(w, 0.1, 0.34, PAL.gold, { up: PAL.goldLit, down: PAL.shade });
+      cap.position.set(cx, DECK.mezzanine + 0.92, -7.32);
+      root.add(cap);
+      caps.push(cap);
+      for (let x = cx - w / 2 + 0.8; x < cx + w / 2 - 0.4; x += 1.6) {
+        root.add(at(cyl(0.05, 0.05, 0.86, 5, PAL.gold, { up: PAL.goldLit, down: PAL.shade }),
+          x, DECK.mezzanine + 0.43, -7.32));
+      }
     }
-    const cap = box(37.4, 0.1, 0.34, PAL.gold, { up: PAL.goldLit, down: PAL.shade });
-    cap.position.set(1.3, DECK.mezzanine + 0.92, -7.32);
-    root.add(cap);
-    // A newel post either side of the opening, so the gap reads as a stair head
+    // A newel either side of the opening, so the gap reads as a stair head
     // rather than as a rail somebody forgot to finish.
-    for (const nx of [-17.6, -21.2]) {
+    for (const nx of [gapW, gapE]) {
       root.add(at(box(0.28, 1.15, 0.28, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }),
         nx, DECK.mezzanine + 0.575, -7.32));
       root.add(at(ico(0.13, 0, PAL.gold, { shadow: false }), nx, DECK.mezzanine + 1.24, -7.32));
     }
-    night.add(cap, PAL.gold, { peak: 0.42, warm: 3.0, delay: 1.4 });
+    night.add(caps, PAL.gold, { peak: 0.42, warm: 3.0, delay: 1.4 });
 
     for (const px of [-16, -8, 0, 8, 16]) perch(px, DECK.mezzanine + 0.9, -7.32);
     for (const px of [-14, -4, 6, 14]) perch(px, DECK.mezzanine, -9.6);
@@ -501,8 +529,8 @@ export function buildLevel() {
    * changed once and will change again.
    */
   {
-    const STEPS = 14;
-    const TOP_Z = -7.2, BOT_Z = 2.6;          // meets the gallery, and the floor
+    const STEPS = STAIR.steps;
+    const TOP_Z = STAIR.topZ, BOT_Z = STAIR.botZ;   // meets the gallery, and the floor
     const run = (BOT_Z - TOP_Z) / STEPS;      // 0.7 m of tread per step
     const rise = DECK.mezzanine / STEPS;      // 0.314 m — under a 0.34 scramble
     for (let i = 0; i < STEPS; i++) {
@@ -510,26 +538,26 @@ export function buildLevel() {
       const cz = BOT_Z - run * (i + 0.5);
       // Each step is solid to the floor, so none of them is an overhang and
       // none of them can shove anything sideways.
-      const b = box(3.0, top, run + 0.02, PAL.stone, { up: PAL.stone, down: PAL.shade });
-      b.position.set(-19.9, top / 2, cz);
+      const b = box(STAIR.w, top, run + 0.02, PAL.stone, { up: PAL.stone, down: PAL.shade });
+      b.position.set(STAIR.x, top / 2, cz);
       root.add(b);
-      solid(-19.9, cz, 3.0, run + 0.02, top);
-      if (i % 4 === 3) perch(-19.9, top, cz);
+      solid(STAIR.x, cz, STAIR.w, run + 0.02, top);
+      if (i % 4 === 3) perch(STAIR.x, top, cz);
       // The balustrade, one post per pair of steps, standing *on* the step it
       // belongs to. Read off the same two numbers as the geometry.
       if (i % 2 === 1) {
         root.add(at(cyl(0.05, 0.05, 0.92, 5, PAL.gold, { up: PAL.goldLit, down: PAL.shade }),
-          -18.5, top + 0.46, cz));
+          STAIR.x + STAIR.w / 2 - 0.1, top + 0.46, cz));
         const seg = box(0.09, 0.09, run * 2.1, PAL.gold, { up: PAL.goldLit, down: PAL.shade });
-        seg.position.set(-18.5, top + 0.95, cz + run * 0.5);
+        seg.position.set(STAIR.x + STAIR.w / 2 - 0.1, top + 0.95, cz + run * 0.5);
         seg.rotation.x = Math.atan2(rise * 2, run * 2);
         root.add(seg);
       }
     }
     // A newel at the foot, matching the pair at the head.
     root.add(at(box(0.28, 1.15, 0.28, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }),
-      -18.5, 0.575, BOT_Z - 0.2));
-    root.add(at(ico(0.13, 0, PAL.gold, { shadow: false }), -18.5, 1.24, BOT_Z - 0.2));
+      STAIR.x + STAIR.w / 2 - 0.1, 0.575, BOT_Z - 0.2));
+    root.add(at(ico(0.13, 0, PAL.gold, { shadow: false }), STAIR.x + STAIR.w / 2 - 0.1, 1.24, BOT_Z - 0.2));
   }
 
   // ══════════════════════════════════════════════════════════════════════════

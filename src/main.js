@@ -106,6 +106,26 @@ const TEST_TRADE_PAYOUT = null;
 // Carries the same three tripwires as the payout cheat above.
 const TEST_SESSION_SECONDS = null;
 
+/**
+ * Test hook: pin the time of day, so a block can be looked at under one light
+ * for as long as it takes to look at it.
+ *
+ * Shortening the day gets you *through* dusk; this stops you there. It is the
+ * difference between "I can reach the evening" and "I can walk the whole block
+ * in the evening", and every lighting note this project has ever taken came
+ * from somebody doing the second thing by hand.
+ *
+ * 0 is the start of the afternoon and 1 is the light going; the street lights
+ * catch at RULES.lampsOnAt (0.72). It overrides the level's own `dayStart`
+ * entirely — the clock still runs, the sun dial still moves, the session still
+ * ends on time — only the *light* is frozen. Null means the real ramp.
+ *
+ * Same three tripwires as the two above: the red badge, the smoke banner and
+ * the startup warning, all of which key off the `TEST_` prefix rather than off
+ * a list somebody has to remember to add to.
+ */
+const TEST_TIME_OF_DAY = null;
+
 class Game {
   /**
    * Everything here outlives a block: the renderer, the input abstraction, the
@@ -150,6 +170,7 @@ class Game {
     const cheats = [];
     if (TEST_TRADE_PAYOUT != null) cheats.push(`trade pays $${TEST_TRADE_PAYOUT.toFixed(2)}`);
     if (TEST_SESSION_SECONDS != null) cheats.push(`day lasts ${TEST_SESSION_SECONDS}s`);
+    if (TEST_TIME_OF_DAY != null) cheats.push(`light pinned at t=${TEST_TIME_OF_DAY}`);
     if (cheats.length) {
       const badge = document.getElementById('testmode');
       badge.textContent = `Test mode · ${cheats.join(' · ')}`;
@@ -1220,7 +1241,7 @@ class Game {
     // than replayed from noon.
     const through = Math.min(1, this.elapsed / this.sessionSeconds);
     const d0 = this.level.dayStart;
-    const t = d0 + (1 - d0) * through;
+    const t = TEST_TIME_OF_DAY ?? (d0 + (1 - d0) * through);
     this.stage.follow(this.crow.pos, dt);
     this.stage.setTimeOfDay(t);
     // Driven in real seconds, not in `t`: the catch-and-warm schedule has to

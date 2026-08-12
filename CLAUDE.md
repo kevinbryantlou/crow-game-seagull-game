@@ -223,6 +223,17 @@ That's why `words.js`, `rank.js` and `save.js` are separate from the DOM code.
   sat in. Look at the frame and find the biggest dark thing before adding a lamp
   — and never lower `duskMedianFloor`/`duskShadowFloor` to make a new block pass.
 
+- **The backdrop skyline used to cast shadows, and it should never have.** A
+  thirty-metre tower sixteen metres behind a block, lit by a sun whose elevation
+  drops to 0.06, throws a shadow the length of the map — and the shadow camera
+  is ±34m around the crow, so the tower is inside it. On the three outdoor
+  blocks that read as a slightly darker dusk and nobody questioned it; on the
+  lobby it was a hard-edged black wedge across half the floor, because an
+  interior whose back wall is 6.6m with clear glazing above lets the whole
+  skyline rake straight in over the top. Switching it off raised the mid-dusk
+  median on *every* block (L2 71→91, L3 70→89, L4 55→63) and breached no floor,
+  which is the asymmetry that made it safe to change for all four at once: a
+  removed shadow can only add light, and every dusk rule is a minimum.
 - **An audit asks "can the camera see this pickup"; a playtest asks "is this in
   the way".** Different questions, and the lobby answered the first and shipped.
   The glazed lantern cleared every check — no pickup hidden — and a playtest read
@@ -712,12 +723,21 @@ pair — same deadpan register, no repeated words between them.
 
 ## Test hooks
 
-Two constants at the top of `main.js`, both `null` in normal play:
+Three constants at the top of `main.js`, all `null` in normal play:
 
 - `TEST_TRADE_PAYOUT` overrides the kid's trade payout so one trade clears the goal.
 - `TEST_SESSION_SECONDS` shortens the day. Everything about sundown — the light
   rig, the sun dial, the out-of-time ending — runs off `elapsed / SESSION_SECONDS`,
   so `60` gives a full dusk in a minute.
+- `TEST_TIME_OF_DAY` *pins* the light. Shortening the day gets you through dusk;
+  this stops you there, which is the difference between "I can reach the evening"
+  and "I can walk the whole block in the evening". It overrides the level's
+  `dayStart` entirely — the clock still runs and the session still ends on time,
+  only the light is frozen. **`shoot.mjs` refuses to run while it is set**, and
+  that guard is the point of it: every dusk sample in that file would otherwise
+  photograph one hour and report it as three, which is the hardcoded-18-minutes
+  bug wearing a different hat. A green shoot with no dusk coverage is worse than
+  a red one.
 
 Either one shows a red TEST MODE badge, prints a banner in `smoke`, and logs a
 startup warning — three tripwires so neither can ship by accident. The smoke

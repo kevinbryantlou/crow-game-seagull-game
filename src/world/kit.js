@@ -196,13 +196,31 @@ export function makeKit(ctx) {
    * The city behind the block. One material, one schedule, randomised windows —
    * the foreground lamps are the event, the skyline is the weather behind it.
    *
+   * **It casts no shadow, and that is the point of this comment.**
+   *
+   * It used to. A thirty-metre tower sixteen metres behind a block, lit by a sun
+   * whose elevation drops to 0.06, throws a shadow the length of the map — and
+   * the shadow camera is ±34 m around the crow, so the tower is inside it. On
+   * the three outdoor blocks that reads as a slightly darker dusk and nobody
+   * ever questioned it. On the lobby it was a hard-edged black wedge lying
+   * across half the floor: an interior whose back wall is 6.6 m with clear
+   * glazing above it lets the whole skyline rake straight in over the top.
+   * Reported from a playtest as "the background buildings are causing odd
+   * lighting", which was exactly right.
+   *
+   * Nobody has ever placed one of these to shade anything — they are weather.
+   * And switching it off can only *raise* luminance, while every dusk rule in
+   * the game is a floor, so no block can fail because of it. That asymmetry is
+   * why this is safe to change for all four at once rather than opting the new
+   * one out.
+   *
    * @returns {number} the depth (z) the wall of buildings occupies
    */
   const addSkyline = (bands, z = -24, opts = {}) => {
     let bx = opts.startX ?? -46;
     const lit = [];
     for (const [w, h, c] of bands) {
-      const b = box(w, h, 12, c, { up: PAL.stone, down: PAL.shade, receive: false });
+      const b = box(w, h, 12, c, { up: PAL.stone, down: PAL.shade, receive: false, shadow: false });
       b.position.set(bx + w / 2, h / 2, z);
       root.add(b);
       // Windows: a grid of small dark quads, cheap and enough at this distance.

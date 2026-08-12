@@ -13,7 +13,7 @@
  */
 
 import puppeteer from 'puppeteer';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 
 // The level module is pure at import time, but three.js and the shape kit both
 // reach for a canvas, so give them somewhere to reach. We only want RULES.
@@ -30,6 +30,29 @@ const { RULES } = await import('../src/world/rules.js');
  */
 const { LEVELS } = await import('../src/world/levels.js');
 const LAST = LEVELS[LEVELS.length - 1];
+
+/**
+ * A pinned clock makes every dusk measurement in this file a lie.
+ *
+ * `TEST_TIME_OF_DAY` freezes the light rig so a block can be walked around
+ * under one hour of the evening. Every dusk sample below then photographs that
+ * one hour four times and reports it as t=0.20, t=0.45 and t=0.98 — three
+ * numbers that agree with each other and with nothing else. That is the same
+ * shape of failure as the harness that hardcoded an 18-minute day and silently
+ * measured four identical frames, which is the reason this guard exists rather
+ * than a note in a README.
+ *
+ * It fails the run rather than skipping the samples: a green shoot with no
+ * dusk coverage is worse than a red one.
+ */
+const mainSrc = readFileSync('src/main.js', 'utf8');
+const pinned = mainSrc.match(/const TEST_TIME_OF_DAY = ([^;]+);/)?.[1].trim();
+if (pinned && pinned !== 'null') {
+  console.error(`\n  TEST_TIME_OF_DAY is ${pinned} — the light rig is frozen.`);
+  console.error('  Every dusk measurement in this file would photograph one hour '
+    + 'and report it as three.\n  Set it back to null in src/main.js and re-run.\n');
+  process.exit(1);
+}
 
 const URL = process.argv[2] || 'http://localhost:5173/';
 const OUT = 'shots';
