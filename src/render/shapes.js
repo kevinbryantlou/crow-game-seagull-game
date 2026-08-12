@@ -12,14 +12,38 @@ import * as THREE from 'three';
 
 const _matCache = new Map();
 
-/** Flat-shaded Lambert. Cached, because the block reuses maybe a dozen materials. */
-export function mat(color, { vertexColors = false, transparent = false, opacity = 1, side } = {}) {
-  const key = `${color}|${vertexColors}|${transparent}|${opacity}|${side ?? 'f'}`;
+/**
+ * Flat-shaded Lambert. Cached, because the block reuses maybe a dozen materials.
+ *
+ * `decal` is for anything lying flat on top of something else — the paving
+ * variation on the ground, the road beyond the kerb, the deck surfaces on the
+ * roofs. Those sit twelve millimetres above the thing they cover, which is
+ * plenty of separation at the near plane and not remotely enough sixty metres
+ * out at a grazing angle: the boundary breaks into a staircase of depth-test
+ * coin flips, and it reads as textures clipping through each other.
+ *
+ * `polygonOffset` is the fix rather than more clearance, because it biases depth
+ * in proportion to the polygon's own depth slope — which is exactly the term
+ * that blows up on a large plane seen almost edge-on. Raising the geometry
+ * instead would mean a visible step at the edge of every slab.
+ *
+ * The offset is part of the cache key. It has to be: `mat()` hands the same
+ * object to every mesh of a colour, and quietly turning polygon offset on for
+ * all 38 users of `goldLit` because one paving slab asked for it is the same
+ * class of bug as the emissive one nightlights.js has a note about.
+ */
+export function mat(color, {
+  vertexColors = false, transparent = false, opacity = 1, side, decal = false,
+} = {}) {
+  const key = `${color}|${vertexColors}|${transparent}|${opacity}|${side ?? 'f'}|${decal ? 'd' : ''}`;
   let m = _matCache.get(key);
   if (!m) {
     m = new THREE.MeshLambertMaterial({
       color, flatShading: true, vertexColors, transparent, opacity,
       side: side ?? THREE.FrontSide,
+      polygonOffset: decal,
+      polygonOffsetFactor: decal ? -4 : 0,
+      polygonOffsetUnits: decal ? -4 : 0,
     });
     _matCache.set(key, m);
   }
@@ -64,7 +88,7 @@ export function tint(geometry, base, up = null, down = null, upThresh = 0.35, do
 }
 
 function finish(geo, colors, opts) {
-  const { up, down, shadow = true, receive = true, transparent, opacity, side } = opts;
+  const { up, down, shadow = true, receive = true, transparent, opacity, side, decal } = opts;
   let material;
   let geometry = geo;
   if (up != null || down != null) {
@@ -72,9 +96,9 @@ function finish(geo, colors, opts) {
     // to replace the original. Dropping it leaves a mesh with vertexColors on
     // and no color attribute, which the shader reads as pure black.
     geometry = tint(geo, colors, up, down);
-    material = mat(0xffffff, { vertexColors: true, transparent, opacity, side });
+    material = mat(0xffffff, { vertexColors: true, transparent, opacity, side, decal });
   } else {
-    material = mat(colors, { transparent, opacity, side });
+    material = mat(colors, { transparent, opacity, side, decal });
   }
   const m = new THREE.Mesh(geometry, material);
   m.castShadow = shadow;

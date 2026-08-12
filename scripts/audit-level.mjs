@@ -462,6 +462,38 @@ export function auditLevel({ level, world, check, deps }) {
   }
 
   /**
+   * Anything lying flat on top of something else declares itself a decal.
+   *
+   * The paving variation sits twelve millimetres above the ground it covers.
+   * That is ample at the near plane and nothing like enough sixty metres out at
+   * a grazing angle: the boundary breaks into a staircase of depth-test coin
+   * flips, and it was reported twice as "textures clipping into one another".
+   * `polygonOffset` fixes it because it scales with the polygon's own depth
+   * slope, which is the term that blows up here — but only on materials that ask
+   * for it, and asking is one word that is easy to leave out on the next slab.
+   *
+   * Additive light pools are exempt: they write no depth, so they cannot fight
+   * for it.
+   */
+  {
+    const v = new THREE.Vector3();
+    const flat = [];
+    world.root.traverse((o) => {
+      if (!o.isMesh || o.geometry.type !== 'PlaneGeometry') return;
+      const m = Array.isArray(o.material) ? o.material[0] : o.material;
+      if (!m || m.depthWrite === false) return;
+      o.getWorldPosition(v);
+      const under = deckAt(world.colliders, v.x, v.z, v.y - 0.001);
+      const gap = v.y - under;
+      if (gap > 0.001 && gap < 0.3 && !m.polygonOffset) {
+        flat.push(`plane at y ${v.y.toFixed(3)} over ${under.toFixed(2)}`);
+      }
+    });
+    check(say('every plane lying on another surface is a depth decal'),
+      flat.length === 0, `(${flat.join('; ')})`);
+  }
+
+  /**
    * Nothing is standing in the block's edge kerb.
    *
    * A bin was, on level 2, half-sunk into the kerb along the near edge — which

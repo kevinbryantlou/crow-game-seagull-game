@@ -100,7 +100,8 @@ export function buildLevel() {
   for (const [x, z, w, d, c] of [
     [-16, 9, 26, 16, PAL.pavingMid], [18, 10, 30, 14, PAL.paving], [0, 3.4, 64, 4, PAL.stoneMid],
   ]) {
-    const sl = plane(w, d, c, { receive: true });
+    // A decal on the ground: see the `decal` note in render/shapes.js.
+    const sl = plane(w, d, c, { receive: true, decal: true });
     sl.position.set(x, 0.012, z);
     root.add(sl);
   }
@@ -113,7 +114,7 @@ export function buildLevel() {
     // foreground is a third of the frame the lamps never reach, and it took the
     // forecourt's dusk median from 53 to 42 against a floor of 48 — a kerb is
     // worth having, a black river in front of it is not.
-    const road = plane(170, 5, PAL.stoneMid, { receive: true });
+    const road = plane(170, 5, PAL.stoneMid, { receive: true, decal: true });
     road.position.set(0, 0.008, 19);
     root.add(road);
     const kerb = box(170, 0.34, 1.2, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
@@ -205,7 +206,7 @@ export function buildLevel() {
 
   // ── the terrace deck surface and its parapet ──────────────────────────────
   {
-    const deck = plane(63, 13, PAL.stone, { receive: true });
+    const deck = plane(63, 13, PAL.stone, { receive: true, decal: true });
     deck.position.set(0, DECK.terrace + 0.014, -5.25);
     root.add(deck);
 
@@ -249,7 +250,7 @@ export function buildLevel() {
     root.add(g);
     solid(-21, -8.75, 18, 6.5, DECK.roof);
 
-    const deck = plane(17.6, 6.1, PAL.stoneMid, { receive: true });
+    const deck = plane(17.6, 6.1, PAL.stoneMid, { receive: true, decal: true });
     deck.position.set(-21, DECK.roof + 0.014, -8.75);
     root.add(deck);
 

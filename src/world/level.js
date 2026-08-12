@@ -49,7 +49,8 @@ export function buildLevel() {
     [-22, 0, 16, 16, PAL.pavingMid], [12, 2, 22, 14, PAL.pavingMid],
     [-2, 8, 20, 9, PAL.stoneMid], [24, -4, 14, 12, PAL.pavingMid],
   ]) {
-    const s = plane(w, d, c, { receive: true });
+    // A decal on the ground: see the `decal` note in render/shapes.js.
+    const s = plane(w, d, c, { receive: true, decal: true });
     s.position.set(x, 0.012, z);
     root.add(s);
   }

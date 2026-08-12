@@ -248,6 +248,22 @@ That's why `words.js` and `rank.js` are separate from `hud.js`.
   in either block sits. When a character has to be identified at the distance
   this camera sits, change the shape, not the shade.
 
+- **A 12mm gap is not clearance, it is a coin flip.** The paving variation lies
+  that far above the ground it covers, which is ample at the near plane and
+  nothing like enough sixty metres out at a grazing angle: the boundary breaks
+  into a staircase, and it got reported twice as "textures clipping into one
+  another". The fix is `polygonOffset`, not more height — it scales with the
+  polygon's own depth slope, which is the term that blows up, and raising the
+  geometry instead would put a visible step at the edge of every slab. Pass
+  `decal: true` to `plane()`/`mat()`; it is part of the material cache key, so
+  one slab asking for it cannot turn it on for all 38 users of a colour. Asserted:
+  any plane sitting 1mm–30cm above a surface must be a decal.
+- **When something looks like z-fighting, turn the shadow map off first.** Two
+  different artifacts on the same wall in the same week looked identical and had
+  nothing to do with each other. One frame with `renderer.shadowMap.enabled =
+  false` separates them in seconds — but the materials have to be recompiled
+  (`needsUpdate = true`) or the shadows stay on and the test lies to you, which
+  cost a round here.
 - **Shadow acne reads exactly like z-fighting, and is not.** Irregular horizontal
   smears along the whole 64m frontage of level 2, only at some sun angles, which
   is why it survived a shipping pass — the block looked clean at noon and striped
