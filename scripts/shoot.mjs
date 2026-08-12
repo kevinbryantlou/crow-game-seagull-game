@@ -1740,16 +1740,28 @@ console.log(`  wrote ${OUT}/13-mobile-collapsed.png (tasks collapsed: ${folded})
     });
   }
 
-  // A returning player, from disk.
-  await bootMenu();
-  if (!/continue/i.test(await label('start') ?? '')) {
-    bad(`returning player's button reads "${await label('start')}"`);
-  }
-  if (!await shown('to-levels')) bad('returning player has no way to the level list');
-  writeFileSync(`${OUT}/19-title-returning.png`, await menu.screenshot({ type: 'png' }));
+  /**
+   * Everything from here needs a save on disk to read back, and the only way to
+   * write one is to finish a block — which without the `__game` handle means
+   * playing eight real minutes. So a production build stops here.
+   *
+   * This is not a hypothetical branch: verifying a deploy runs `shoot` against
+   * the built bundle, which is exactly the build with no handle. The first
+   * version of this section left the tail unguarded and crashed on the deploy
+   * check, clicking a button on a screen that had never been opened.
+   */
+  if (!hasMenuHandle) {
+    console.log('  note: no __game handle (production build) — menu state checks skipped');
+  } else {
+    // A returning player, from disk.
+    await bootMenu();
+    if (!/continue/i.test(await label('start') ?? '')) {
+      bad(`returning player's button reads "${await label('start')}"`);
+    }
+    if (!await shown('to-levels')) bad('returning player has no way to the level list');
+    writeFileSync(`${OUT}/19-title-returning.png`, await menu.screenshot({ type: 'png' }));
 
-  // The ending's third way out.
-  if (hasMenuHandle) {
+    // The ending's third way out.
     await menu.click('#start');
     await new Promise((r) => setTimeout(r, 700));
     await menu.evaluate(() => {
@@ -1768,7 +1780,6 @@ console.log(`  wrote ${OUT}/13-mobile-collapsed.png (tasks collapsed: ${folded})
       try { return localStorage.getItem('smallchange.progress'); } catch { return null; }
     });
     if (saved && !/"cleared"\s*:\s*\[[^\]]/.test(saved)) bad(`a win wrote no cleared block: ${saved}`);
-  }
 
   // Forget, and the empty state it restores. It asks first — the only action in
   // the game that destroys something the player cannot get back.
@@ -1828,8 +1839,9 @@ console.log(`  wrote ${OUT}/13-mobile-collapsed.png (tasks collapsed: ${folded})
   if (hasMenuHandle && !/thirty dollars/.test(promised.strapline ?? '')) {
     bad(`the title card promises "${promised.strapline}" on a $${promised.goal} block`);
   }
-  if (hasMenuHandle && promised.counter !== '$30.00' && !/30/.test(promised.counter ?? '')) {
+  if (promised.counter !== '$30.00' && !/30/.test(promised.counter ?? '')) {
     bad(`the money counter reads "${promised.counter}" on a $${promised.goal} block`);
+  }
   }
 
   console.log(`  wrote ${OUT}/15..19 — title (new/returning), pause, levels, forfeit`);
