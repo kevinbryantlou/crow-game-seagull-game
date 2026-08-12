@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<title>Small Change — The Lobby</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  html { -webkit-text-size-adjust: 100%; }
+  :root {
+    --paper:      #E9E5DA;
+    --paper-2:    #DFDACB;
+    --ink:        #141C18;
+    --ink-soft:   #3E4A44;
+    --nickel:     #8B948F;
+    --rule:       #C3BFB1;
+    --enamel:     #1F4D3D;
+    --enamel-2:   #17392E;
+    --brass:      #A87C22;
+    --brass-lit:  #C79A34;
+    --sheen:      #4B4B7A;
+    --band-text:  #EDEAE0;
+    --band-dim:   #9FB5AB;
+    --chip-bg:    #D7D2C2;
+    --shadow:     rgba(20,28,24,.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:     #131815;
+      --paper-2:   #1A211D;
+      --ink:       #E4E2D7;
+      --ink-soft:  #A3ADA6;
+      --nickel:    #7C857F;
+      --rule:      #2C3630;
+      --enamel:    #16332A;
+      --enamel-2:  #102520;
+      --brass:     #D2A644;
+      --brass-lit: #E0B85C;
+      --sheen:     #8A8AC4;
+      --band-text: #E4E2D7;
+      --band-dim:  #7E9A8D;
+      --chip-bg:   #212925;
+      --shadow:    rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:     #131815;
+    --paper-2:   #1A211D;
+    --ink:       #E4E2D7;
+    --ink-soft:  #A3ADA6;
+    --nickel:    #7C857F;
+    --rule:      #2C3630;
+    --enamel:    #16332A;
+    --enamel-2:  #102520;
+    --brass:     #D2A644;
+    --brass-lit: #E0B85C;
+    --sheen:     #8A8AC4;
+    --band-text: #E4E2D7;
+    --band-dim:  #7E9A8D;
+    --chip-bg:   #212925;
+    --shadow:    rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .display {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold",
+                 "Arial Narrow", "Helvetica Neue", sans-serif;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-wrap: balance;
+  }
+  .mono {
+    font-family: Menlo, ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: .82em;
+    letter-spacing: .01em;
+  }
+
+  /* ---- sign band ---- */
+  .band {
+    background: var(--enamel);
+    color: var(--band-text);
+    padding: 3.2rem 1.5rem 2.4rem;
+    border-bottom: 6px solid var(--brass);
+  }
+  .band-inner { max-width: 62rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1.1rem; }
+  .band .eyebrow {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .72rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--band-dim);
+  }
+  h1.title {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: clamp(3rem, 11vw, 6.5rem);
+    line-height: .86;
+    letter-spacing: .005em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  h1.title .thin { display: block; color: var(--brass-lit); }
+  .band .deck {
+    font-size: 1.12rem; max-width: 34rem; color: var(--band-text);
+    opacity: .88; margin: 0;
+  }
+  .facts {
+    display: flex; flex-wrap: wrap; gap: 0 2.2rem;
+    border-top: 1px solid rgba(159,181,171,.28);
+    padding-top: 1rem; margin-top: .4rem;
+  }
+  .facts div { display: flex; flex-direction: column; gap: .1rem; }
+  .facts dt {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .18em; text-transform: uppercase; color: var(--band-dim);
+  }
+  .facts dd { margin: 0; font-size: .95rem; }
+
+  /* ---- document body ---- */
+  main { max-width: 62rem; margin: 0 auto; padding: 0 1.5rem 6rem; }
+  .col { max-width: 38rem; }
+
+  section { padding-top: 3.4rem; }
+  section > * + * { margin-top: 1rem; }
+
+  h2 {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase;
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+    line-height: 1.05; letter-spacing: .015em;
+    margin: 0 0 .2rem; padding-bottom: .55rem;
+    border-bottom: 2px solid var(--ink);
+    display: flex; align-items: baseline; gap: .7rem;
+  }
+  h2 .sec {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .7rem; font-weight: 400; letter-spacing: .12em;
+    color: var(--brass); flex: none;
+  }
+  h3 {
+    font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    font-size: .95rem; margin: 1.8rem 0 .3rem; color: var(--ink);
+  }
+  p { margin: 0; }
+  section p + p { margin-top: .85rem; }
+  a { color: var(--brass); }
+
+  ul, ol { margin: .2rem 0; padding-left: 1.15rem; }
+  li { margin: .3rem 0; }
+  li::marker { color: var(--nickel); }
+
+  strong { font-weight: 700; }
+  em.term { font-style: normal; font-weight: 700; color: var(--sheen); }
+
+  /* ---- exhibits (break the column) ---- */
+  .exhibit { margin: 2rem 0 0; }
+  .exhibit-cap {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--nickel); margin-top: .6rem;
+  }
+  .plate {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    padding: 1.2rem;
+    overflow-x: auto;
+  }
+  .plate svg { display: block; width: 100%; height: auto; min-width: 30rem; }
+
+  /* ---- tables ---- */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--rule); background: var(--paper-2); }
+  table { border-collapse: collapse; width: 100%; min-width: 34rem; font-size: .92rem; }
+  th, td { text-align: left; padding: .6rem .85rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); background: var(--chip-bg); border-bottom: 2px solid var(--ink);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num { font-family: Menlo, ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.val { font-family: Menlo, ui-monospace, monospace; font-variant-numeric: tabular-nums; color: var(--brass); white-space: nowrap; }
+
+  /* ---- key caps ---- */
+  kbd {
+    font-family: Menlo, ui-monospace, monospace; font-size: .74rem;
+    background: var(--chip-bg); border: 1px solid var(--rule);
+    border-bottom-width: 2px; border-radius: 3px;
+    padding: .1rem .38rem; color: var(--ink); white-space: nowrap;
+  }
+
+  /* ---- callout ---- */
+  .note {
+    border-left: 4px solid var(--brass);
+    background: var(--paper-2);
+    padding: .9rem 1.1rem;
+    font-size: .95rem;
+  }
+  .note .lbl {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--brass); display: block; margin-bottom: .25rem;
+  }
+
+  /* ---- scope columns ---- */
+  .scope { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0; border: 1px solid var(--rule); }
+  .scope > div { padding: 1rem 1.15rem; border-right: 1px solid var(--rule); }
+  .scope > div:last-child { border-right: 0; }
+  .scope h4 {
+    font-family: Menlo, ui-monospace, monospace; font-weight: 400;
+    font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+    margin: 0 0 .5rem; color: var(--ink-soft);
+  }
+  .scope ul { padding-left: 1rem; font-size: .9rem; }
+  .scope.in  > div:first-child { background: var(--paper-2); }
+
+  /* ---- milestones ---- */
+  .miles { border-top: 2px solid var(--ink); }
+  .mile {
+    display: grid; grid-template-columns: 5.5rem 1fr; gap: 1.2rem;
+    padding: .85rem 0; border-bottom: 1px solid var(--rule); align-items: baseline;
+  }
+  .mile .m-id {
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; color: var(--brass); padding-top: .15rem;
+  }
+  .mile .m-body strong { display: block; font-family: "Avenir Next Condensed","Arial Narrow",sans-serif; text-transform: uppercase; letter-spacing: .04em; font-size: 1rem; }
+  .mile .m-body span { font-size: .9rem; color: var(--ink-soft); }
+
+  footer {
+    border-top: 2px solid var(--ink); margin-top: 4rem; padding-top: 1rem;
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--nickel);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+  }
+
+  @media (max-width: 40rem) {
+    body { font-size: 16px; }
+    .mile { grid-template-columns: 1fr; gap: .1rem; }
+    .plate svg { min-width: 26rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="band">
+  <div class="band-inner">
+    <div class="eyebrow">Level Design Brief &nbsp;·&nbsp; The Lobby &nbsp;·&nbsp; Built and verified — not yet played</div>
+    <h1 class="title">The<br>Lobby<span class="thin">The Atrium</span></h1>
+    <p class="deck">Inside the hotel whose roof you already robbed. One room, four walls, a glass
+      lantern for a ceiling, and nowhere else to go. The roofline taught you that up is where the
+      money is. This is the block that teaches you up is where <em>safety</em> is.</p>
+    <dl class="facts">
+      <div><dt>Setting</dt><dd>The Atrium, the hotel's front hall</dd></div>
+      <div><dt>Goal</dt><dd>$40.00</dd></div>
+      <div><dt>Decks</dt><dd>Three — 0 / 4.4 / 7.6 m</dd></div>
+      <div><dt>Session</dt><dd>8 min, starting at t=0.55</dd></div>
+      <div><dt>Slot</dt><dd>Level 4 — after the roofline, last block</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main>
+
+  <section id="status">
+    <h2><span class="sec">§0</span> Where this stands</h2>
+    <div class="col">
+      <p><strong>Built and verified. Not yet played.</strong> This document was written before any
+      geometry existed, as the argument and the numbers, so that the geometry could be checked
+      against something. It has since been built and the claims have been checked:
+      <span class="mono">smoke</span> runs every level-design rule against it and
+      <span class="mono">shoot</span> drives it in real WebGL, photographs eleven frames of it and
+      measures six dusk samples. Both pass.</p>
+
+      <p>What the plan got wrong is in <a href="#caught">§7</a>, and it is the interesting part —
+      three of the four corrections were things no amount of writing would have found, because they
+      are properties of a <em>picture</em>. The section is written as a record rather than tidied
+      away, because that is what the last three briefs are for.</p>
+
+      <p>The premise came from the brief for this session: the roofline is the hotel from
+      <em>outside</em>, so the block after it is the hotel from <em>inside</em>. That is the one
+      piece of progression this game has never done — every block so far has been a new place, and
+      this one is the same place through a different door. It is worth doing precisely once, and
+      the last block is where it belongs.</p>
+
+      <div class="note">
+        <span class="lbl">The ladder, with a fourth rung</span>
+        $20 on the block · $25 in the park · $30 on the roofline · <strong>$40 here</strong>.
+        One deck · two decks · four decks · <strong>three, stacked inside one room</strong>.
+        The dollar step breaks its own pattern on purpose; §3 argues why.
+      </div>
+
+      <div class="note">
+        <span class="lbl">Copy rule for this block</span>
+        <strong>American English throughout.</strong> Fries, not chips. Bill, not note. Sidewalk,
+        not pavement. Grab, not lift. Every string a player can read — task, toast, label, ending —
+        gets checked against this before it ships, because the whole job of a line like
+        <span class="mono">The kid on the suitcase will trade for that</span> is to send a specific
+        person to a specific place, and a word they have to translate first does not do that.
+      </div>
+    </div>
+  </section>
+
+  <section id="thesis">
+    <h2><span class="sec">§1</span> What a fourth block is for</h2>
+    <div class="col">
+      <p>Three blocks exist and each spends a different currency. The block spends
+      <em class="term">nothing</em> — it is the tutorial with a sunset on it. The park spends
+      <em class="term">social pressure</em>: three people round one cooler and no softer district
+      to work instead. The roofline spends <em class="term">altitude</em>: four decks, a nest
+      twelve metres up, money priced by the climb.</p>
+
+      <p>A fourth block that spends more of any of those is a bigger version of a block that
+      already exists. So the lobby spends the one thing none of them has touched:
+      <em class="term">enclosure</em>.</p>
+
+      <h3>The one-room rule</h3>
+      <p>Every block so far is open at the edges. You are caught at the cart, and you go and work
+      the café row; you are caught at the picnic, and the pretzel wagon is forty metres east. The
+      lobby is <strong>44 m by 24 m with walls on all four sides</strong>, and every guard in it
+      shares a room with every other guard. There is no district next door. There is no next door.</p>
+
+      <p>That is a genuinely nastier level, and left alone it would be a miserable one — a room
+      where being seen has no answer is a room you lose in. So the lobby pairs it with the thing
+      that makes it playable, and the pairing <em>is</em> the design:</p>
+
+      <div class="note">
+        <span class="lbl">The trade this block makes</span>
+        <strong>Laterally, there is nowhere to run. Vertically, nobody can follow.</strong>
+        A human's <span class="mono">floorY</span> is authored and they never leave it, so the
+        mezzanine at 4.4 m and the chandelier at 7.6 m are two rooms nobody in the cast can reach.
+        The loop becomes: drop in, take one thing, climb out of the world. That is a new-feeling
+        level made entirely out of verbs the player already has.
+      </div>
+
+      <p>It also fixes the one thing that is slightly wrong with banking on every other block. The
+      nest has always been in a corner — a memorial, a vent housing, a water tank — somewhere out
+      of the way. Here <strong>the nest is in the chandelier over the middle of the room</strong>,
+      so every single trip to it is a flight straight up through the centre of the lobby in front
+      of everybody. The safest place on the block is also the most conspicuous, and that sentence
+      is the whole level.</p>
+
+      <div class="note">
+        <span class="lbl">No new verbs</span>
+        Fly, take one thing, bank it, shove the weight off a bill, bait a guard with food, trade a
+        shiny with a kid. All six are level 1's. The only new noun is the <strong>croissant</strong>,
+        a fourth member of <span class="mono">BAIT_KINDS</span> — a pretzel that got in through the
+        roof, same as the pigeons eating it.
+      </div>
+    </div>
+  </section>
+
+  <section id="plan">
+    <h2><span class="sec">§2</span> The plan</h2>
+    <div class="col">
+      <p>One room, read left to right: the bell desk and the stairs at the west end, the front desk
+      across the back, the fountain and the kid dead centre under the chandelier, the bar and the
+      lounge east. The mezzanine runs the full width along the back wall at 4.4 m, and the
+      housekeeping cart is on it — so the safe deck is not free either.</p>
+
+      <p>The near wall is <strong>cut away</strong>, the way the roofline cuts away everything under
+      its terrace. What is left at the section line is a 1.15 m glass screen on a brass rail and the
+      sidewalk beyond it, which is the same street the roofline's forecourt stands on. The room
+      stops somewhere without anything standing between the camera and the floor.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate">
+        <svg viewBox="0 0 960 532" role="img" aria-label="Top-down plan of the hotel lobby: front desk across the back, fountain and chandelier in the middle, bar and lounge east, bell desk and grand stair west, mezzanine along the back wall.">
+          <defs>
+            <style>
+              .marble{ fill: #E4DACB; }
+              .band  { fill: #C9BDA8; }
+              .rug   { fill: #6AA89E; }
+              .mezz  { fill: #BFA98A; }
+              .water { fill: #4E9BB0; }
+              .rim   { fill: #E4DACB; stroke: #C3BFB1; stroke-width: 1; }
+              .bldg  { fill: #C9BDA8; stroke: #141C18; stroke-width: 1.5; }
+              .prop  { fill: #A87C22; stroke: #141C18; stroke-width: 1.2; }
+              .glass { fill: #7FC4D2; opacity: .55; }
+              .road  { fill: #D8C6A8; }
+              .lbl   { font-family: Menlo, ui-monospace, monospace; font-size: 11px; fill: #141C18; }
+              .lbl-s { font-family: Menlo, ui-monospace, monospace; font-size: 9px; fill: #3E4A44; }
+              .lbl-w { font-family: Menlo, ui-monospace, monospace; font-size: 11px; fill: #E9E5DA; }
+              .pin   { fill: #1F4D3D; }
+              .cam   { fill: none; stroke: #4B4B7A; stroke-width: 1.5; stroke-dasharray: 5 4; }
+              .chand { fill: none; stroke: #A87C22; stroke-width: 1.5; stroke-dasharray: 4 3; }
+            </style>
+          </defs>
+
+          <!-- floor -->
+          <rect class="marble" x="0" y="0" width="960" height="532"/>
+          <!-- the runner: teal, the park's chord indoors -->
+          <rect class="rug" x="196" y="240" width="620" height="96"/>
+          <rect class="band" x="0" y="440" width="960" height="40"/>
+
+          <!-- mezzanine over the back wall -->
+          <rect class="mezz" x="44" y="4" width="872" height="88"/>
+          <text class="lbl-w" x="600" y="52">MEZZANINE 4.4 m — housekeeping, 2 gulls, and the way up</text>
+
+          <!-- grand stair, west -->
+          <rect class="bldg" x="44" y="96" width="131" height="120"/>
+          <text class="lbl-s" x="52" y="140">GRAND</text>
+          <text class="lbl-s" x="52" y="152">STAIR</text>
+          <text class="lbl-s" x="52" y="164">0 → 2.2 → 4.4</text>
+
+          <!-- front desk -->
+          <rect class="bldg" x="131" y="76" width="261" height="12"/>
+          <rect class="bldg" x="131" y="116" width="261" height="20"/>
+          <circle class="pin" cx="196" cy="103" r="6"/>
+          <circle class="pin" cx="300" cy="103" r="6"/>
+          <circle class="pin" cx="410" cy="150" r="6"/>
+          <text class="lbl" x="131" y="110">FRONT DESK</text>
+          <text class="lbl-s" x="131" y="168">$28.00 · the drawer, the bell, the mail slot · the bait target</text>
+
+          <!-- fountain + chandelier + nest -->
+          <circle class="rim"   cx="523" cy="292" r="70"/>
+          <circle class="water" cx="523" cy="292" r="56"/>
+          <circle class="chand" cx="523" cy="292" r="37"/>
+          <circle cx="523" cy="292" r="12" fill="#A87C22" stroke="#141C18" stroke-width="1.2"/>
+          <text class="lbl-w" x="486" y="270">FOUNTAIN</text>
+          <text class="lbl-s" x="574" y="248">CHANDELIER 5.9 / 7.6 m</text>
+          <text class="lbl-s" x="574" y="260">NEST — over the middle of the room</text>
+
+          <!-- the kid, on her suitcase, camera side of the water -->
+          <circle class="pin" cx="606" cy="371" r="6"/>
+          <text class="lbl-s" x="560" y="392">THE KID · sits on a suitcase · trades</text>
+
+          <!-- piano -->
+          <rect class="bldg" x="310" y="382" width="78" height="46"/>
+          <text class="lbl-s" x="300" y="444">PIANO (cream)</text>
+
+          <!-- bar, east -->
+          <rect class="bldg" x="741" y="109" width="175" height="20"/>
+          <circle class="pin" cx="828" cy="92" r="6"/>
+          <text class="lbl" x="741" y="103">THE BAR</text>
+          <text class="lbl-s" x="741" y="150">$11.00 · tip tray and the register</text>
+
+          <!-- lounge -->
+          <rect class="prop" x="700" y="330" width="34" height="30"/>
+          <rect class="prop" x="770" y="352" width="34" height="30"/>
+          <rect class="prop" x="820" y="300" width="34" height="30"/>
+          <rect class="bldg" x="742" y="300" width="26" height="26"/>
+          <text class="lbl" x="690" y="392">THE LOUNGE</text>
+          <text class="lbl-s" x="690" y="406">4 empty armchairs · the tea cart · THE CROISSANT</text>
+
+          <!-- bell desk / luggage, west -->
+          <rect class="prop" x="96" y="392" width="60" height="34"/>
+          <circle class="pin" cx="170" cy="420" r="6"/>
+          <text class="lbl" x="60" y="382">BELL DESK</text>
+          <text class="lbl-s" x="60" y="452">$3.40 · the bellhop walks the floor</text>
+
+          <!-- palm, the near-side occluder -->
+          <circle class="bldg" cx="698" cy="466" r="20"/>
+          <text class="lbl-s" x="640" y="500">POTTED PALM (occluder)</text>
+
+          <!-- revolving door -->
+          <circle class="bldg" cx="196" cy="497" r="28"/>
+          <text class="lbl-s" x="228" y="501">REVOLVING DOOR (occluder)</text>
+
+          <!-- the glass screen and the street -->
+          <rect class="glass" x="0" y="510" width="960" height="10"/>
+          <rect class="road" x="0" y="524" width="960" height="8"/>
+
+          <!-- spawn -->
+          <circle cx="741" cy="444" r="7" fill="none" stroke="#141C18" stroke-width="2"/>
+          <text class="lbl-s" x="756" y="440">SPAWN</text>
+
+          <!-- camera -->
+          <path class="cam" d="M 480 529 L 372 467 M 480 529 L 588 467"/>
+          <text class="lbl-s" x="296" y="525">CAMERA (fixed, 38°)</text>
+        </svg>
+      </div>
+      <div class="exhibit-cap">Exhibit A — the lobby in plan. The back wall is up; the camera is
+        fixed below, looking up-screen at 38°. Roughly 21.8 px to the metre. The room is
+        x −22…22, z −11.4…13 — the smallest block in the game, deliberately.</div>
+    </div>
+
+    <div class="col">
+      <h3>The three decks</h3>
+      <ul>
+        <li><strong>0 — the floor.</strong> Marble, a teal runner down the middle, and everybody in
+          the cast except one.</li>
+        <li><strong>4.4 — the mezzanine.</strong> A 4 m gallery the full width of the back wall,
+          reachable on foot by the grand stair and in one hop by a crow. The housekeeper works it
+          and two gulls have got in and are standing on it.</li>
+        <li><strong>7.6 — the chandelier.</strong> Two tiers, a lower ring at 5.9 and a 3.2 m crown
+          at 7.6 with the nest on top of it. The lower ring is what keeps the climb from the floor
+          honest: 5.9 m, then 1.7 m, against a 9 m rule.</li>
+      </ul>
+      <p>Three decks after the roofline's four is not a step backwards. The roofline's decks are
+      <em>places</em> — a forecourt, a terrace, a roof, each with its own economy. The lobby's are
+      one place seen from three heights, which is why they can be stacked inside a room a third the
+      size and still not feel like a smaller level.</p>
+    </div>
+  </section>
+
+  <section id="ladder">
+    <h2><span class="sec">§3</span> The value ladder</h2>
+    <div class="col">
+      <p>$57.05 against a $40 goal, which means you have to land <strong>70%</strong> of everything
+      in the room. The block asks for 62%, the park for 76%. This sits between them on purpose: the
+      lobby is harder than the park to work, so it should not also be tighter than the park to
+      finish.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Where</th><th>What</th><th>Value</th><th>Guarded by</th><th>Costs you</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Marble and runner</td><td>10 pennies, 5 nickels, 4 dimes, 3 quarters</td><td class="val">$1.50</td><td>—</td><td>Walking</td></tr>
+            <tr><td>Lounge table, piano lid, under a chair</td><td>Two heaps and a dollar bill</td><td class="val">$3.00</td><td>—</td><td>Noticing furniture</td></tr>
+            <tr><td>Mezzanine rail</td><td>Loose change on the ledge</td><td class="val">$0.90</td><td>—</td><td>One climb</td></tr>
+            <tr><td>The fountain</td><td>Five quarters, and a ring somebody lost</td><td class="val">$1.25</td><td>The water</td><td>Getting wet</td></tr>
+            <tr><td>Bell desk</td><td>The change dish on the luggage cart</td><td class="val">$3.40</td><td>The bellhop</td><td>Timing a walker</td></tr>
+            <tr><td>The bar</td><td>The tip tray</td><td class="val">$6.00</td><td>The bartender</td><td>A counter he stands behind</td></tr>
+            <tr><td>The bar</td><td>A five by the register</td><td class="val">$5.00</td><td>The bartender</td><td>The same trip, twice</td></tr>
+            <tr><td>Front desk</td><td>The tip under the brass bell</td><td class="val">$5.00</td><td>The clerk</td><td>A shove, in front of two people</td></tr>
+            <tr><td>Front desk</td><td>The mail slot</td><td class="val">$3.00</td><td>The clerk</td><td>Reaching over the counter</td></tr>
+            <tr><td>Front desk</td><td><strong>The open cash drawer</strong></td><td class="val">$20.00</td><td>The concierge</td><td>The croissant, or nothing</td></tr>
+            <tr><td>Mezzanine</td><td>Housekeeping's float</td><td class="val">$8.00</td><td>The housekeeper</td><td>Being up there with her</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="exhibit-cap">Exhibit B — where the money is. Unguarded and dry: <strong>$5.40</strong>.
+        Guarded: <strong>$50.40</strong>. In the water: $1.25.</div>
+    </div>
+
+    <div class="col">
+      <h3>Why $40 and not $35</h3>
+      <p>$20 / $25 / $30 is three equal steps, and the honest fourth term of that series is $35.
+      The argument for breaking it is that the series is not the point — <em>the run</em> is. The
+      first three blocks each add one idea to a run you already know how to do. This one is the last
+      block, it is the inside of a building whose outside asked $30, and a hotel front desk is the
+      only place in this game where a large amount of cash sitting in the open is not a contrivance.
+      $35 in a room with a cash drawer in it would read as the level being coy.</p>
+
+      <p>It is also the number the roofline was originally built at, and rejected — for being too
+      big a leap <em>from the block</em>. After three blocks it is not a leap, it is the top of the
+      ladder. If it plays as a grind, the fix is $35 and it is a one-line change; the geometry does
+      not care.</p>
+
+      <h3>The kid's ladder</h3>
+      <p><span class="mono">tradeValues: [2.00, 3.00, 4.00, 5.00]</span>, a rung above the
+      roofline's. She is sitting in the middle of an open marble floor, which is the easiest kid in
+      the game to <em>reach</em> and the worst place in the game to be standing still. Four shinies
+      exist — a room key fob, a paper clip, a foil wrapper, and a ring in the fountain — so the
+      entire ladder pays $14.00. With $5.40 of free money that is $19.40 against a $40 goal, so
+      trading can soften this block by about half and can never finish it. That bound is
+      <span class="mono">smoke</span>'s to enforce, not mine to eyeball.</p>
+    </div>
+  </section>
+
+  <section id="desk">
+    <h2><span class="sec">§4</span> The front desk</h2>
+    <div class="col">
+      <p>Every block has one set piece that the whole level is arranged around: the hot dog cart,
+      the picnic cooler, the restaurant terrace. Here it is the front desk — <strong>$28.00 across
+      twelve metres of counter, with two people behind it and a guest in front of it</strong>.</p>
+
+      <p>It is three problems in one place, and they are deliberately solved in different orders by
+      different players:</p>
+      <ul>
+        <li><strong>The mail slot ($3.00)</strong> is a reach over the counter at the far end from
+          the clerk. Cheap, and it teaches the counter's geometry for free.</li>
+        <li><strong>The tip under the brass bell ($5.00)</strong> needs a shove first — this
+          block's saltshaker, its paperback, its candle lantern. A shove is two beats long and it
+          happens on the counter directly in front of the clerk.</li>
+        <li><strong>The cash drawer ($20.00)</strong> is the concierge's, he stands at the open end
+          of the desk where the camera can see him, and he does not move for anything except
+          pigeons in his lobby.</li>
+      </ul>
+
+      <p>Which is the croissant. Drop it on the floor more than 8 m from the desk and every pigeon
+      in the atrium goes for it; the concierge leaves the drawer and goes to deal with the fact that
+      there are birds in his lobby. Drop it <em>on the mezzanine</em> and nothing happens, because
+      birds do not use stairs — the roofline teaches that lesson with a failure and this block is
+      late enough to be allowed to assume it.</p>
+
+      <div class="note">
+        <span class="lbl">Why the concierge stands in front of his own desk</span>
+        The park learned this: its vendor stands at the open end of his wagon rather than behind it,
+        because behind it is where the camera cannot see him, and level 1's newsagent spent a whole
+        build reading as a head growing out of a shelf. A 1.15 m counter is low enough to keep the
+        clerk legible, but the guard whose <em>leaving</em> is the puzzle has to be unmistakably
+        visible both before and after he leaves. He stands in the open.
+      </div>
+    </div>
+  </section>
+
+  <section id="kid">
+    <h2><span class="sec">§5</span> The armchair problem</h2>
+    <div class="col">
+      <p>The kid is identified by her silhouette: she sits, and nothing else in the game sits. The
+      roofline invented that and the park had to <em>defend</em> it — a park is mostly benches, so
+      the picnic stands, the keeper walks, the jogger runs, and all four benches are empty.</p>
+
+      <p>A hotel lobby is worse than a park. A lobby is a room whose entire purpose is chairs.</p>
+
+      <p>So the lobby defends the silhouette twice over:</p>
+      <ul>
+        <li><strong>Every armchair in the lounge is empty.</strong> Four of them, arranged around a
+          low table, all unoccupied. This is not even a stretch — an empty armchair in a hotel
+          lobby is the most ordinary object in the world.</li>
+        <li><strong>She does not sit on a chair.</strong> She sits on a hard-shell suitcase in the
+          middle of an open marble floor, which is a shape nothing else in the room has: small,
+          low, and nowhere near the furniture. A kid parked on the family luggage while the parents
+          check in is the single most recognisable thing that happens in a hotel lobby, and it reads
+          from the back of the frame.</li>
+      </ul>
+
+      <p>She is also placed by the park's rule, not the roofline's: <strong>on the camera side of
+      the fountain</strong>, so the water is behind her instead of in front. A small figure against
+      teal is a small figure you can see; a small figure in front of a marble floor and a marble
+      counter is a tan smudge. And nothing that is core loop goes behind the two occluders — the
+      revolving door is at the far west end of the near wall and the palm is east of her.</p>
+
+      <div class="note">
+        <span class="lbl">The rest of the cast, and what each is for</span>
+        <strong>Concierge</strong> — the drawer, and the bait. <strong>Clerk</strong> — the bell and
+        the mail slot, behind the counter. <strong>Bartender</strong> — the tray and the register.
+        <strong>Bellhop</strong> — the level's clock: a full lap of the floor between the door and
+        the desk, the way the park's keeper laps the park. <strong>Housekeeper</strong> — the
+        mezzanine, so the safe deck costs something. <strong>A guest at the desk</strong> — owns
+        nothing, notices nothing, stands exactly where you want to land. <strong>Someone crossing
+        the lobby on their phone</strong> — a moving obstacle on the one route everybody uses.
+        Eight, counting the kid; the park has seven.
+      </div>
+    </div>
+  </section>
+
+  <section id="light">
+    <h2><span class="sec">§6</span> The sun, indoors</h2>
+    <div class="col">
+      <p>This was the part of the proposal most likely to be wrong. It was wrong, and the way it was
+      wrong is the most useful thing in this document.</p>
+
+      <p>The entire light rig is a sunset. One directional key that swings and reddens, a hemisphere
+      fill whose <em>sky</em> colour is the colour of shade, and a gradient sky sphere — all of it
+      outdoors by construction. Rewriting it for one level was never on the table, so the lobby was
+      given a <strong>glass lantern</strong> instead of a ceiling: a steel truss roof at 11.2 m
+      glazed between the members, and a clerestory band from 6.6 m up on all four sides. The panes
+      cast no shadow and the truss members do, so the afternoon key would come through as bars of
+      light lying across the marble.</p>
+
+      <h3>What that missed</h3>
+      <div class="note">
+        <span class="lbl">This camera is above the roof</span>
+        It sits 38° up and about thirty metres back, so <strong>the sightline from anything on the
+        floor leaves through the ceiling.</strong> A ceiling with structure in it is not a ceiling,
+        it is a grille laid over the whole level — the pickups, the people and the crow. The audit
+        caught five hidden pickups. Nothing would have caught the crow.
+      </div>
+
+      <p>So the roof is sectioned away exactly like the near wall, and where the structure went is
+      arithmetic rather than taste. A ray toward this camera rises 0.616 for every 0.714 it travels
+      in +z, which means a thing standing on the floor crosses the ceiling plane <strong>12.9 m
+      further forward than it stands</strong>. The frontmost pickup on this block is at z = −8.2, so
+      nothing on the floor leaves through the ceiling before z = +4.7, and nothing on the gallery
+      before z = −3.2. That buys back a real ceiling:</p>
+
+      <ul>
+        <li><strong>The back seven metres are solid plaster</strong>, coffered, with downlights in
+          it — over the gallery, which needed them more than anything else in the room did.</li>
+        <li><strong>The rest is the lantern</strong>, whose trusses run <em>across</em> and never
+          along. A beam parallel to z sits over a strip of floor six metres to its west and would
+          hide everything on it; a beam parallel to x is over a strip 12.9 m behind it, which on
+          this block is outside the room.</li>
+        <li><strong>The chandelier hangs from the truss at z = 2</strong>, which is why that truss is
+          at z = 2. The first build had it hanging off nothing, which a screenshot caught in one
+          frame and no test would ever have.</li>
+      </ul>
+
+      <p>And the bars of light come from somewhere better. The sun's azimuth swings from −118° to
+      −138° across a session — behind the block and to the west, all day — so the <strong>clerestory
+      mullions on the west and back walls</strong> cast them, and those are the two walls that can
+      never occlude anything. The east wall has no mullions at all, for the same reason its solid
+      half stops at 6.6 m: it is the one wall the camera looks through.</p>
+
+      <h3>Starting at t = 0.55</h3>
+      <p>The block starts at 0, the park at 0.20, the roofline at 0.42. The lobby starts at
+      <strong>0.55</strong>, so <span class="mono">RULES.lampsOnAt</span> (0.72) arrives at
+      <strong>3 m 01 s</strong> of the eight-minute day, against the roofline's 4 m 08 s and the
+      block's 5 m 46 s. This is the first block where most players will finish in artificial light,
+      which is the honest reading of walking into a hotel lobby at six in the evening — and it makes
+      the chandelier catching the level's event, the way the street lights catching are the
+      block's.</p>
+
+      <div class="note">
+        <span class="lbl">The rule that did not get bent</span>
+        <span class="mono">duskMedianFloor</span> and <span class="mono">duskShadowFloor</span> were
+        not lowered to make this block pass. It failed them twice and the materials changed both
+        times. Shipped: median <strong>48 / 61</strong> against a floor of 48, 5th percentile
+        <strong>35 / 42</strong> against a floor of 24, blue over red by 18 and 34 at t = 0.98.
+      </div>
+    </div>
+  </section>
+
+  <section id="caught">
+    <h2><span class="sec">§7</span> What the harnesses caught</h2>
+    <div class="col">
+      <p>Four corrections, in the order they were found. Three of them are properties of a picture
+      and one is a property of a number, which is roughly the ratio this project always gets.</p>
+
+      <h3>1. The ceiling was a grille over the level</h3>
+      <p>Five pickups hidden, reported by the audit's sightline ray; the cause, and the fix, are
+      <a href="#light">§6</a>. The lesson generalises past this block: <strong>a camera above a
+      roof means the roof is between it and everything.</strong> An interior in this engine is not
+      an outdoor block with a lid on it.</p>
+
+      <h3>2. The chandelier photographed as a wedding cake</h3>
+      <p>Two thick gold discs with a cone between them. Legible in the source, and from a camera
+      looking down at 38° it read as tiered woodwork — nothing about it said light fitting. What
+      says it from above is a <em>wheel</em>: a thin pale pan, a brass rim, spokes to a hub, candles
+      standing on the rim and drops hanging off the edge. This is the roofline's kid all over again
+      — the fix for "you cannot tell what that is" is the silhouette, not the shade.</p>
+
+      <h3>3. The runner, twice</h3>
+      <p>It was specified as a sage-teal so the lobby would carry the park's colour chord indoors.
+      It <strong>photographed as grass</strong>: a long green band running off the edge of the
+      frame, on the one block in this game trying not to read as outdoors. Corrected to a dusty
+      blue — and at dusk that rendered as a <strong>navy band across a third of the lower
+      frame</strong> and pinned the 5th percentile at 21 against a floor of 24.</p>
+      <p>Two lounge floor lamps and two wall sconces moved that number by nothing at all, because a
+      pool of light on the floor cannot make a dark material bright. The runner is 34 points of
+      luminance below the park's lawn, and the lawn is the palest thing the park could get away
+      with. Repainting it pale blue-grey moved the 5th percentile from 21 to 35 in one edit. The
+      lamps stayed, because the lounge and the west end genuinely had no light of their own — but
+      they were the wrong first move, exactly as the roofline's brief says.</p>
+      <div class="note">
+        <span class="lbl">The rule, stated for the fourth time</span>
+        <strong>Find the biggest dark thing before adding a lamp</strong> — and a big surface is a
+        light-rig decision before it is a colour one.
+      </div>
+
+      <h3>4. A test that was wrong about the level</h3>
+      <p>The check written for the chandelier — "the crown is landable from every heading" — flew a
+      crow at it from five metres out and reported all eight headings as unreachable. The crown was
+      fine. A crow crossing a three-metre disc at flight speed has 0.35 s to fall 1.4 m, so it
+      sailed over every time. The check now drops a crow onto eight points round the rim with no
+      input at all, which asserts the thing actually worth asserting: <strong>the whole disc is a
+      floor, edges included</strong>, because banking is the only reason anybody goes up there and
+      you arrive carrying.</p>
+
+      <h3>And what the plan got right</h3>
+      <p>The economy needed no tuning: $57.05 on the block, $5.40 unguarded and dry, $50.40 guarded,
+      $19.40 reachable without stealing against a $40 goal. The decks needed none: the tallest
+      unbroken climb to this nest measures <strong>1.7 m</strong>. Nothing shoves the crow more than
+      0.55 m in a frame despite the mezzanine, the stair landings, four counters and two chandelier
+      tiers all being colliders with air underneath them. The pass-through in the middle of the
+      front desk was drawn on the first attempt because the park had already taught that a guard in
+      a corridor is a guard who cannot chase, and the chase probe that starts behind the desk passes
+      because of it.</p>
+    </div>
+  </section>
+
+  <section id="wiring">
+    <h2><span class="sec">§8</span> What changes outside this level</h2>
+    <div class="col">
+      <p>Deliberately almost nothing. The progression system is two fields and a function, and it
+      was built for this.</p>
+      <ul>
+        <li><span class="mono">world/lobby.js</span> — new. Named for the place, like
+          <span class="mono">park.js</span>; slot numbers are a registry question, not a filename
+          one.</li>
+        <li><span class="mono">world/levels.js</span> — a fourth descriptor, and level 3's
+          <span class="mono">next</span> goes from <span class="mono">null</span> to
+          <span class="mono">4</span>. That one edit is the entire unlock change: the ending screen
+          grows a brass <span class="mono">The lobby →</span> button, the Levels screen grows a
+          fourth chip, and <span class="mono">save.js</span> opens the door — all of it off
+          <span class="mono">next</span>, which is why the ladder is defined in exactly one place.</li>
+        <li><span class="mono">render/palette.js</span> — two entries, <span class="mono">rug</span>
+          and <span class="mono">rugMid</span>, plus the matching swatches in
+          <span class="mono">docs/style-guide.html</span>. The doc is the spec; if they disagree the
+          doc is wrong, so they get changed together.</li>
+        <li><span class="mono">world/pickups.js</span> — the croissant mesh and label, and
+          <span class="mono">croissant</span> added to <span class="mono">BAIT_KINDS</span>. The
+          audit reads that set rather than naming kinds, so nothing else has to notice.</li>
+        <li><span class="mono">scripts/shoot.mjs</span> — a level 4 section: the block photographed
+          at both ends of the day, the dusk measurement, and the navigation test extended to the
+          fourth chip.</li>
+      </ul>
+
+      <p>What is <em>not</em> being changed: the roofline's ending copy. It closes on a kid holding
+      out a marble, it does not name where you go next, and the button under it already does. And
+      no level file gets renamed.</p>
+    </div>
+  </section>
+
+  <section id="copy">
+    <h2><span class="sec">§9</span> The words</h2>
+    <div class="col">
+      <h3>Tasks</h3>
+      <ul>
+        <li>Dive the lobby fountain</li>
+        <li>Get the tip out from under the bell</li>
+        <li>Trade something shiny</li>
+        <li>Get the concierge away from the desk</li>
+        <li>Get the twenty</li>
+      </ul>
+
+      <h3>Toasts</h3>
+      <ul>
+        <li><span class="mono">money</span> — Take it to your nest</li>
+        <li><span class="mono">shiny</span> — The kid on the suitcase will trade for that</li>
+        <li><span class="mono">bait</span> — A croissant. The pigeons in here got in the same way you did.</li>
+        <li><span class="mono">pin</span> — The tip is loose</li>
+        <li><span class="mono">bait dropped</span> — Every pigeon in the atrium has seen it</li>
+        <li><span class="mono">too close</span> — Too near the desk</li>
+        <li><span class="mono">wrong deck</span> — Not from up here</li>
+      </ul>
+
+      <h3>The ending</h3>
+      <p>Losing headline: <strong>Check<span style="color:var(--brass)">&nbsp;Out</span></strong>.</p>
+      <p>Winning: the game's last ending, so it closes the arc rather than pointing anywhere. You
+      come back twenty-five feet over a marble floor, in a hotel you are not a guest of, with a
+      nest full of money at your elbow and every face in the lobby turned up at you — except the
+      kid's, who is still holding a room key out at knee height for a bird that is not there any
+      more.</p>
+    </div>
+  </section>
+
+  <section id="open">
+    <h2><span class="sec">§10</span> Questions, open and closed</h2>
+    <div class="col">
+      <h3>Closed</h3>
+      <ul>
+        <li><strong>Interior or another exterior?</strong> Interior. It is the one progression this
+          game has not made, and the roof of this building was the last block.</li>
+        <li><strong>How does the sun get in?</strong> A glass lantern roof and a clerestory. No
+          change to the light rig.</li>
+        <li><strong>Where is the nest?</strong> The chandelier, over the middle of the room. It is
+          the level's thesis in one object.</li>
+        <li><strong>Does the mezzanine make people follow you up?</strong> No. Humans never leave
+          their deck, and that is the deal this block is built on.</li>
+      </ul>
+
+      <h3>Open — decide by measuring</h3>
+      <ul>
+        <li><strong>$40 or $35.</strong> Built at $40, untested by a human. One line, changed on a
+          playtest note.</li>
+        <li><strong>Two gulls on the mezzanine, or none.</strong> They are there so the safe deck is
+          not free. If they make the only route to the nest read as punishing, they come out and the
+          housekeeper carries it alone.</li>
+        <li><strong>Whether the runner survives both ends of the light ramp.</strong> Closed by
+          measurement, twice — see §7.</li>
+        <li><strong>Whether a room this size wants eight people in it.</strong> The park's seven are
+          spread over 60 m; these eight are in 44. If it reads as crowded rather than watched, the
+          phone-crosser is the first one out.</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>Small Change · Level 4 · The Lobby</span>
+  <span>Built and verified · awaiting playtest</span>
+</footer>
+
+</body>
+</html>

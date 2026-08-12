@@ -49,7 +49,8 @@ the game had never been looked at. Both harnesses exist to close that gap.
 - **`scripts/shoot.mjs`** drives real WebGL in headless Chrome, writes PNGs to
   `shots/`, and fails on any console error or failed request. It runs every
   block: `01`–`13` are the block, `20`–`29` and `l2-dusk-*` are the park,
-  `30`–`39` and `l3-dusk-*` are the roofline, `14` is the ending screen's
+  `30`–`39` and `l3-dusk-*` are the roofline, `40`–`49` and `l4-dusk-*` are the
+  lobby, `14` is the ending screen's
   next-level button, and `15`–`20` are the menu — title card new and returning,
   pause, the Levels screen, the forfeit, and the touch pause control. It also
   swaps levels eight times **through the menu** and asserts the GPU gets its
@@ -79,6 +80,7 @@ src/
   world/park.js        LEVEL 2 — The Park: lawn, pond, pavilion roof. Two decks.
   world/level2.js      LEVEL 3 — The Hotel (Outside): forecourt, balconies, terrace, roof
                        (built second, slotted third — filenames are not slot numbers)
+  world/lobby.js       LEVEL 4 — The Hotel (Inside): one room, a gallery, a chandelier
   world/levels.js      the registry: goal, tasks, teach copy, bait rules, endings, per level
   world/collide.js     the collider format, and going round things (pure, unit tested)
   world/pickups.js     the money
@@ -92,6 +94,7 @@ docs/                  design brief + style guide — the spec, written to be ch
                        park-brief.html    — level 2, the park: design, ladder, what it caught
                        level-2-brief.html — level 3, the roofline (filename predates the slot)
                        menu-brief.html    — progress, level select and pause: PROPOSED, not built
+                       lobby-brief.html   — level 4, the lobby: built and verified, not yet played
 ```
 
 Pure logic goes in its own module so `smoke.mjs` can test it without a DOM.
@@ -218,6 +221,44 @@ That's why `words.js`, `rank.js` and `save.js` are separate from the DOM code.
   sat in. Look at the frame and find the biggest dark thing before adding a lamp
   — and never lower `duskMedianFloor`/`duskShadowFloor` to make a new block pass.
 
+- **A camera above a roof means the roof is between it and everything.** The
+  lobby's first build had a glazed steel truss over the whole room, which is the
+  obvious way to keep a sunset working indoors. The sightline this game uses
+  travels toward +x, +y and +z from every point on the floor, so it leaves
+  through the *ceiling* — the truss was a grille laid over the entire level. The
+  audit caught five hidden pickups; nothing would have caught the crow. Where a
+  ceiling may be solid is arithmetic, not taste: a ray rises 0.616 for every
+  0.714 it travels in z, so anything on the floor crosses the ceiling plane
+  12.9m further forward than it stands, which is what buys the lobby a real
+  plastered ceiling over its back seven metres. An interior in this engine is
+  not an outdoor block with a lid on it.
+- **A ceiling beam parallel to z hides a strip of floor six metres west of it.**
+  The same arithmetic sideways, and the reason the lobby's lantern trusses all
+  run across the room and never along it. A beam parallel to x is over a strip
+  12.9m behind itself, which on a 24m-deep block is outside the room.
+- **A pool of light on the floor cannot make a dark material bright.** The
+  lobby's runner was a dusty blue, 34 points of luminance below the park's lawn,
+  and at dusk it rendered as a navy band across a third of the lower frame —
+  5th percentile 21 against a floor of 24. Two floor lamps and two sconces moved
+  that number by *nothing*. Repainting the runner pale moved it from 21 to 35 in
+  one edit. Find the biggest dark thing before adding a lamp: a big surface is a
+  light-rig decision before it is a colour one.
+- **A big flat green surface indoors is a lawn.** The lobby's runner was
+  specified teal so the block would carry the park's colour chord inside, and it
+  photographed as grass — on the one block in the game trying not to read as
+  outdoors. Under the 2.6-intensity warm key any green with yellow in it goes
+  olive, and olive on a floor is turf. Blue cannot be mistaken for planting at
+  any hour of this day.
+- **A test can be wrong about the level.** The check for "the chandelier crown is
+  landable from every heading" flew a crow at it from five metres out and
+  reported all eight headings as unreachable. The crown was fine: a crow
+  crossing a three-metre disc at flight speed has 0.35s to fall 1.4m, so it
+  sailed over every time. Check a new check before believing it — and prefer
+  asserting the invariant (the whole disc is a floor) over a performance (one
+  particular flight path works).
+- **A harness that names how many blocks there are will fail on the next one.**
+  `shoot.mjs` hardcoded "the last block is 3" and "there are 3 chips", and both
+  reported the lobby's arrival as a bug in the game. Both read `LEVELS` now.
 - **The crow's lateral collision resolved the wrong thing, three ways.** Reported
   from a playtest as "clipping through the fire escape — resets me outside the
   playable area", and it was three faults compounding on any geometry with air
@@ -476,7 +517,7 @@ once per entry in `LEVELS`:
   eyeballed.
 - **Nothing is standing in the edge kerb.**
 
-## Three levels
+## Four levels
 
 `world/levels.js` is the registry. A level descriptor holds everything about a
 block that is not geometry: `goal`, `sessionSeconds`, `dayStart`, `spawn`, the
@@ -485,9 +526,11 @@ task list (with `when` predicates for the ones that complete by observation),
 smoke, and the ending copy. If another block would need a different one, it is
 level data; if they all need the same one, it is in `world/rules.js`.
 
-The ladder is **$20 / $25 / $30** and **one deck / two decks / four decks**.
-Both rows are deliberate: each block is one step, and the middle one exists
-because the gap between the outer two was measured and found too big.
+The ladder is **$20 / $25 / $30 / $40** and **one deck / two decks / four decks
+/ three decks inside one room**. The first three dollar steps are equal and the
+fourth is not, deliberately: the first three blocks each add one idea to a run
+you already know how to do, and the fourth is the last one and the inside of a
+building whose outside asked $30.
 
 - **Level 1 — the block** (`level.js`). Flat, $20, starts at `dayStart: 0`.
 - **Level 2 — The Park** (`park.js`). Two decks (0 / 3.4, nest at 4.75), $25,
@@ -512,6 +555,21 @@ because the gap between the outer two was measured and found too big.
   **Do not renumber the file.** `level2.js` is level 3 and `park.js` has no
   number in its name at all; order is a registry question, not a filename one,
   and renaming would only move the confusion somewhere git blame cannot follow.
+
+- **Level 4 — The Hotel (Inside)** (`lobby.js`). Three decks (0 / 4.4, nest on
+  the chandelier at 7.6), $40, ±22 wide — the *smallest* block in the game —
+  starting at `dayStart: 0.55` so the lamps catch at 3m01s.
+  `docs/lobby-brief.html` is the spec.
+
+  The first interior, and what it spends is **enclosure**: one room, four walls,
+  every guard sharing it, and no district next door to work instead. That is
+  only playable because of the trade it is paired with — *laterally there is
+  nowhere to run, vertically nobody can follow* — since a human's `floorY` is
+  authored and they never leave it. Which is also why the nest is in the
+  chandelier over the middle of the room rather than in a corner: the safest
+  place on the block is also the most conspicuous, and every trip to bank
+  anything is a flight straight up through the centre of it in front of
+  everybody. Built and verified; **not yet playtested**.
 
 **Finishing a block hands you the next one.** The ending screen carries a brass
 button naming where it goes (`The park →`) with `Again!` beside it in outline;
@@ -578,11 +636,15 @@ screen, nothing is outlined.
 ## Docs
 
 `docs/*.html` are self-contained (no webfonts, no external assets, theme-aware).
-They are also deployed to the **password-gated** `/research/` area of the sibling
-`beacon2` repo — *not* `/notes`, which is public despite the name. After editing a
-doc, copy it to `../beacon2/research/small-change-*.html` and commit both repos.
+They are also deployed to the **password-gated** area of the sibling `beacon2`
+repo, which is `/notes/` — *not* `/research/`. That moved: `/research/*` is
+retired and 308s to the matching `/notes/*` path, the Vercel middleware gates
+`/notes` and `/notes/:path*`, and the env var keeps its old `RESEARCH_PW` name
+only so the gate did not need a dashboard change. `/notes` is gated despite the
+name. After editing a doc, copy it to `../beacon2/notes/small-change-*.html`
+and commit both repos.
 
-**Copying the file is only half of publishing it.** `beacon2/research/index.html`
+**Copying the file is only half of publishing it.** `beacon2/notes/index.html`
 is a hand-maintained list of cards and nothing generates it, so a copied doc is
 reachable only by someone who already knows its URL — which is how the park
 brief and the lighting brief sat deployed and unlinked for weeks, and the menu
@@ -591,9 +653,9 @@ four lines, and it is worth running after any doc lands:
 
 ```bash
 cd ../beacon2 && node -e "
-const h=require('fs').readFileSync('research/index.html','utf8');
-const links=[...h.matchAll(/href=\"\/research\/([^\"]+)\"/g)].map(m=>m[1]);
-const files=require('fs').readdirSync('research').filter(f=>f.endsWith('.html')&&f!=='index.html');
+const h=require('fs').readFileSync('notes/index.html','utf8');
+const links=[...h.matchAll(/href=\"\/notes\/([^\"]+)\"/g)].map(m=>m[1]);
+const files=require('fs').readdirSync('notes').filter(f=>f.endsWith('.html')&&f!=='index.html');
 console.log('unlisted:',files.filter(f=>!links.includes(f)));
 console.log('broken :',links.filter(l=>!files.includes(l)&&l!=='logout'));"
 ```

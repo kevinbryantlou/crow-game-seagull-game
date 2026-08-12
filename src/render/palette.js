@@ -49,6 +49,34 @@ export const PAL = {
   lawn:        0xa2bf8a,
   lawnMid:     0x93b07b,
 
+  /**
+   * The lobby runner — the biggest coloured surface on level 4, and it took two
+   * goes for the same reason the park's lawn took three.
+   *
+   * The first paint was a sage-teal, one value up from `awning`, chosen so the
+   * lobby would carry the park's colour chord indoors. It measured fine and it
+   * *photographed as grass*: a long green band running off the edge of the
+   * frame, on a block that has spent every other decision trying not to read as
+   * outdoors. Under this game's afternoon key — 0xffd9a0 at 2.6 — a green with
+   * any yellow in it goes olive, and olive on a floor is a lawn.
+   *
+   * Blue is the correction to that, and it pays for itself twice: it cannot be
+   * mistaken for planting at any hour, and it is the one large surface in the
+   * game that *helps* the dusk check that says shade must be violet.
+   *
+   * The *value* took a second measurement. At 0x6f9ab4 — a perfectly reasonable
+   * dusty blue — the runner rendered at dusk as a navy band across a third of
+   * the lower frame and pinned the 5th percentile at 21 against a floor of 24,
+   * and no amount of light fixed it, because a pool on the floor cannot make a
+   * dark material bright. It is 34 points of luminance below `lawn`, and `lawn`
+   * is itself the palest thing the park could get away with. So this is a pale
+   * blue-grey at almost exactly the lawn's value: still unmistakably not
+   * planting, still blue over red by 43, and no longer the darkest thing in the
+   * room. **A big surface is a light-rig decision before it is a colour one.**
+   */
+  rug:         0xa7c2d2,
+  rugMid:      0x8fadc0,
+
   // planting & water
   canopy:      0x7fa05c,
   canopyLit:   0x8fb06a,

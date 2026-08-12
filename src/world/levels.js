@@ -23,6 +23,7 @@
 import { buildLevel as buildBlock } from './level.js';
 import { buildLevel as buildPark } from './park.js';
 import { buildLevel as buildRoofline } from './level2.js';
+import { buildLevel as buildLobby } from './lobby.js';
 import { RULES } from './rules.js';
 
 export const LEVELS = [
@@ -277,8 +278,15 @@ export const LEVELS = [
     build: buildRoofline,
     title: 'The Hotel (Outside)',
     district: 'The Vantage',
-    /** The last block there is. The ending screen offers only a replay. */
-    next: null,
+    /**
+     * The lobby, which is this same building through a different door.
+     *
+     * This one field is the whole unlock change: the ending screen grows a
+     * brass button, the Levels screen grows a fourth chip, and `save.js` opens
+     * the door — all three read the ladder off `next`, which is the entire
+     * reason it is defined in exactly one place.
+     */
+    next: 4,
     shortName: 'the hotel',
     /**
      * $30, not $40.
@@ -386,6 +394,155 @@ export const LEVELS = [
         + '<br><br>'
         + 'Still a crow. But there is a whole roof up here that nobody comes to after '
         + 'dark, and the gulls have all gone home.',
+    },
+  },
+
+  {
+    id: 4,
+    slug: 'the-lobby',
+    build: buildLobby,
+    title: 'The Hotel (Inside)',
+    district: 'The Atrium',
+    /** The last block there is. The ending screen offers only a replay. */
+    next: null,
+    shortName: 'the lobby',
+    /**
+     * $40.
+     *
+     * $20 / $25 / $30 is three equal steps and the honest fourth term is $35.
+     * The argument for breaking the series is that the series was never the
+     * point: each of the first three blocks adds one idea to a run you already
+     * know how to do, and this one is the last block, the inside of a building
+     * whose outside asked $30, and the only place in this game where a large
+     * amount of cash sitting in the open is not a contrivance. $35 in a room
+     * with a cash drawer in it reads as the level being coy.
+     *
+     * It is also the number the roofline was first built at and rejected — for
+     * being too big a leap *from the block*. After three blocks it is not a
+     * leap, it is the top of the ladder. If it ever plays as a grind the fix is
+     * one line here and the geometry does not care.
+     */
+    goal: 40.00,
+    sessionSeconds: RULES.sessionSeconds,
+    /**
+     * The latest start of any block, so the lamps catch at 3m01s against the
+     * roofline's 4m08s and the block's 5m46s. This is the first level where
+     * most players finish in artificial light, which is the honest reading of
+     * walking into a hotel lobby at six in the evening — and it makes the
+     * chandelier catching this block's event, the way the street lights are
+     * the block's.
+     */
+    dayStart: 0.55,
+    /**
+     * Near the lounge, looking back across the room.
+     *
+     * The opening frame has to carry the whole level in one picture: the
+     * fountain and its free money, the kid on the luggage, the front desk
+     * behind them, and — because the camera lifts as the crow climbs — the
+     * chandelier with the nest in it directly over the middle of all three.
+     */
+    spawn: [7, 0, 5],
+
+    tasks: [
+      { id: 'dive', text: 'Dive the lobby fountain', when: (g) => g.crow.inWater },
+      /**
+       * Observed rather than banked, like the park's cooler: the risk is in the
+       * lifting. Shove the bell, take the tip off the desk with the clerk on
+       * the other side of it, and the task is done — whether you get it up to
+       * the chandelier is a separate problem and the level is happy to let you
+       * find that out.
+       */
+      { id: 'bell', text: 'Get the tip out from under the bell', when: (g) => !!g.crow.carried?.underBell },
+      { id: 'trade', text: 'Trade something shiny' },
+      { id: 'desk', text: 'Get the concierge away from the desk' },
+      { id: 'twenty', text: 'Get the twenty' },
+    ],
+    bankTicks: { bill20: 'twenty' },
+
+    teach: {
+      money: 'Take it to your nest',
+      // Plain words for a place, and American ones: "the kid on the suitcase"
+      // is a person you can find from the back of the room without translating
+      // anything first.
+      shiny: 'The kid on the suitcase will trade for that',
+      bait: 'A croissant. The pigeons in here got in the same way you did.',
+    },
+
+    /**
+     * A rung above the roofline's.
+     *
+     * She is the easiest kid in the game to *reach* — she is sitting in the
+     * middle of an open floor — and that floor is the worst place in the game
+     * to be standing still: there is no cover on it, the bellhop laps it, and
+     * somebody crosses it every twenty seconds. Bounded by the rule rather
+     * than by taste: unguarded money plus every trade she will ever make is
+     * $19.40 against $40, so trading can soften this block by about half and
+     * can never finish it.
+     */
+    tradeValues: [2.00, 3.00, 4.00, 5.00],
+
+    bait: {
+      task: 'desk',
+      guard: 'concierge',
+      seconds: 12,
+      mobFor: 13,
+      anchor: (world) => world.desk,
+      minDist: 8,
+      tooClose: 'Too near the desk',
+      onDrop: 'Every pigeon in the atrium has seen it',
+      /**
+       * The floor, and the mezzanine is the wrong answer. The roofline teaches
+       * "birds do not use stairs" with a failure rather than a toast; this
+       * block is late enough to assume it, and the gallery is exactly the place
+       * a player will try it.
+       */
+      deck: 0,
+      wrongDeck: 'Not from up here',
+    },
+
+    pinToast: 'The tip is loose',
+
+    /**
+     * One room, so every probe but the last is on the same floor as every
+     * other — which is the point of the level and the reason this list is
+     * longer than the park's. The two that matter are the ones that start
+     * *behind* something: a clerk in the alley behind a twelve-metre desk and a
+     * bartender in a 1.65 m gap have to be able to get out, or they are
+     * scenery.
+     */
+    chaseProbes: (w) => [
+      ['the fountain, back to front', 0, [w.fountain.x, w.fountain.z - 7], [w.fountain.x, w.fountain.z + 8]],
+      ['the fountain, corner to corner', 0, [-5, -3], [9, 7]],
+      ['the desk, end to end', 0, [-17, -4.4], [-2, -4.4]],
+      ['behind the desk, out through the gap', 0, [-7, -7.6], [-8, -3]],
+      ['the bar, out of the alley', 0, [w.bar.x, -6.3], [w.bar.x, -1]],
+      ['the lounge, through the chairs', 0, [8, 9], [19, 3]],
+      ['the west end, round the luggage', 0, [-20, 9], [-15, 2]],
+      ['the columns, straight across', 0, [-13, 3], [13, 3]],
+      ['the gallery, end to end', 4.4, [-17, -8.4], [15, -8.4]],
+    ],
+
+    ending: {
+      lostTitle: 'Check<span>Out</span>',
+      /**
+       * The last ending in the game, so it closes rather than points. The other
+       * three all end on where you are standing; this one ends on the room
+       * looking back, which is the only thing this block has that the others do
+       * not — everybody is already here.
+       */
+      won: () =>
+        'The last bill goes into the nest and the chandelier takes your weight without '
+        + 'a sound, because it was built to hold more than a bird.<br><br>'
+        + 'You come back twenty-five feet over a marble floor, in a hotel you are not a '
+        + 'guest of, with a nest full of somebody else\'s money at your elbow and every '
+        + 'face in the room turning up toward you. Every face but one. Down at the front '
+        + 'of it all a kid is still holding a room key out at knee height, waiting for a '
+        + 'bird that is not there any more.',
+      lost: (total) =>
+        `You got to $${total.toFixed(2)}. The chandelier came on an hour ago and the `
+        + 'bell captain has started looking at the ceiling.<br><br>'
+        + 'Still a crow. But nobody in a hotel lobby ever looks up, and there is a nest '
+        + 'full of other people\'s change twenty-five feet over the check-in line.',
     },
   },
 ];

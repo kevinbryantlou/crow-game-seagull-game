@@ -20,6 +20,16 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 globalThis.document ??= { createElement: () => ({ width: 0, height: 0, getContext: () => ({}), style: {} }) };
 globalThis.window ??= globalThis;
 const { RULES } = await import('../src/world/rules.js');
+/**
+ * The registry, so this harness never has to be told a fourth block exists.
+ *
+ * Both of the numbers below used to be literals — "the last block" was 3 and
+ * "how many chips" was 3 — and both of them failed the day the lobby landed,
+ * which is a harness reporting its own staleness as a bug in the game. A check
+ * that has to be edited to notice a new level is not a check.
+ */
+const { LEVELS } = await import('../src/world/levels.js');
+const LAST = LEVELS[LEVELS.length - 1];
 
 const URL = process.argv[2] || 'http://localhost:5173/';
 const OUT = 'shots';
@@ -1100,6 +1110,347 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
   if (end3) { await new Promise((r) => setTimeout(r, 1400)); await shoot3('39-l3-ending'); }
 }
 
+// ── level 4: the lobby ───────────────────────────────────────────────────────
+/**
+ * The first interior, and its risks are nothing like the other three.
+ *
+ * A block with a roof is a block seen *through* something: this camera sits 38°
+ * up and thirty metres back, so the sightline from anything on the floor leaves
+ * through the ceiling. The first build had a steel truss up there and it laid a
+ * grille over the entire level — five pickups caught by the audit and the crow
+ * caught by nobody, because no headless test looks at what is in front of the
+ * bird. The roof is sectioned away now and these frames are how that stays true.
+ *
+ * The other new thing is a forty-metre gallery. Everything under it is in
+ * shadow that no key light reaches at any hour, which makes the back of this
+ * floor the darkest place in the game — so it gets its own dusk sample.
+ */
+{
+  const url4 = URL + (URL.includes('?') ? '&' : '?') + 'level=4';
+  const p4 = await browser.newPage();
+  await p4.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
+  p4.on('console', (m) => { if (m.type() === 'error') errors.push(`L4 console: ${m.text()}`); });
+  p4.on('pageerror', (e) => errors.push(`L4 uncaught: ${e.message}`));
+  p4.on('requestfailed', (r) => errors.push(`L4 404/failed: ${r.url()}`));
+
+  console.log(`\nloading ${url4}`);
+  await p4.goto(url4, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  const booted4 = Date.now();
+  await p4.waitForFunction(
+    () => document.getElementById('loading')?.classList.contains('hidden')
+       || (document.getElementById('loading')?.textContent || '').startsWith('Could not start'),
+    { timeout: 30000 },
+  ).catch(() => errors.push('L4: still booting after 30s — no error thrown, just slow'));
+  const boot4Msg = await p4.$eval('#loading', (el) => (el.classList.contains('hidden') ? null : el.textContent))
+    .catch(() => null);
+  if (boot4Msg) errors.push(`L4 did not start: ${boot4Msg}`);
+  console.log(`  L4 booted in ${Date.now() - booted4} ms`);
+
+  const has4 = await p4.evaluate(() => !!window.__game);
+  await p4.click('#start');
+  await new Promise((r) => setTimeout(r, 1200));
+
+  const shoot4 = async (name) => {
+    writeFileSync(`${OUT}/${name}.png`, await p4.screenshot({ type: 'png' }));
+    console.log(`  wrote ${OUT}/${name}.png`);
+  };
+  const look4 = async (name, x, y, z) => {
+    if (!has4) return;
+    await p4.evaluate(([px, py, pz]) => {
+      window.__game.crow.pos.set(px, py, pz);
+      window.__game.crow.vel.set(0, 0, 0);
+    }, [x, y, z]);
+    await new Promise((r) => setTimeout(r, 900));
+    await shoot4(name);
+  };
+
+  await shoot4('40-l4-spawn');
+  await look4('41-l4-fountain', 5, 0, 4);
+  await look4('42-l4-desk', -10, 0, -3.6);
+  await look4('43-l4-bell', -6.4, 0, -4.6);
+  await look4('44-l4-bar', 13, 0, -2.6);
+  await look4('45-l4-lounge', 14, 0, 7);
+  await look4('46-l4-west', -17, 0, 6);
+  await look4('47-l4-gallery', -12, 4.4, -8.4);
+  await look4('48-l4-nest', 2, 7.6, 2);
+
+  /**
+   * The lobby fountain — the third body of water in the game, and the first two
+   * both had a bug in them. A rim you can walk into but not out of is the
+   * lobster pot, and it has arrived twice from two unrelated directions.
+   */
+  const pool4 = !has4 ? null : await p4.evaluate(async () => {
+    const g = window.__game;
+    const f = g.world.fountain;
+    const frame = () => new Promise((r) => requestAnimationFrame(r));
+    g.crow.pos.set(f.x, f.floor, f.z);
+    g.crow.vel.set(0, 0, 0);
+    await frame(); await frame();
+    const out = { rim: f.rim, wet: g.crow.inWater };
+    for (const [nm, drive] of [
+      ['hold', () => ({ move: { x: 0, y: 0 }, flap: true })],
+      ['tap', (i) => ({ move: { x: 0, y: 0 }, flap: (i % 12) < 5 })],
+      ['walk', () => ({ move: { x: 1, y: 0 }, flap: false })],
+    ]) {
+      g.crow.pos.set(f.x, f.floor, f.z);
+      g.crow.vel.set(0, 0, 0);
+      g.crow.stamina = 0;
+      g.crow.inWater = true;
+      let escaped = false;
+      for (let i = 0; i < 600 && !escaped; i++) {
+        g.crow.update(1 / 60, drive(i), g.world, g.audio);
+        const r = Math.hypot(g.crow.pos.x - f.x, g.crow.pos.z - f.z);
+        escaped = (!g.crow.inWater && g.crow.pos.y > f.rim) || r > f.r + 0.5;
+      }
+      out[nm] = escaped;
+    }
+    g.crow.pos.set(12, 0, 9);
+    g.crow.vel.set(0, 0, 0);
+    return out;
+  });
+  if (pool4) console.log('  water:', JSON.stringify(pool4));
+  if (pool4 && !pool4.wet) errors.push('L4: crow on the fountain floor is not in the water');
+  if (pool4) {
+    const failed = ['hold', 'tap', 'walk'].filter((k) => !pool4[k]);
+    if (failed.length) errors.push(`L4: cannot get out of the lobby fountain by: ${failed.join(', ')}`);
+  }
+
+  /**
+   * The chandelier crown, and the assertion the brief asked for.
+   *
+   * It is a three-metre disc hanging in mid-air with the nest on it, and it is
+   * the only way to bank anything on this block. Every other nest in the game
+   * stands on a building. Fly at it from eight headings and end up on it.
+   */
+  const crown = !has4 ? null : await p4.evaluate(async () => {
+    const g = window.__game;
+    const n = g.world.nest;
+    const stuck = [];
+    // Eight points round the rim, dropped from just above it with no input.
+    //
+    // The first version of this flew at the crown from five metres out and
+    // reported all eight headings as unlandable — which was the *test* being
+    // wrong, not the level: a crow crossing a three-metre disc at flight speed
+    // has 0.35 s to fall 1.4 m, so it sailed over every time and then kept
+    // going. What is actually worth asserting is the collision, not the piloting:
+    // the whole disc has to be a floor, edges included, because banking is the
+    // only reason anybody comes up here and you arrive carrying.
+    for (let deg = 0; deg < 360; deg += 45) {
+      const a = (deg * Math.PI) / 180;
+      g.crow.pos.set(n.x + Math.cos(a) * 1.4, n.y + 1.2, n.z + Math.sin(a) * 1.4);
+      g.crow.vel.set(0, 0, 0);
+      let landed = false;
+      for (let i = 0; i < 240 && !landed; i++) {
+        g.crow.update(1 / 60, { move: { x: 0, y: 0 }, flap: false }, g.world, g.audio);
+        landed = g.crow.grounded && Math.abs(g.crow.pos.y - n.y) < 0.3;
+      }
+      if (!landed) stuck.push(`${deg}° (fell to ${g.crow.pos.y.toFixed(1)})`);
+    }
+    g.crow.pos.set(8.5, 0, 5.5);
+    g.crow.vel.set(0, 0, 0);
+    return { stuck, nest: [n.x, n.y, n.z] };
+  });
+  if (crown) console.log('  crown:', JSON.stringify(crown));
+  if (crown && crown.stuck.length) {
+    errors.push(`L4: cannot land on the chandelier from ${crown.stuck.join(', ')}`);
+  }
+
+  /**
+   * Every pickup on the gallery is visible from the camera.
+   *
+   * The audit already casts this ray headless, but the gallery is a forty-metre
+   * overhang with a balustrade on the front of it and it is the one place on
+   * this block where the answer is decided by centimetres — so it is worth
+   * asking the real renderer, in the real scene, after the occluder clones have
+   * been swapped in.
+   */
+  const seen = !has4 ? null : await p4.evaluate(() => {
+    const g = window.__game;
+    const THREE = g.crow.pos.constructor;
+    const dir = new THREE(
+      Math.sin(25 * Math.PI / 180) * Math.cos(38 * Math.PI / 180),
+      Math.sin(38 * Math.PI / 180),
+      Math.cos(25 * Math.PI / 180) * Math.cos(38 * Math.PI / 180),
+    ).normalize();
+    g.world.root.updateMatrixWorld(true);
+    const opaque = [];
+    g.world.root.traverse((o) => {
+      if (!o.isMesh) return;
+      const m = Array.isArray(o.material) ? o.material[0] : o.material;
+      if (m && m.transparent && m.opacity < 0.9) return;
+      opaque.push(o);
+    });
+    const ray = new g.stage._ray.constructor();
+    ray.far = 60;
+    const blocked = [];
+    for (const p of g.pickups) {
+      if (p.home.y < 4) continue;                    // the gallery deck and up
+      ray.set(p.home.clone().addScaledVector(dir, 0.06), dir);
+      if (ray.intersectObjects(opaque, false).length) blocked.push(p.label);
+    }
+    return { checked: g.pickups.filter((p) => p.home.y >= 4).length, blocked };
+  });
+  if (seen) console.log('  gallery sightlines:', JSON.stringify(seen));
+  if (seen && !seen.checked) errors.push('L4: nothing is on the gallery to look at');
+  if (seen && seen.blocked.length) {
+    errors.push(`L4: hidden on the gallery: ${seen.blocked.join(', ')}`);
+  }
+
+  /**
+   * The set piece. A croissant on the floor empties the front desk; the same
+   * croissant on the gallery feeds nobody, because birds do not use stairs.
+   */
+  const bait4 = !has4 ? null : await p4.evaluate(async () => {
+    const g = window.__game;
+    const frame = () => new Promise((r) => requestAnimationFrame(r));
+    const toast = () => document.getElementById('toast').textContent;
+    const food = g.pickups.find((p) => p.kind === 'croissant');
+    const out = { label: food.label };
+    const dropAt = async (x, y, z) => {
+      food.state = 'world'; food.taken = false;
+      g.crow.pos.set(x, y, z);
+      g.crow.vel.set(0, 0, 0);
+      // Two frames, because a dropped pickup lands at the beak and the beak
+      // comes off the rig's world matrix.
+      await frame(); await frame();
+      food.setCarried(g.crow.grip);
+      g.crow.carried = food;
+      g.foodUntil = 0;
+      g._doAction({ kind: 'drop' });
+      await frame();
+      return toast();
+    };
+    out.onTheGallery = await dropAt(0, 4.4, -9);
+    out.movedGallery = !!(g.foodUntil && g.foodUntil > g.elapsed);
+    out.tooNear = await dropAt(-8, 0, -3.5);
+    out.onTheFloor = await dropAt(8, 0, 8);
+    out.movedFloor = !!(g.foodUntil && g.foodUntil > g.elapsed);
+    out.guardDistracted = g.baitGuard.state === 'distracted';
+    out.taskTicked = g.tasks.find((t) => t.id === 'desk').done;
+    g.crow.carried = null;
+    g.crow.pos.set(12, 0, 9);
+    return out;
+  });
+  if (bait4) console.log('  bait:', JSON.stringify(bait4));
+  if (bait4 && bait4.movedGallery) errors.push('L4: a croissant on the gallery moved the concierge');
+  if (bait4 && !/up here/i.test(bait4.onTheGallery)) errors.push(`L4: no deck hint on the gallery: "${bait4.onTheGallery}"`);
+  if (bait4 && !/desk/i.test(bait4.tooNear)) errors.push(`L4: no too-close hint by the desk: "${bait4.tooNear}"`);
+  if (bait4 && !bait4.movedFloor) errors.push('L4: a legal croissant drop did nothing');
+  if (bait4 && !bait4.guardDistracted) errors.push('L4: the concierge did not leave the desk');
+  if (bait4 && !bait4.taskTicked) errors.push('L4: the concierge task did not tick');
+
+  // The kid pays this block's ladder, and the reward auto-equips.
+  const trade4 = !has4 ? null : await p4.evaluate(() => {
+    const g = window.__game;
+    const shiny = g.pickups.find((p) => p.kind === 'shiny' && !p.taken);
+    if (!shiny) return { error: 'no shiny available' };
+    shiny.setCarried(g.crow.grip);
+    g.crow.carried = shiny;
+    g._doAction({ kind: 'trade' });
+    const reward = g.crow.carried;
+    const out = {
+      value: reward ? reward.value : 0,
+      expected: g.level.tradeValues[0],
+      parentedToBeak: !!reward && reward.root.parent === g.crow.grip,
+    };
+    g.crow.carried = null; g.tradeStep = 0;
+    return out;
+  });
+  if (trade4) console.log('  L4 trade:', JSON.stringify(trade4));
+  if (trade4 && trade4.value !== trade4.expected) {
+    errors.push(`L4 first trade paid ${trade4.value}, expected ${trade4.expected}`);
+  }
+  if (trade4 && !trade4.parentedToBeak) errors.push('L4 trade reward was not auto-equipped');
+
+  /**
+   * Dusk, measured from the two places this room can go dark: the middle of the
+   * floor, which is lit by one chandelier and nothing else, and under the
+   * gallery, where no key light reaches at any hour of any day.
+   */
+  if (has4) {
+    const FLOOR = { p50: RULES.duskMedianFloor, p05: RULES.duskShadowFloor };
+    await p4.evaluate(() => {
+      document.getElementById('hud').style.display = 'none';
+      const b = document.getElementById('testmode');
+      if (b) b.style.display = 'none';
+    });
+
+    const measure4 = async (through, settle, at) => {
+      await p4.evaluate(([tt, pos]) => {
+        const g = window.__game;
+        g.running = false;
+        g.finished = false;
+        g.elapsed = tt * g.sessionSeconds;
+        g.crow.pos.set(pos[0], pos[1], pos[2]);
+        g.crow.vel.set(0, 0, 0);
+      }, [through, at]);
+      await new Promise((r) => setTimeout(r, settle));
+      const b64 = await p4.screenshot({ type: 'png', encoding: 'base64' });
+      return p4.evaluate((u) => new Promise((res) => {
+        const img = new Image();
+        img.onload = () => {
+          const cv = document.createElement('canvas');
+          cv.width = img.width; cv.height = img.height;
+          const cx = cv.getContext('2d');
+          cx.drawImage(img, 0, 0);
+          const y0 = Math.floor(img.height * 0.42);
+          const d = cx.getImageData(0, y0, img.width, img.height - y0).data;
+          const L = [];
+          let r = 0, g = 0, b = 0, n = 0;
+          for (let i = 0; i < d.length; i += 16) {
+            L.push(0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]);
+            r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
+          }
+          L.sort((x, y) => x - y);
+          res({
+            p05: Math.round(L[Math.floor(L.length * 0.05)]),
+            p50: Math.round(L[Math.floor(L.length * 0.5)]),
+            rgb: [Math.round(r / n), Math.round(g / n), Math.round(b / n)],
+          });
+        };
+        img.src = u;
+      }), `data:image/png;base64,${b64}`);
+    };
+
+    let late4 = null;
+    for (const [where, pos] of [['floor', [4, 0, 5]], ['gallery', [-8, 0, -4]]]) {
+      for (const [through, settle] of [[0.20, 500], [0.45, 9000], [0.98, 700]]) {
+        const m = await measure4(through, settle, pos);
+        const key = `l4-dusk-${where}-${String(Math.round(through * 100))}`;
+        writeFileSync(`${OUT}/${key}.png`, await p4.screenshot({ type: 'png' }));
+        console.log(`  ${key}: p05 ${m.p05}, p50 ${m.p50}, avg rgb ${m.rgb.join(',')}`);
+        if (m.p50 < FLOOR.p50) errors.push(`${key}: median ${m.p50} below the ${FLOOR.p50} floor`);
+        if (m.p05 < FLOOR.p05) errors.push(`${key}: 5th pct ${m.p05} below the ${FLOOR.p05} floor`);
+        if (through > 0.9) late4 = m;
+      }
+    }
+    if (late4 && late4.rgb[2] <= late4.rgb[0]) {
+      errors.push(`L4 dusk reads warm, not violet: avg rgb ${late4.rgb.join(',')}`);
+    }
+    await p4.evaluate(() => { document.getElementById('hud').style.display = ''; });
+  }
+
+  // The ending, with the level's own copy, its own goal, and no next block.
+  const end4 = !has4 ? null : await p4.evaluate(() => {
+    const g = window.__game;
+    g.total = 41.05; g.elapsed = 289; g.finished = false; g.running = true;
+    g._finish(true);
+    return {
+      title: document.getElementById('ending-title').textContent.replace(/\s+/g, ' ').trim(),
+      body: document.getElementById('ending-body').textContent.slice(0, 60),
+      goal: g.goal,
+      onward: document.getElementById('onward').hidden,
+    };
+  });
+  if (end4) console.log('  L4 ending:', JSON.stringify(end4));
+  if (end4 && end4.goal !== 40) errors.push(`L4 goal is ${end4.goal}, expected 40`);
+  if (end4 && !/forty-one dollars five cents/i.test(end4.title)) {
+    errors.push(`L4 ending headline wrong: "${end4.title}"`);
+  }
+  if (end4 && end4.onward === false) errors.push('L4 is the last block but offered a next one');
+  if (end4) { await new Promise((r) => setTimeout(r, 1400)); await shoot4('49-l4-ending'); }
+}
+
 // ── the way from one block to the next ───────────────────────────────────────
 /**
  * Finishing a block hands you the one after it, and "Again!" drops you back
@@ -1222,12 +1573,23 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
 
     // The last block has nowhere to send you, so its single action must be the
     // brass one rather than an outlined button beside an empty slot.
-    await nav.evaluate(() => window.__game.loadLevel(3, true));
+    await nav.evaluate((id) => window.__game.loadLevel(id, true), LAST.id);
     await new Promise((r) => setTimeout(r, 1000));
-    const end3 = await win();
-    console.log(`  L3 ending offers: ${JSON.stringify(end3)}`);
-    if (end3.onward !== null) errors.push(`the last block offers a next level: "${end3.onward}"`);
-    if (end3.againIsGhost) errors.push('the last block leaves Again! as a secondary button');
+    const endLast = await win();
+    console.log(`  last block (${LAST.shortName}) ending offers: ${JSON.stringify(endLast)}`);
+    if (endLast.onward !== null) errors.push(`the last block offers a next level: "${endLast.onward}"`);
+    if (endLast.againIsGhost) errors.push('the last block leaves Again! as a secondary button');
+
+    // And the block before it does offer one, by name — the same field, read
+    // from the other side, so "nothing is offered" can never pass by accident.
+    const prev = LEVELS.find((l) => l.next === LAST.id);
+    await nav.evaluate((id) => window.__game.loadLevel(id, true), prev.id);
+    await new Promise((r) => setTimeout(r, 1000));
+    const endPrev = await win();
+    console.log(`  ${prev.shortName} ending offers: ${JSON.stringify(endPrev)}`);
+    if (!endPrev.onward || !endPrev.onward.toLowerCase().includes(LAST.shortName.replace(/^the /, ''))) {
+      errors.push(`${prev.shortName} does not offer ${LAST.shortName}: "${endPrev.onward}"`);
+    }
 
     // And losing never hands out the next block — you reach one by finishing
     // the one before it, and that rule is the whole progression system.
@@ -1524,7 +1886,7 @@ console.log(`  wrote ${OUT}/13-mobile-collapsed.png (tasks collapsed: ${folded})
         disabled: c.disabled,
         armed: c.getAttribute('aria-pressed') === 'true',
       })));
-    if (chips.length !== 3) bad(`${chips.length} chips for 3 levels`);
+    if (chips.length !== LEVELS.length) bad(`${chips.length} chips for ${LEVELS.length} levels`);
     if (!chips[0]?.armed) bad('the block being played is not the armed chip');
     if (!chips[1]?.locked || !chips[1]?.disabled) bad('an uncleared block is not locked');
     if (!/back to/i.test(await label('levels-play'))) {

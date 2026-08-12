@@ -16,7 +16,7 @@ export const KIND_LABEL = {
   coins: 'LOOSE CHANGE', bill1: 'DOLLAR BILL', bill5: 'FIVE', bill10: 'TEN',
   bill20: 'TWENTY',
   shiny: 'SOMETHING SHINY', hotdog: 'HOT DOG', chips: 'A CONE OF CHIPS',
-  pretzel: 'A SOFT PRETZEL',
+  pretzel: 'A SOFT PRETZEL', croissant: 'A CROISSANT',
 };
 
 const SHINY_LABEL = {
@@ -26,13 +26,13 @@ const SHINY_LABEL = {
 
 /**
  * Bait — the kinds that pull birds. A hot dog on the block, a soft pretzel in
- * the park, a cone of chips on the roofline; all three are takeable, none of
- * them is money, and each exists so the crow can move a guard by moving a
- * smell. Named here rather than in any level so the game's one bait rule reads
- * off the pickup vocabulary — and so a block that invents a fourth gets the
- * audit's bait checks for free.
+ * the park, a cone of chips on the roofline, a croissant in the lobby; all four
+ * are takeable, none of them is money, and each exists so the crow can move a
+ * guard by moving a smell. Named here rather than in any level so the game's one
+ * bait rule reads off the pickup vocabulary — and so a block that invents a
+ * fourth gets the audit's bait checks for free, which is exactly what happened.
  */
-export const BAIT_KINDS = new Set(['hotdog', 'chips', 'pretzel']);
+export const BAIT_KINDS = new Set(['hotdog', 'chips', 'pretzel', 'croissant']);
 
 /**
  * The glint texture: a soft radial falloff with a faint four-point star.
@@ -249,6 +249,34 @@ function buildMesh(spec) {
         chip.position.set(dx, 0.22 + h / 2, dz);
         chip.rotation.z = a;
         g.add(chip);
+      }
+      return g;
+    }
+    case 'croissant': {
+      // Level 4's bait, off the tea cart in the lounge.
+      //
+      // A crescent, which is the one silhouette in the bait vocabulary that is
+      // neither a box nor a closed ring — a torus with its arc cut short. 210°
+      // rather than 180: half a doughnut reads as a broken doughnut, and the
+      // extra thirty degrees at each end is what makes the horns turn back
+      // toward each other.
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.TorusGeometry(0.075, 0.036, 4, 7, (210 * Math.PI) / 180),
+        mat(PAL.goldLit),
+      );
+      body.rotation.x = Math.PI / 2;
+      body.rotation.z = -1.83;         // the open side away from the camera
+      body.castShadow = true;
+      g.add(body);
+      // The three scored ridges across the back, in the darker bake. Boxes, not
+      // geometry on the torus: at four radial segments there is nothing to
+      // score, and the whole kit is primitives laid on primitives.
+      for (const [dx, dz, a] of [[0.0, 0.075, 0], [-0.06, 0.045, 0.8], [0.06, 0.045, -0.8]]) {
+        const ridge = box(0.02, 0.05, 0.055, PAL.gold, { shadow: false });
+        ridge.position.set(dx, 0.03, dz);
+        ridge.rotation.y = a;
+        g.add(ridge);
       }
       return g;
     }
