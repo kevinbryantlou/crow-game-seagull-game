@@ -374,26 +374,44 @@ export function buildLevel() {
   // THE MEZZANINE — the deck nobody in the cast can follow you onto
   // ══════════════════════════════════════════════════════════════════════════
   {
-    const slab = box(40, 0.4, 4.0, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
-    slab.position.set(0, DECK.mezzanine - 0.2, -9.2);
+    // West to the wall, not to x = −20. The stair lands at x −21.4…−18.4 and the
+    // gallery used to stop at −20, so the top step delivered you onto 1.6 m of
+    // deck with a two-metre hole beside it.
+    const slab = box(42, 0.4, 4.0, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
+    slab.position.set(-1, DECK.mezzanine - 0.2, -9.2);
     root.add(slab);
-    solid(0, -9.2, 40, 4.0, DECK.mezzanine, DECK.mezzanine - 0.4);
-    addDecal(0, -9.2, 39.4, 3.6, PAL.stone, DECK.mezzanine);
+    solid(-1, -9.2, 42, 4.0, DECK.mezzanine, DECK.mezzanine - 0.4);
+    addDecal(-1, -9.2, 41.4, 3.6, PAL.stone, DECK.mezzanine);
 
     // The balustrade. Its top is at 5.3, which is the number that decides where
     // anything on this deck can be put: money at the back of the gallery clears
     // it on the way to the camera, money at the front does not.
-    const bal = box(40, 0.9, 0.25, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
-    bal.position.set(0, DECK.mezzanine + 0.45, -7.32);
+    /**
+     * And it stops short of the stair, which is the other half of that bug.
+     *
+     * An unbroken rail along the gallery edge is a 0.9 m wall standing across
+     * the top step. Everything arriving on foot met it, and the only way on was
+     * to fly — over a stair whose entire reason for existing is that you do not
+     * have to. A staircase has an opening at its head; so does this one now.
+     */
+    const bal = box(37.4, 0.9, 0.25, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
+    bal.position.set(1.3, DECK.mezzanine + 0.45, -7.32);
     root.add(bal);
-    solid(0, -7.32, 40, 0.25, DECK.mezzanine + 0.9, DECK.mezzanine);
-    for (let x = -19; x <= 19; x += 1.6) {
+    solid(1.3, -7.32, 37.4, 0.25, DECK.mezzanine + 0.9, DECK.mezzanine);
+    for (let x = -16.8; x <= 19; x += 1.6) {
       root.add(at(cyl(0.05, 0.05, 0.86, 5, PAL.gold, { up: PAL.goldLit, down: PAL.shade }),
         x, DECK.mezzanine + 0.43, -7.32));
     }
-    const cap = box(40, 0.1, 0.34, PAL.gold, { up: PAL.goldLit, down: PAL.shade });
-    cap.position.set(0, DECK.mezzanine + 0.92, -7.32);
+    const cap = box(37.4, 0.1, 0.34, PAL.gold, { up: PAL.goldLit, down: PAL.shade });
+    cap.position.set(1.3, DECK.mezzanine + 0.92, -7.32);
     root.add(cap);
+    // A newel post either side of the opening, so the gap reads as a stair head
+    // rather than as a rail somebody forgot to finish.
+    for (const nx of [-17.6, -21.2]) {
+      root.add(at(box(0.28, 1.15, 0.28, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }),
+        nx, DECK.mezzanine + 0.575, -7.32));
+      root.add(at(ico(0.13, 0, PAL.gold, { shadow: false }), nx, DECK.mezzanine + 1.24, -7.32));
+    }
     night.add(cap, PAL.gold, { peak: 0.42, warm: 3.0, delay: 1.4 });
 
     for (const px of [-16, -8, 0, 8, 16]) perch(px, DECK.mezzanine + 0.9, -7.32);
@@ -431,50 +449,87 @@ export function buildLevel() {
     night.addPool(root, cx, cz + 0.6, 5.0, { profile: 'stall', peak: 0.5, warm: 2.2, delay: 0.5 });
   }
 
-  // Wall washers under the gallery. A forty-metre soffit casts a forty-metre
-  // shadow across the back of the floor, and the answer to that is light on the
-  // ground rather than another pendant — the park bought two points of median
-  // and lost four of 5th percentile by adding one more lamppost.
-  for (const wx of [-15, -5, 5, 15]) {
+  /**
+   * Wall washers under the gallery, and there are eight of them now.
+   *
+   * A forty-metre soffit casts a forty-metre shadow across the back of the
+   * floor, and the answer is light on the ground rather than another pendant —
+   * the park bought two points of median and lost four of 5th percentile by
+   * adding one more lamppost. That lesson is about *columns*, though, and a
+   * washer bolted to a wall has none: it is pure pool. Which is the reason this
+   * block can carry roughly twice the fixture count of any outdoor one without
+   * paying for it. An interior at six in the evening has its lights on; the
+   * three blocks before this were lit by a sky.
+   */
+  for (const wx of [-18, -13.5, -9, -4.5, 0, 4.5, 9, 15]) {
     const w = box(0.5, 0.22, 0.3, PAL.goldLit, { shadow: false });
     w.position.set(wx, 3.5, -7.05);
     root.add(w);
-    night.add(w, PAL.goldLit, { peak: 0.8, warm: 2.6, delay: 0.9 });
-    night.addPool(root, wx, -6.0, 5.6, { profile: 'stall', peak: 0.62, warm: 2.6, delay: 0.9 });
+    night.add(w, PAL.goldLit, { peak: 0.85, warm: 2.6, delay: 0.9 });
+    night.addPool(root, wx, -5.6, 6.4, { profile: 'stall', peak: 0.7, warm: 2.6, delay: 0.9 });
+  }
+
+  // Uplights at the foot of every column, which is the cheapest light in the
+  // game: no fixture anybody can see, and it lands where the crow walks.
+  for (const [ux, uz] of [[-16, -7.6], [-8, -7.6], [0, -7.6], [8, -7.6], [16, -7.6], [-9, 3], [9, 3]]) {
+    const u = cyl(0.2, 0.24, 0.07, 8, PAL.goldLit, { shadow: false });
+    u.position.set(ux, 0.035, uz + 0.7);
+    root.add(u);
+    night.add(u, PAL.goldLit, { peak: 0.7, warm: 3.0, delay: 1.2 });
+    night.addPool(root, ux, uz + 0.9, 4.6, { profile: 'stall', peak: 0.5, warm: 3.0, delay: 1.2 });
   }
 
   // ── the grand stair, against the west wall ────────────────────────────────
   /**
-   * Four runs and a landing, from the floor to the gallery.
+   * Fourteen steps, and every one of them shallow enough to walk up.
    *
-   * It is scenery for the crow — the mezzanine is one hop from a column — and it
-   * is the reason a housekeeper is up there at all. It also breaks the climb for
-   * anybody who does not want to spend a stamina bar on it, which is the
-   * roofline's staircase-of-decks argument at a fifth of the scale.
+   * It was four stacked slabs with 1.1 m risers and a rail floating diagonally
+   * through the middle of them, and a playtest called it buggy from three
+   * directions at once — the crow appeared to clip through it, bits of
+   * balustrade stuck out of the treads, and the top did not meet the gallery.
+   * Only the last of those was a collision problem. The other two were the
+   * *drawing*: a 1.1 m riser is not a step, it is a wall you can stand on top
+   * of, so walking into one and rising over it looks exactly like passing
+   * through it; and a straight rail laid over a four-slab staircase crosses the
+   * treads because the staircase has no consistent slope to follow.
    *
-   * Three metres wide, not four. The west end of this room is the only strip of
-   * it the concierge has to stand in, and at four metres the stair left him a
-   * 1.4 m slot between it and his own counter — which a walker can stand in and
-   * cannot chase out of.
+   * A riser of 0.314 m is under the crow's 0.34 m scramble, so this is now a
+   * staircase a bird can walk up rather than a stack it has to flap over — and
+   * it is under a walker's 0.45 m step, so the bottom of it is not a wall to a
+   * person either. The rail is generated from the step tops rather than laid
+   * across them, which is the only way it can be right for a shape that
+   * changed once and will change again.
    */
   {
-    const RUNS = [[1.6, 1.1], [-0.4, 2.2], [-2.4, 3.3], [-5.0, DECK.mezzanine]];
-    for (const [cz, top] of RUNS) {
-      const d = cz === -5.0 ? 4.4 : 2.0;
-      const b = box(3.0, top, d, PAL.stone, { up: PAL.stone, down: PAL.shade });
+    const STEPS = 14;
+    const TOP_Z = -7.2, BOT_Z = 2.6;          // meets the gallery, and the floor
+    const run = (BOT_Z - TOP_Z) / STEPS;      // 0.7 m of tread per step
+    const rise = DECK.mezzanine / STEPS;      // 0.314 m — under a 0.34 scramble
+    for (let i = 0; i < STEPS; i++) {
+      const top = rise * (i + 1);
+      const cz = BOT_Z - run * (i + 0.5);
+      // Each step is solid to the floor, so none of them is an overhang and
+      // none of them can shove anything sideways.
+      const b = box(3.0, top, run + 0.02, PAL.stone, { up: PAL.stone, down: PAL.shade });
       b.position.set(-19.9, top / 2, cz);
       root.add(b);
-      solid(-19.9, cz, 3.0, d, top);
-      perch(-19.9, top, cz);
+      solid(-19.9, cz, 3.0, run + 0.02, top);
+      if (i % 4 === 3) perch(-19.9, top, cz);
+      // The balustrade, one post per pair of steps, standing *on* the step it
+      // belongs to. Read off the same two numbers as the geometry.
+      if (i % 2 === 1) {
+        root.add(at(cyl(0.05, 0.05, 0.92, 5, PAL.gold, { up: PAL.goldLit, down: PAL.shade }),
+          -18.5, top + 0.46, cz));
+        const seg = box(0.09, 0.09, run * 2.1, PAL.gold, { up: PAL.goldLit, down: PAL.shade });
+        seg.position.set(-18.5, top + 0.95, cz + run * 0.5);
+        seg.rotation.x = Math.atan2(rise * 2, run * 2);
+        root.add(seg);
+      }
     }
-    // The balustrade down the open side.
-    for (const [px, py] of [[2.4, 1.2], [0.6, 2.3], [-1.4, 3.4], [-3.4, 4.5]]) {
-      root.add(at(cyl(0.05, 0.05, 0.9, 5, PAL.gold, { up: PAL.goldLit, down: PAL.shade }), -18.45, py - 0.45, px));
-    }
-    const rail = box(0.1, 0.1, 8.4, PAL.gold, { up: PAL.goldLit, down: PAL.shade });
-    rail.position.set(-18.45, 3.1, -1.2);
-    rail.rotation.x = -0.34;
-    root.add(rail);
+    // A newel at the foot, matching the pair at the head.
+    root.add(at(box(0.28, 1.15, 0.28, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }),
+      -18.5, 0.575, BOT_Z - 0.2));
+    root.add(at(ico(0.13, 0, PAL.gold, { shadow: false }), -18.5, 1.24, BOT_Z - 0.2));
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -493,7 +548,9 @@ export function buildLevel() {
   const FOUNTAIN = POOL.spec;
   root.userData.fountainWater = POOL.water;
   perch(POOL_SPEC.x + POOL_SPEC.r + 0.1, FOUNTAIN.rim, POOL_SPEC.z);
-  night.add(POOL.water, PAL.water, { peak: 0.07, warm: 5.0, delay: 1.8 });
+  night.add(POOL.water, PAL.water, { peak: 0.18, warm: 5.0, delay: 1.8 });
+  night.addPool(root, POOL_SPEC.x, POOL_SPEC.z, 7.0,
+    { profile: 'stall', peak: 0.42, warm: 5.0, delay: 1.8 });
 
   // ══════════════════════════════════════════════════════════════════════════
   // THE LOBBY CLOCK — a landmark that stands on the floor, and the nest on it
@@ -590,17 +647,34 @@ export function buildLevel() {
      * camera looking down at 38° is a wheel, not a disc.
      */
     const corona = (y, r, candles, spokes) => {
-      const band = cyl(r, r, 0.05, 16, PAL.shiny, { up: PAL.shiny, down: PAL.silver, shadow: false });
+      // A ring rather than a disc: the middle of the crown belongs to the nest,
+      // and a pale plate under dark twigs is the one background that makes them
+      // hard to pick out.
+      const band = new THREE.Mesh(
+        new THREE.RingGeometry(r - 0.42, r, 16).rotateX(-Math.PI / 2),
+        mat(PAL.shiny, { side: THREE.DoubleSide }),
+      );
       band.position.y = y;
       g.add(band);
       const lip = new THREE.Mesh(new THREE.TorusGeometry(r, 0.05, 4, 16), mat(PAL.gold));
       lip.rotation.x = Math.PI / 2;
       lip.position.y = y + 0.03;
       g.add(lip);
+      /**
+       * Spokes from the rim *inward*, and stopping well short of the middle.
+       *
+       * They ran hub-to-rim at first, which is how a wheel is built and which
+       * laid eight brass bars straight across the nest — a pie chart with a
+       * crow's nest under it. **Nothing overlaps the nest**, ever: it is the one
+       * object on a block whose whole job is to be read at a glance, from the
+       * far side of the room, while something is chasing you. `audit-level.mjs`
+       * asserts it now rather than leaving it to whoever builds the fifth block.
+       */
       for (let i = 0; i < spokes; i++) {
         const a = (i / spokes) * Math.PI * 2;
-        const arm = box(r, 0.05, 0.05, PAL.gold, { shadow: false });
-        arm.position.set(Math.cos(a) * r / 2, y + 0.06, Math.sin(a) * r / 2);
+        const len = r - 1.02;
+        const arm = box(len, 0.05, 0.05, PAL.gold, { shadow: false });
+        arm.position.set(Math.cos(a) * (r - len / 2), y + 0.06, Math.sin(a) * (r - len / 2));
         arm.rotation.y = -a;
         g.add(arm);
       }
@@ -704,8 +778,8 @@ export function buildLevel() {
       root.add(shade);
       night.add(shade, PAL.goldLit, { peak: 0.95, warm: 1.8, delay: 0.7 });
     }
-    night.addPool(root, DESK.x, DESK.z + 0.6, 7.4,
-      { profile: 'stall', peak: 0.7, warm: 1.8, delay: 0.7 });
+    night.addPool(root, DESK.x, DESK.z + 1.2, 9.0,
+      { profile: 'stall', peak: 0.82, warm: 1.8, delay: 0.7 });
 
     // The open cash drawer, on the west counter. A tray with a 5 cm lip, so the
     // bill in it is unmistakably *in* something and nothing is standing between
@@ -774,8 +848,23 @@ export function buildLevel() {
     back.position.set(BAR.x, 0, -7.4);
     root.add(back);
     solid(BAR.x, -7.4, 8, 0.5, 2.4);
-    night.addPool(root, BAR.x, BAR.z + 0.8, 6.4,
-      { profile: 'stall', peak: 0.66, warm: 2.8, delay: 1.1 });
+    night.addPool(root, BAR.x, BAR.z + 1.2, 7.6,
+      { profile: 'stall', peak: 0.78, warm: 2.8, delay: 1.1 });
+
+    // Three pendants over the counter. They hang from nothing, and at 2.6 m
+    // that is fine — the eye reads a lamp on a short drop as hung off something
+    // out of shot, which is not true of a three-metre chandelier in the middle
+    // of a room. Kept low enough to sit under every sightline the bar has.
+    const pend = [];
+    for (const px of [-2.6, 0, 2.6]) {
+      const sh = cone(0.26, 0.3, 8, PAL.gold, { up: PAL.goldLit, down: PAL.goldLit, shadow: false });
+      sh.rotation.z = Math.PI;
+      sh.position.set(BAR.x + px, 2.42, BAR.z - 0.1);
+      root.add(sh);
+      root.add(at(cyl(0.02, 0.02, 0.5, 4, PAL.gold, { shadow: false }), BAR.x + px, 2.75, BAR.z - 0.1));
+      pend.push(sh);
+    }
+    night.add(pend, PAL.goldLit, { peak: 0.95, warm: 2.2, delay: 0.5 });
 
     // The tip tray. An open dish, so the coins in it read as takeable rather
     // than as decoration on a counter.
@@ -876,8 +965,8 @@ export function buildLevel() {
       l.position.set(lx, 0, lz);
       root.add(l);
       solid(lx, lz, 0.5, 0.5, 1.6);
-      night.add(shade, PAL.goldLit, { peak: 0.9, warm: 2.2, delay: 0.35 });
-      night.addPool(root, lx, lz, 6.2, { profile: 'stall', peak: 0.72, warm: 2.2, delay: 0.35 });
+      night.add(shade, PAL.goldLit, { peak: 0.95, warm: 2.2, delay: 0.35 });
+      night.addPool(root, lx, lz, 7.4, { profile: 'stall', peak: 0.82, warm: 2.2, delay: 0.35 });
     }
 
     // The near-side occluder. Every block has one thing whose job is to be in
@@ -899,76 +988,60 @@ export function buildLevel() {
   // THE WEST END — the door, the luggage, and the kid's suitcase
   // ══════════════════════════════════════════════════════════════════════════
   /**
-   * The entrance, which is no longer a revolving door.
+   * The entrance, third attempt.
    *
-   * It was one, and it went through two builds and failed both. As a glazed
-   * drum it read as a teal barrel with an orange lid; rebuilt as an open brass
-   * frame it read as a café table with a parasol. The diagnosis is the same
-   * both times and it is not about the modelling: **a revolving door is a hole
-   * in a wall, and this block has no near wall.** With the frontage cut away
-   * there is nothing for it to be a hole in, so it stands in the middle of an
-   * open edge as a mystery object three metres wide.
+   * A revolving door failed twice — as a glazed drum it read as a teal barrel,
+   * as an open brass frame it read as a café table — because a revolving door
+   * is a hole in a wall and this block has no near wall. What replaced it was a
+   * rope line and a lamp, and that failed for a smaller reason: **four posts
+   * and two ropes at this distance are six thin sticks**, and a rope slung
+   * between two of them at an angle reads as a red stick that missed.
    *
-   * What is left is the part that was doing the work: a mat, a rope line and a
-   * lamp standard. Two of those are ankle height and the third is thinner than
-   * a person, so the whole entrance now costs the frame nothing — and it still
-   * says which way a guest came in, which is all the door was ever for.
+   * The version that works stops trying to draw a barrier and draws the two
+   * things a hotel entrance actually has at ankle and eye height: a *mat*, wide
+   * enough to read as one, and a pair of urns flanking it. Both are objects
+   * with mass. Neither is taller than a person, so the near edge of the room
+   * stays clear.
    */
   {
-    addDecal(DOOR.x, DOOR.z + 0.4, 4.4, 2.6, PAL.rugMid);
-    addDecal(DOOR.x, DOOR.z + 0.4, 3.8, 2.0, PAL.rug);
+    addDecal(DOOR.x, DOOR.z - 0.2, 6.2, 3.4, PAL.gold);
+    addDecal(DOOR.x, DOOR.z - 0.2, 5.6, 2.8, PAL.terracotta);
+    addDecal(DOOR.x, DOOR.z - 0.2, 4.4, 1.9, PAL.terracottaLit);
 
-    // The rope line, angled in from the threshold.
-    const posts = [[-2.2, -1.6], [-0.8, -0.2], [2.2, -1.6], [0.8, -0.2]];
-    for (const [px, pz] of posts) {
-      const st = new THREE.Group();
-      st.add(at(cyl(0.22, 0.26, 0.06, 10, PAL.gold, { up: PAL.goldLit, down: PAL.shade }), 0, 0.03, 0));
-      st.add(at(cyl(0.045, 0.045, 0.94, 6, PAL.gold, { up: PAL.goldLit, down: PAL.shade }), 0, 0.5, 0));
-      st.add(at(ico(0.075, 0, PAL.goldLit, { shadow: false }), 0, 1.0, 0));
-      st.position.set(DOOR.x + px, 0, DOOR.z + pz);
-      root.add(st);
-    }
-    for (const side of [-1, 1]) {
-      const rope = box(0.06, 0.06, 2.0, PAL.cloth[0], { up: PAL.clothLit[0], down: PAL.shade });
-      rope.position.set(DOOR.x + side * 1.5, 0.82, DOOR.z - 0.9);
-      // 45°, which is the angle between the two posts it is slung between —
-      // eyeballed at 0.62 it hung off the end of both of them.
-      rope.rotation.y = -side * (Math.PI / 4);
-      root.add(rope);
+    // The urns. Kit planters, which is what they are — and the only greenery at
+    // this end of a room whose other three quarters all have some.
+    for (const ux of [-2.9, 2.9]) {
+      const urn = addPlanter(DOOR.x + ux, DOOR.z - 0.2, 0, { w: 1.2 });
+      urn.add(at(cyl(0.72, 0.5, 0.24, 10, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }), 0, 0.82, 0));
     }
 
     /**
      * The lamp standard, and the block's first light.
      *
      * It catches at delay 0 with the stutter, before anything else in the room —
-     * the entrance lamp goes, then the desk, then the clock. Smoke asserts that
-     * some light on every block flickers from a standing start, which is the
-     * only reason that schedule is worth writing down.
+     * the entrance goes, then the desk, then the clock. Smoke asserts that some
+     * light on every block flickers from a standing start, which is the only
+     * reason that schedule is worth writing down.
      */
     const post = new THREE.Group();
-    post.add(at(cyl(0.28, 0.32, 0.08, 10, PAL.gold, { up: PAL.goldLit, down: PAL.shade }), 0, 0.04, 0));
-    post.add(at(cyl(0.06, 0.06, 2.2, 6, PAL.gold, { up: PAL.goldLit, down: PAL.shade }), 0, 1.1, 0));
-    const lantern = at(box(0.36, 0.5, 0.36, PAL.goldLit, { shadow: false }), 0, 2.42, 0);
+    post.add(at(cyl(0.3, 0.36, 0.1, 8, PAL.gold, { up: PAL.goldLit, down: PAL.shade }), 0, 0.05, 0));
+    post.add(at(cyl(0.06, 0.075, 2.3, 6, PAL.gold, { up: PAL.goldLit, down: PAL.shade }), 0, 1.2, 0));
+    // A lantern, which is glass panels in a brass cage rather than a box on a
+    // stick — the box on a stick read as a birdhouse.
+    const lantern = at(box(0.34, 0.46, 0.34, PAL.goldLit, { shadow: false }), 0, 2.55, 0);
     lantern.material = mat(PAL.goldLit);
     post.add(lantern);
-    post.add(at(cyl(0.3, 0.02, 0.16, 4, PAL.gold, { up: PAL.goldLit, down: PAL.shade }), 0, 2.74, 0));
-    post.position.set(DOOR.x + 2.9, 0, DOOR.z - 0.6);
+    for (const [ex, ez] of [[-0.19, -0.19], [0.19, -0.19], [-0.19, 0.19], [0.19, 0.19]]) {
+      post.add(at(cyl(0.03, 0.03, 0.5, 4, PAL.gold, { up: PAL.goldLit, down: PAL.shade }), ex, 2.55, ez));
+    }
+    post.add(at(cone(0.32, 0.24, 4, PAL.gold, { up: PAL.goldLit, down: PAL.shade }), 0, 2.9, 0));
+    post.add(at(ico(0.07, 0, PAL.gold, { shadow: false }), 0, 3.08, 0));
+    post.position.set(DOOR.x + 4.4, 0, DOOR.z - 0.6);
     root.add(post);
-    solid(DOOR.x + 2.9, DOOR.z - 0.6, 0.6, 0.6, 2.6);
-    night.add(lantern, PAL.goldLit, { peak: 0.9, warm: 1.6, delay: 0, flicker: true });
-    night.addPool(root, DOOR.x, DOOR.z, 6.4,
-      { profile: 'stall', peak: 0.6, warm: 1.6, delay: 0, flicker: true });
-  }
-
-  // A pair of sconces on the west wall, over the stair and the bell cart —
-  // the last unlit quarter of the room, and light on the ground rather than
-  // another column standing in it.
-  for (const sz of [-1.0, 6.0]) {
-    const sc = box(0.16, 0.5, 0.34, PAL.goldLit, { shadow: false });
-    sc.position.set(-21.7, 3.1, sz);
-    root.add(sc);
-    night.add(sc, PAL.goldLit, { peak: 0.85, warm: 2.4, delay: 0.8 });
-    night.addPool(root, -20.4, sz, 5.8, { profile: 'stall', peak: 0.62, warm: 2.4, delay: 0.8 });
+    solid(DOOR.x + 4.4, DOOR.z - 0.6, 0.7, 0.7, 2.8);
+    night.add(lantern, PAL.goldLit, { peak: 1.0, warm: 1.6, delay: 0, flicker: true });
+    night.addPool(root, DOOR.x + 1.4, DOOR.z - 0.6, 8.0,
+      { profile: 'stall', peak: 0.78, warm: 1.6, delay: 0, flicker: true });
   }
 
   // The luggage cart, and the change dish on it.

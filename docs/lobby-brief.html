@@ -256,7 +256,7 @@
 
 <header class="band">
   <div class="band-inner">
-    <div class="eyebrow">Level Design Brief &nbsp;·&nbsp; The Lobby &nbsp;·&nbsp; Built, played, revised once</div>
+    <div class="eyebrow">Level Design Brief &nbsp;·&nbsp; The Lobby &nbsp;·&nbsp; Built, played, revised twice</div>
     <h1 class="title">The<br>Lobby<span class="thin">The Atrium</span></h1>
     <p class="deck">Inside the hotel whose roof you already robbed. One room, four walls, a glass
       lantern for a ceiling, and nowhere else to go. The roofline taught you that up is where the
@@ -775,7 +775,7 @@
   <section id="played">
     <h2><span class="sec">§8</span> What the playtest took out</h2>
     <div class="col">
-      <p>Three notes, and between them they removed the ceiling, the chandelier and the front door.
+      <p><em>Round one.</em> Three notes, and between them they removed the ceiling, the chandelier and the front door.
       All three are the same note: <strong>this camera sits above the room, so everything near the
       top of it is between the player and the floor.</strong> §6 and §7 had already learned half of
       that from an automated check. The half a check cannot see is that "in the way" includes the
@@ -827,6 +827,58 @@
         The audit asks "can the camera see this pickup". A playtest asks "is this in the way", and
         those are different questions. Anything above about four metres in an interior has to answer
         the second one before it is allowed to exist.
+      </div>
+
+      <h3>Round two, and one of them is now a rule</h3>
+
+      <p><strong>Nothing overlaps the nest.</strong> The crown's spokes ran hub-to-rim, which is how
+      a wheel is built and which laid eight brass bars straight across the twig ring — a pie chart
+      with a nest under it. Nobody writes that down as a decision; it falls out of modelling the
+      thing the nest sits <em>on</em> and forgetting what sits on it. The spokes are short now and
+      the pan is a ring rather than a plate, and the general rule is asserted in
+      <span class="mono">audit-level.mjs</span>: no mesh may cross the nest's own footprint above
+      its base. That check took one correction of its own — a bounding box is the wrong shape to ask
+      the question with, because the box of a torus covers its own hole, so a brass rim
+      <em>around</em> the nest reported as sitting <em>on</em> it. It samples triangle edges now,
+      which also catches the case a box would miss: a beam long enough to span the nest with both
+      ends outside it.</p>
+
+      <p><strong>The staircase was three bugs wearing one coat.</strong> It was four stacked slabs
+      with 1.1 m risers, and it was reported as clipping, as having bits poking out of it, and as
+      not connecting at the top. Only the last was a collision problem — the gallery's rail ran
+      unbroken across the head of the stair, so everything arriving on foot met a 0.9 m wall and the
+      only way on was to fly, over a staircase whose entire reason for existing is that you do not
+      have to. The other two were the drawing: <strong>a 1.1 m riser is not a step, it is a wall you
+      can stand on top of</strong>, so walking into one and rising over it looks exactly like
+      passing through it; and a straight rail laid over a four-slab stair crosses the treads,
+      because a four-slab stair has no consistent slope to follow. It is fourteen steps now at a
+      0.314 m rise — under the crow's 0.34 m scramble, so a bird can walk up it, and under a
+      walker's 0.45 m step. The rail is generated from the step tops rather than laid across them,
+      which is the only way it stays right when the shape changes again. The gallery reaches the
+      west wall and its rail has an opening at the stair head, with newels either side.</p>
+
+      <p><strong>The entrance, third attempt.</strong> A rope line between four posts is six thin
+      sticks at this distance, and a rope slung at an angle reads as a red stick that missed. The
+      version that works stops drawing a barrier and draws what a hotel entrance has at ankle and
+      eye height: a mat wide enough to read as one, and a pair of urns flanking it. Both have mass;
+      neither is taller than a person.</p>
+
+      <p><strong>And more light.</strong> The washers under the gallery went from four to eight,
+      every column got an uplight, the bar got three pendants, and the desk, fountain, lounge and
+      entrance pools all grew. A washer bolted to a wall and an uplight in the floor are the two
+      fixtures in this game that are <em>pure pool</em> — no column, no shadow — which is why an
+      interior can carry roughly twice the fixture count of an outdoor block without paying the
+      price the park's ninth lamppost paid. It bought three points of 5th percentile (35 → 38) and
+      nothing on the median, which is the honest result: the median at t = 0.98 is set by the
+      ambient ramp and is 48 on every block in the game.</p>
+
+      <div class="note">
+        <span class="lbl">Open, and it is a design question rather than a lighting one</span>
+        A real hotel lobby has its lamps on <em>all afternoon</em>. This one's come on at 3 m 01 s
+        like a street. Making them earlier means giving the block its own
+        <span class="mono">lampsOnAt</span>, which is a shared assertion — "a fast run is rewarded
+        with daylight" — becoming per-level. That is a statement about what this block <em>is</em>,
+        not a brightness knob, so it is not being turned quietly.
       </div>
     </div>
   </section>
@@ -940,7 +992,7 @@
 
 <footer>
   <span>Small Change · Level 4 · The Lobby</span>
-  <span>Built · playtested · one revision round</span>
+  <span>Built · playtested · two revision rounds</span>
 </footer>
 
 </body>

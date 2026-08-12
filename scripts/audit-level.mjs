@@ -108,6 +108,78 @@ export function auditLevel({ level, world, check, deps }) {
     world.nestPlatform >= world.nestFootprint * RULES.nestPlatformRatio,
     `(platform ${world.nestPlatform} vs nest ${world.nestFootprint})`);
 
+  /**
+   * And nothing is standing in it.
+   *
+   * The nest is the one object on a block whose whole job is to be readable at a
+   * glance, from the far side of the map, while something is chasing you — and
+   * the fourth block put a brass wheel round it with eight spokes running
+   * hub-to-rim, which photographed as a pie chart with a crow's nest underneath.
+   * Nobody would write that down as a decision; it falls out of modelling the
+   * thing the nest sits *on* and forgetting what sits on it.
+   *
+   * The column checked is the nest's own footprint, from just above its base to
+   * a bird's height over it. Anything parented to the nest is exempt, because
+   * banked money lives there and is supposed to.
+   */
+  {
+    const N = world.nest;
+    const nestGroup = world.root.userData.nestGroup;
+    const inNest = new Set();
+    nestGroup?.traverse((o) => inNest.add(o));
+    const rad = world.nestFootprint / 2;
+    const bb = new THREE.Box3();
+    const over = [];
+    world.root.updateMatrixWorld(true);
+
+    /**
+     * A bounding box is the wrong shape to ask this question with, and it took
+     * one run to find out: the AABB of a torus covers its own hole, so a brass
+     * rim *around* the nest reports as sitting *on* it, and the AABB of a bar
+     * rotated 45° reaches a quarter of a metre past either end of the bar.
+     * Both are false positives and both would have been "fixed" by moving
+     * geometry that was already fine.
+     *
+     * So the box is only the cheap reject. What decides it is the geometry:
+     * every triangle edge, in world space, sampled along its length — which
+     * catches the case an AABB would miss as well as the two it invents,
+     * namely a beam long enough to span the column with both ends outside it.
+     */
+    const va = new THREE.Vector3(), vb = new THREE.Vector3(), vp = new THREE.Vector3();
+    const crosses = (o) => {
+      const pos = o.geometry.attributes.position;
+      if (!pos) return false;
+      const idx = o.geometry.index;
+      const n = idx ? idx.count : pos.count;
+      for (let i = 0; i < n; i += 3) {
+        for (let e = 0; e < 3; e++) {
+          const ia = idx ? idx.getX(i + e) : i + e;
+          const ib = idx ? idx.getX(i + (e + 1) % 3) : i + (e + 1) % 3;
+          va.fromBufferAttribute(pos, ia).applyMatrix4(o.matrixWorld);
+          vb.fromBufferAttribute(pos, ib).applyMatrix4(o.matrixWorld);
+          for (let t = 0; t <= 1; t += 1 / 12) {
+            vp.lerpVectors(va, vb, t);
+            if (vp.y > N.y + 0.03 && vp.y < N.y + 1.2
+              && Math.hypot(vp.x - N.x, vp.z - N.z) < rad) return true;
+          }
+        }
+      }
+      return false;
+    };
+
+    world.root.traverse((o) => {
+      if (!o.isMesh || inNest.has(o)) return;
+      bb.setFromObject(o);
+      if (bb.max.y < N.y + 0.03 || bb.min.y > N.y + 1.2) return;
+      if (bb.max.x < N.x - rad || bb.min.x > N.x + rad) return;
+      if (bb.max.z < N.z - rad || bb.min.z > N.z + rad) return;
+      if (!crosses(o)) return;
+      over.push(`${o.geometry.type} at (${bb.min.y.toFixed(2)}..${bb.max.y.toFixed(2)})`);
+    });
+    check(say('nothing overlaps the nest'), over.length === 0,
+      `(${[...new Set(over)].join('; ')})`);
+  }
+
   // ── pickups ───────────────────────────────────────────────────────────────
   const pickups = world.pickups.map((s) => new Pickup(s));
   check(say('all pickups construct'), pickups.length === world.pickups.length, `(${pickups.length})`);
