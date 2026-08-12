@@ -462,9 +462,11 @@
     border-top: 1px solid rgba(159,181,171,.22); padding-top: 6px;
   }
   .chip[aria-pressed="true"] { border-color: var(--brass); border-bottom-color: var(--brass); }
-  /* Locked blocks stay on screen. The ladder — $20 / $25 / $30, one deck / two /
-     four — is the reason to keep playing, and a menu that hides what is next
-     hides the reason. */
+  /* Locked blocks stay on screen. The ladder is the reason to keep playing, and
+     a menu that hides what is next hides the reason. Deliberately not spelled
+     out here: this comment named the rungs, and was wrong within a day of a
+     fourth block arriving. The chips read `goal` off the registry, which is the
+     only place the ladder is written down. */
   .chip.locked {
     opacity: .40; cursor: default; border-bottom-color: rgba(159,181,171,.35);
   }
