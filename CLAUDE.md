@@ -368,6 +368,21 @@ That's why `words.js` and `rank.js` are separate from `hud.js`.
   builds. Any assertion on mesh or geometry counts has to be a bound, not an
   equality — but scene *children* are deterministic, so that one can be pinned,
   and it is the sharper leak detector anyway.
+- **A night light drives a material, not a mesh, so it can be orphaned in
+  silence.** `Stage.registerOccluders` clones the material of anything that
+  fades when it blocks the camera; a mesh that is *also* a night light keeps
+  ramping a material nothing renders. Level 1's whole café front — a door and
+  three windows — never lit up for months for exactly this reason. `NightLights`
+  holds a *list* of materials now and `follow()` is how the clone gets adopted.
+  The clone itself cannot be skipped: `mat()` caches by colour, so `transparent`
+  would leak to every mesh of that colour, and fade is per-mesh, so two
+  occluders sharing one material would fight over one `opacity` every frame.
+- **A check that runs before the thing it checks for passes for free.** The
+  orphaning above is done by a *caller*, after the level is built, so an audit
+  that only looks at the built world sees nothing wrong — it measured 0 orphans
+  at build time and 2 a moment later. `prepareOccluders` is exported from
+  `stage.js` so the audit can run the real step in the real order rather than a
+  reimplementation that would only ever agree with itself.
 
 ## Level-design rules (asserted, not aspirational)
 

@@ -197,7 +197,10 @@ class Game {
 
     this.world = this.level.build();
     this.stage.scene.add(this.world.root);
-    this.stage.registerOccluders([...new Set(this.world.occluders.filter((o) => o && o.isMesh))]);
+    this.stage.registerOccluders(
+      [...new Set(this.world.occluders.filter((o) => o && o.isMesh))],
+      this.world.nightLights,
+    );
 
     this.crow = new Crow(this.stage);
     this.crow.pos.set(...this.level.spawn);
@@ -308,7 +311,9 @@ class Game {
 
     // The night lights are the only lambert materials on level geometry that
     // are clones rather than cache entries, and the pools are additive quads.
-    for (const item of this.world.nightLights.items) item.material?.dispose();
+    for (const item of this.world.nightLights.items) {
+      for (const m of item.materials) m.dispose();
+    }
 
     this.world = null;
     this.crow = null;

@@ -13,6 +13,32 @@ const YAW = THREE.MathUtils.degToRad(25);
 const DIST_GROUND = 46;
 const DIST_MAX = 60;   // camera eases out as the crow climbs
 
+/**
+ * Give each occluder a material of its own, and tell the night lights.
+ *
+ * Standalone, and exported, for one reason: this is the step that runs *after*
+ * a level is built and quietly rewrites part of it, so it is the step a
+ * headless audit has to be able to run too. `scripts/audit-level.mjs` calls it
+ * to check that no night light was orphaned by it — and calling the real
+ * function rather than a reimplementation of it is the entire point, since a
+ * copy would drift and start agreeing with itself.
+ *
+ * Cloning is required twice over, even for a material that is already private:
+ * `mat()` caches by colour, so setting `transparent` would leak to every mesh
+ * sharing that colour; and fade is per-mesh, so two occluders on one material
+ * would fight over a single `opacity` every frame.
+ */
+export function prepareOccluders(list, night = null) {
+  for (const o of list) {
+    o.userData.fade = 0;
+    const before = o.material;
+    o.material = before.clone();
+    o.material.transparent = true;
+    night?.follow(before, o.material);
+  }
+  return list;
+}
+
 export class Stage {
   constructor(canvas) {
     this.renderer = new THREE.WebGLRenderer({
@@ -108,13 +134,15 @@ export class Stage {
   }
 
   /** Meshes that should fade to a silhouette when they get between us and the crow. */
-  registerOccluders(list) {
-    this._occluders = list;
-    for (const o of list) {
-      o.userData.fade = 0;
-      o.material = o.material.clone();
-      o.material.transparent = true;
-    }
+  /**
+   * @param {Array} list        meshes that fade when they get in the way
+   * @param {object} [night]    the block's NightLights, if it has any.
+   *   Cloning below silently steals any mesh that is *also* a night light —
+   *   the light keeps writing to the material the mesh no longer uses, and it
+   *   never comes on. Handing the registry over lets it follow the swap.
+   */
+  registerOccluders(list, night = null) {
+    this._occluders = prepareOccluders(list, night);
   }
 
   /**

@@ -41,6 +41,11 @@ const { Pickup, BAIT_KINDS } = await import('../src/world/pickups.js');
 const { NightLights } = await import('../src/render/nightlights.js');
 const { PAL, SKY_RAMP } = await import('../src/render/palette.js');
 const { mat } = await import('../src/render/shapes.js');
+// Imported for the audit's orphaned-night-light check, which has to run the
+// real occluder swap rather than a copy of it. Stage itself is never
+// constructed here — it would want a WebGL context — but the module is safe
+// to import: nothing at its top level touches the DOM.
+const { prepareOccluders } = await import('../src/render/stage.js');
 const { auditLevel } = await import('./audit-level.mjs');
 
 let failures = 0;
@@ -137,7 +142,9 @@ function auditLights(level, world) {
   // A pool drives `opacity` on a MeshBasicMaterial; an emissive source drives
   // `emissiveIntensity`. Everything that asks "is it off?" has to read whichever
   // one this light actually uses.
-  const output = (i) => (i.pool ? i.material.opacity : i.material.emissiveIntensity);
+  // A light may drive more than one material — see NightLights.follow — but
+  // they are all written together, so the first one speaks for the item.
+  const output = (i) => (i.pool ? i.materials[0].opacity : i.materials[0].emissiveIntensity);
   const pools = night.items.filter((i) => i.pool);
 
   /**
@@ -207,7 +214,7 @@ function auditLights(level, world) {
     cached.emissive.getHex() === 0,
     `(cached goldLit emissive #${cached.emissive.getHexString()})`);
   check(say('every night light has its own material, none is the cached one'),
-    night.items.every((i) => i.material !== cached));
+    night.items.every((i) => !i.materials.includes(cached)));
 
   // Before the trigger nothing is on, however long the frame.
   night.update(0.5, 10);
@@ -243,8 +250,8 @@ function auditLights(level, world) {
    * as "the light looks a bit washed out".
    */
   check(say('pool textures are tagged sRGB, not left linear'),
-    pools.every((i) => i.material.map && i.material.map.colorSpace === THREE.SRGBColorSpace),
-    `(${pools.map((i) => i.material.map?.colorSpace || 'none').join(', ')})`);
+    pools.every((i) => i.materials[0].map && i.materials[0].map.colorSpace === THREE.SRGBColorSpace),
+    `(${pools.map((i) => i.materials[0].map?.colorSpace || 'none').join(', ')})`);
 
   /**
    * A pool is light, not geometry that light falls on — and specifically it must
@@ -253,8 +260,8 @@ function auditLights(level, world) {
    * putting light on the ground it walks over.
    */
   check(say('pools are additive and write no depth'),
-    pools.every((i) => i.material.blending === THREE.AdditiveBlending
-      && i.material.depthWrite === false && i.material.fog === false));
+    pools.every((i) => i.materials[0].blending === THREE.AdditiveBlending
+      && i.materials[0].depthWrite === false && i.materials[0].fog === false));
 
 }
 
@@ -277,7 +284,7 @@ console.log('\nthe sky ramp');
 // ── every block, every rule ─────────────────────────────────────────────────
 const deps = {
   RULES, overlaps, blocksWalker, deckAt, WALKER_RADIUS,
-  Crow, CROW, Human, Pigeon, Gull, Pickup, BAIT_KINDS,
+  Crow, CROW, Human, Pigeon, Gull, Pickup, BAIT_KINDS, prepareOccluders,
 };
 const summary = [];
 for (const level of LEVELS) {

@@ -27,7 +27,7 @@ const finite = (v) => Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isF
 export function auditLevel({ level, world, check, deps }) {
   const {
     RULES, overlaps, blocksWalker, deckAt, WALKER_RADIUS,
-    Crow, CROW, Human, Pigeon, Gull, Pickup, BAIT_KINDS,
+    Crow, CROW, Human, Pigeon, Gull, Pickup, BAIT_KINDS, prepareOccluders,
   } = deps;
 
   const name = `L${level.id}`;
@@ -55,6 +55,39 @@ export function auditLevel({ level, world, check, deps }) {
   check(say('no mesh renders black from a missing color attribute'),
     blackMeshes.length === 0, `(${blackMeshes.length} of ${meshCount} meshes)`);
   console.log(`       meshes ${meshCount}, colliders ${world.colliders.length}`);
+
+  /**
+   * Every night light is attached to something that will actually be drawn.
+   *
+   * A light drives a material, not a mesh, so a light whose material no mesh
+   * uses is silently dead — it ramps up on schedule every dusk and nothing on
+   * screen changes. That is precisely what happened to level 1's café front for
+   * months: `Stage.registerOccluders` clones the material of anything that has
+   * to fade when it blocks the camera, and a door and three windows were both
+   * a night light and an occluder, so the emissive went to an object nobody
+   * had rendered since boot.
+   *
+   * The clone is a *caller's* doing, after the level is built, so the check has
+   * to do what the caller does before it can see anything: `prepareOccluders`
+   * is the real function main.js reaches through `Stage`, called here in the
+   * same order and with the same arguments. Reimplementing it would produce a
+   * test that agrees with itself and with nothing else. Pools are exempt — they
+   * own the quad they light, and it is not in the level's mesh tree.
+   */
+  {
+    prepareOccluders([...new Set(world.occluders.filter((o) => o && o.isMesh))], world.nightLights);
+
+    const inUse = new Set();
+    world.root.traverse((o) => {
+      if (!o.isMesh) return;
+      for (const m of (Array.isArray(o.material) ? o.material : [o.material])) inUse.add(m);
+    });
+    const dead = world.nightLights.items
+      .filter((i) => !i.pool && !i.materials.some((m) => inUse.has(m)))
+      .map((i) => `0x${i.materials[0].color.getHexString()}`);
+    check(say('every night light is on a material something actually renders'),
+      dead.length === 0, `(${dead.length} orphaned: ${dead.join(', ')})`);
+  }
 
   // ── the water ─────────────────────────────────────────────────────────────
   const F = world.fountain;

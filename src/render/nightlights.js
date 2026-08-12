@@ -124,7 +124,13 @@ export class NightLights {
     for (const m of list) m.material = material;
 
     const item = {
-      material,
+      /**
+       * Usually one, shared by every mesh in the group — a hundred skyline
+       * windows cost one assignment a frame rather than a hundred. It is a
+       * list because a mesh's material can be swapped out from under this
+       * after the fact; see `follow`.
+       */
+      materials: [material],
       peak: opts.peak ?? 1,
       delay: opts.delay ?? 0,
       warm: opts.warm ?? 2.4,
@@ -165,7 +171,7 @@ export class NightLights {
     parent.add(mesh);
 
     const item = {
-      material, pool: true,
+      materials: [material], pool: true,
       peak: opts.peak ?? 0.34,
       delay: opts.delay ?? 0,
       warm: opts.warm ?? 2.4,
@@ -174,6 +180,40 @@ export class NightLights {
     };
     this.items.push(item);
     return item;
+  }
+
+  /**
+   * A mesh we light has had its material replaced. Light the replacement too.
+   *
+   * There is exactly one thing in the game that does this: `Stage.registerOccluders`
+   * clones the material of anything that has to fade when it comes between the
+   * camera and the crow. It has to clone, twice over — `mat()` caches by colour,
+   * so setting `transparent` on a cached material would make every mesh of that
+   * colour see-through; and fade is per-mesh, so two occluders sharing one
+   * material would fight over a single `opacity` every frame.
+   *
+   * The collision is with anything that is *both* a night light and an
+   * occluder, which on level 1 is the whole café front — a door and three
+   * windows. Their emissive was being written to a material no mesh had used
+   * since boot, so the one shopfront the block deliberately puts on its near
+   * side never lit up. It measured as "0 of 11 night lights are orphaned" at
+   * build time and 2 of 11 a moment later, which is why it survived: the
+   * damage is done by a caller, after the level is built.
+   *
+   * Adding rather than replacing, because a group's other meshes may still be
+   * using the original. Writing to a material nobody uses is free.
+   */
+  follow(oldMaterial, newMaterial) {
+    for (const item of this.items) {
+      if (!item.materials.includes(oldMaterial)) continue;
+      item.materials.push(newMaterial);
+      // Bring it straight to wherever the rest of the group already is, or a
+      // light registered mid-ramp would sit dark until the next change.
+      if (item.pool) newMaterial.opacity = item.level * item.peak;
+      else newMaterial.emissiveIntensity = item.level * item.peak;
+      return item;
+    }
+    return null;
   }
 
   /** Level 0..1 for one light, `s` seconds after the block started coming on. */
@@ -198,8 +238,10 @@ export class NightLights {
       const level = NightLights.levelAt(item, this.since);
       if (level === item.level) continue;
       item.level = level;
-      if (item.pool) item.material.opacity = level * item.peak;
-      else item.material.emissiveIntensity = level * item.peak;
+      for (const m of item.materials) {
+        if (item.pool) m.opacity = level * item.peak;
+        else m.emissiveIntensity = level * item.peak;
+      }
     }
   }
 }
