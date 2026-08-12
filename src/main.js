@@ -469,7 +469,7 @@ class Game {
      *
      * Only `hideLevels` used to undo it, and `#forget` re-enters this method
      * *without* leaving first — so forgetting your progress while a forfeit was
-     * up left the panel open, the Play/Back row hidden, and `_forfeitTo`
+     * up left the panel open, the Play/Back row hidden, and `_confirmAction`
      * pointing at a block that had just been re-locked.
      */
     this._cancelForfeit();
@@ -585,21 +585,66 @@ class Game {
     this.loadLevel(id, true);
   }
 
-  _askForfeit(id) {
-    this._forfeitTo = id;
-    const target = getLevel(id);
-    const copy = document.getElementById('forfeit-copy');
-    copy.innerHTML = `<b>Are you sure?</b> You already collected $${this.total.toFixed(2)}.`;
-    document.getElementById('forfeit-go').textContent = `Go to ${target.shortName}`;
-    document.getElementById('forfeit-stay').textContent = `Stay in ${this.level.shortName}`;
-    document.getElementById('forfeit').hidden = false;
+  /**
+   * Take over the Levels screen's action row with a yes/no.
+   *
+   * Two callers — leaving a block with money in the nest, and forgetting your
+   * progress — and one component, because they are the same question in the
+   * same place and two panels would drift apart. In both, the destructive
+   * choice is the *outlined* button: brass is always the way back.
+   *
+   * @param {{copy:string, yes:string, no:string, onYes:Function}} spec
+   */
+  _ask({ copy, yes, no, onYes }) {
+    this._confirmAction = onYes;
+    document.getElementById('confirm-copy').innerHTML = copy;
+    document.getElementById('confirm-yes').textContent = yes;
+    document.getElementById('confirm-no').textContent = no;
+    document.getElementById('confirm').hidden = false;
     document.getElementById('levels-actions').hidden = true;
   }
 
   _cancelForfeit() {
-    this._forfeitTo = null;
-    document.getElementById('forfeit').hidden = true;
+    this._confirmAction = null;
+    document.getElementById('confirm').hidden = true;
     document.getElementById('levels-actions').hidden = false;
+  }
+
+  _askForfeit(id) {
+    const target = getLevel(id);
+    this._ask({
+      copy: `<b>Are you sure?</b> You already collected $${this.total.toFixed(2)}.`,
+      yes: `Go to ${target.shortName}`,
+      no: `Stay in ${this.level.shortName}`,
+      onYes: () => {
+        this.paused = false;
+        document.getElementById('pause').classList.add('hidden');
+        this.hideLevels();
+        this.loadLevel(id, true);
+      },
+    });
+  }
+
+  /**
+   * Forgetting is the only thing in the game that destroys something the player
+   * cannot get back, so it asks — and then it puts you back at the beginning.
+   *
+   * Returning to the first block is not tidiness. Forgetting can re-lock the
+   * block you are standing in, and every screen that survives the reset is then
+   * offering a way back into it: the ending screen's `Again!` replayed a block
+   * the reset had just closed, reported from a playtest as exactly that. A
+   * reset that leaves you holding a key to the thing it locked is not a reset.
+   */
+  _askForget() {
+    this._ask({
+      copy: '<b>Are you sure?</b> This forgets every level you have opened.',
+      yes: 'Forget everything',
+      no: 'Keep it',
+      onYes: () => {
+        this.progress.forget();
+        this.showTitle(LEVELS[0].id);
+      },
+    });
   }
 
   /** The title card, dressed for whoever is looking at it — and for whichever block. */
@@ -638,8 +683,8 @@ class Game {
    * `autoStart: false` so it builds behind the title card rather than dropping
    * the player straight back in.
    */
-  showTitle() {
-    const id = this.level.id;
+  showTitle(levelId = null) {
+    const id = levelId ?? this.level.id;
     this.paused = false;
     this.finished = false;
     document.getElementById('pause').classList.add('hidden');
@@ -668,25 +713,18 @@ class Game {
     document.getElementById('levels-play').addEventListener('click', () => this._playArmed());
     document.getElementById('levels-back').addEventListener('click', () => this._leaveLevels());
 
-    document.getElementById('forfeit-go').addEventListener('click', () => {
-      const id = this._forfeitTo;
+    document.getElementById('confirm-yes').addEventListener('click', () => {
+      const act = this._confirmAction;
       this._cancelForfeit();
-      this.hideLevels();
-      this.paused = false;
-      document.getElementById('pause').classList.add('hidden');
-      this.loadLevel(id, true);
+      act?.();
     });
-    document.getElementById('forfeit-stay').addEventListener('click', () => {
+    document.getElementById('confirm-no').addEventListener('click', () => {
       this._cancelForfeit();
       this._armed = this.level.id;
       this._paintArmed();
     });
 
-    document.getElementById('forget').addEventListener('click', () => {
-      this.progress.forget();
-      this._paintTitle();
-      this.showLevels();
-    });
+    document.getElementById('forget').addEventListener('click', () => this._askForget());
 
     document.getElementById('resume').addEventListener('click', () => this.resume());
     document.getElementById('restart').addEventListener('click', () => {

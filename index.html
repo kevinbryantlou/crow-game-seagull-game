@@ -472,17 +472,17 @@
 
   /* The forfeit. Takes over the action row in place rather than opening a
      dialogue on top of it — see §7. */
-  #forfeit {
+  #confirm {
     border: 2px solid rgba(217,95,76,.65); background: rgba(15,13,20,.72);
     padding: 16px 20px 18px; margin-top: 24px; max-width: 30rem;
   }
-  #forfeit[hidden] { display: none; }
-  #forfeit p {
+  #confirm[hidden] { display: none; }
+  #confirm p {
     font-family: Charter, Georgia, serif; font-size: 15px; color: #e8ddd6; margin: 0;
   }
-  #forfeit p b { color: var(--red); font-weight: 700; }
-  #forfeit .row { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
-  #forfeit .start { margin-top: 0; font-size: 15px; padding: 10px 26px; }
+  #confirm p b { color: var(--red); font-weight: 700; }
+  #confirm .row { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
+  #confirm .start { margin-top: 0; font-size: 15px; padding: 10px 26px; }
 
   #levels-actions { display: flex; gap: 14px; align-items: stretch; justify-content: center; }
   #levels-actions .start { margin-top: 30px; }
@@ -663,11 +663,15 @@
     <button class="start ghost" id="levels-back">Back</button>
   </div>
 
-  <div id="forfeit" hidden>
-    <p id="forfeit-copy"></p>
+  <!-- One confirm, two callers: leaving a block with money in the nest, and
+       forgetting your progress. Both take over the action row in place rather
+       than opening a dialogue on top of it, and in both the destructive choice
+       is the outlined button — the brass one is always the way back. -->
+  <div id="confirm" hidden>
+    <p id="confirm-copy"></p>
     <div class="row">
-      <button class="start ghost" id="forfeit-go">Leave</button>
-      <button class="start" id="forfeit-stay">Stay</button>
+      <button class="start ghost" id="confirm-yes">Yes</button>
+      <button class="start" id="confirm-no">No</button>
     </div>
   </div>
 
@@ -682,7 +686,7 @@
     <button class="start ghost" id="restart">Start over</button>
     <button class="start ghost" id="pause-levels">Levels</button>
   </div>
-  <p class="fine">Esc to resume · M mutes · <button class="linky" id="quit">Quit to title</button></p>
+  <p class="fine">Esc to resume · M to mute · <button class="linky" id="quit">Quit to title</button></p>
 </div>
 
 <div class="screen hidden" id="ending">

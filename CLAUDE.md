@@ -549,8 +549,17 @@ chip gates, the URL does not** — `?level=N` still bypasses everything, because
 it is how `shoot.mjs` drives the game and how a block gets spot-checked without
 playing two others first.
 
-What is still missing: no route backwards through a *finished* run, no
-difficulty options, and nothing displays the best.
+**Forgetting your progress asks, and then returns you to the first block.** Both
+halves came from the playtest. It is the only action in the game that destroys
+something the player cannot get back, so it shares the forfeit's confirm — one
+`#confirm` component, two callers, destructive choice outlined and the way back
+in brass. And a reset can *re-lock the block you are standing in*, at which
+point every screen that survives it holds a key to that block: finish the
+roofline, open Levels from the ending, forget, press Back, and `Again!` replays
+a block the reset just closed. **A reset that leaves you holding a key to the
+thing it locked is not a reset**, so it ends the run and rebuilds level 1.
+
+What is still missing: no difficulty options, and nothing displays the best.
 
 `world/kit.js` holds anything a fourth block would otherwise copy-paste: tables,
 benches, lamps, bins, planters, trees, the skyline, the nest, and the water body.

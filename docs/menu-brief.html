@@ -505,7 +505,7 @@
       all of it the moment the tab closes. This is the proposal for the save file, the level
       select, and the pause screen that has to exist for either of them to be reachable.</p>
     <dl class="facts">
-      <div><dt>Status</dt><dd>Built — not yet playtested</dd></div>
+      <div><dt>Status</dt><dd>Built · playtested once</dd></div>
       <div><dt>New files</dt><dd>1 — <span class="mono">core/save.js</span></dd></div>
       <div><dt>New screens</dt><dd>2 — Levels, and pause</dd></div>
       <div><dt>Open decisions</dt><dd>None</dd></div>
@@ -526,7 +526,14 @@
       to what the code would produce, not an impression of it. It is not, however, running.</p>
 
       <div class="note">
-        <span class="lbl">Built · not yet playtested</span>
+        <span class="lbl">Built · one playtest round</span>
+        The title card, the pause overlay and the three-button row all read as fine. The round
+        found one bug and one copy fix, both in <a href="#save">§8</a>: forgetting your progress
+        did not ask, and it left every surviving screen holding a route back into a block it had
+        just locked.
+      </div>
+
+      <div class="note">
         All five milestones in <a href="#plan">§11</a> have landed and every assertion in
         <a href="#verify">§10</a> is in one of the two harnesses — 35 of them in
         <span class="mono">smoke</span> for the save layer and the rest in
@@ -1140,10 +1147,22 @@
 
       <div class="note">
         <span class="lbl">Forget my progress</span>
-        One line of fine print, on the title card. It is needed for testing the empty state, and
-        it is the honest thing to put next to the only feature in this game that writes to
+        One line of fine print, on the Levels screen. It is needed for testing the empty state,
+        and it is the honest thing to put next to the only feature in this game that writes to
         somebody's machine.
       </div>
+
+      <h3>Forgetting asks, and then it takes you back to the beginning</h3>
+      <p>Both halves came out of the first playtest. It is the only action in the game that
+      destroys something the player cannot get back, so it uses the same confirm the forfeit
+      uses — one component, two callers, destructive choice outlined and the way back in brass.</p>
+      <p>The second half is the less obvious one. <strong>Forgetting can re-lock the block you
+      are standing in</strong>, and every screen that survives the reset is then holding a key to
+      it: finish the roofline, open Levels from the ending, forget, press Back, and the ending
+      screen is still sitting there offering <em>Again!</em> on a block that was just closed.
+      Reported from a playtest as exactly that sequence. So a reset ends the run and returns to
+      the title on the first block — <strong>a reset that leaves you holding a key to the thing it
+      locked is not a reset.</strong></p>
     </div>
   </section>
 

@@ -1571,14 +1571,14 @@ console.log(`  wrote ${OUT}/13-mobile-collapsed.png (tasks collapsed: ${folded})
     await menu.click('#levels-list .chip[data-level="2"]');
     await menu.click('#levels-play');
     await new Promise((r) => setTimeout(r, 200));
-    if (!await shown('forfeit')) bad('leaving a block with money in the nest did not ask');
+    if (!await shown('confirm')) bad('leaving a block with money in the nest did not ask');
     if (await shown('levels-actions')) bad('the forfeit did not take over the action row');
-    if (!/4\.25/.test(await label('forfeit-copy'))) {
-      bad(`the forfeit does not name the amount: "${await label('forfeit-copy')}"`);
+    if (!/4\.25/.test(await label('confirm-copy'))) {
+      bad(`the forfeit does not name the amount: "${await label('confirm-copy')}"`);
     }
     writeFileSync(`${OUT}/18-forfeit.png`, await menu.screenshot({ type: 'png' }));
 
-    await menu.click('#forfeit-go');
+    await menu.click('#confirm-yes');
     await new Promise((r) => setTimeout(r, 900));
 
     /**
@@ -1651,19 +1651,76 @@ console.log(`  wrote ${OUT}/13-mobile-collapsed.png (tasks collapsed: ${folded})
     await menu.click(`#levels-list .chip[data-level="${elsewhere}"]`);
     await menu.click('#levels-play');
     await new Promise((r) => setTimeout(r, 200));
-    if (!await shown('forfeit')) bad('the forfeit did not appear for the re-entry check');
+    if (!await shown('confirm')) bad('the forfeit did not appear for the re-entry check');
     await menu.click('#forget');
     await new Promise((r) => setTimeout(r, 300));
-    if (await shown('forfeit')) bad('forgetting left a forfeit prompt up');
-    if (!await shown('levels-actions')) bad('forgetting left the action row hidden');
+    // Forget now *asks*, so the panel is still up — but it must be the reset
+    // question, not the stale forfeit one.
+    if (!await shown('confirm')) bad('forgetting did not ask for confirmation');
+    if (!/forgets every level/i.test(await label('confirm-copy'))) {
+      bad(`forget re-used the stale prompt: "${await label('confirm-copy')}"`);
+    }
+    await menu.click('#confirm-no');
+    await new Promise((r) => setTimeout(r, 200));
+    if (await shown('confirm')) bad('declining the reset left the prompt up');
+    if (!await shown('levels-actions')) bad('declining the reset left the action row hidden');
+    const kept = await menu.evaluate(() => window.__game.progress.cleared.length);
+    if (kept === 0) bad('declining the reset forgot the progress anyway');
 
-    /** HUD countdowns must not drain behind the scrim. */
+    /**
+     * The playtest repro, exactly: finish the roofline, open Levels from the
+     * ending, forget, go Back — and the ending screen is still sitting there
+     * offering `Again!` on a block the reset has just locked. A reset that
+     * leaves you holding a key to the thing it locked is not a reset, so it
+     * ends the run and returns to the first block.
+     */
     await menu.evaluate(() => {
       const g = window.__game;
-      g.hideLevels(); g.resume();
-      g.hud._tasksT = 3; g.hud._controlsT = 3;
+      g.progress.cleared = [1, 2, 3]; g.progress.save();
+      g.resume?.();
+      g.total = 31; g.elapsed = 240; g.finished = false; g.running = true;
+      g._finish(true);
     });
-    await menu.evaluate(() => window.__game.pause());
+    await new Promise((r) => setTimeout(r, 300));
+    await menu.click('#ending-levels');
+    await new Promise((r) => setTimeout(r, 200));
+    await menu.click('#forget');
+    await new Promise((r) => setTimeout(r, 150));
+    await menu.click('#confirm-yes');
+    await new Promise((r) => setTimeout(r, 900));
+    const afterReset = await menu.evaluate(() => ({
+      level: window.__game.level.id,
+      cleared: window.__game.progress.cleared.length,
+      finished: window.__game.finished,
+      running: window.__game.running,
+      titleUp: !document.getElementById('title').classList.contains('hidden'),
+      endingUp: !document.getElementById('ending').classList.contains('hidden'),
+      levelsUp: !document.getElementById('levels').classList.contains('hidden'),
+      start: document.getElementById('start').textContent.trim(),
+    }));
+    if (afterReset.cleared !== 0) bad('the reset did not clear the ladder');
+    if (afterReset.level !== 1) bad(`the reset left the player on level ${afterReset.level}`);
+    if (afterReset.endingUp) bad('the reset left the ending screen up, offering Again! on a locked block');
+    if (afterReset.levelsUp) bad('the reset left the level list up');
+    if (!afterReset.titleUp) bad('the reset did not return to the title');
+    if (afterReset.finished || afterReset.running) bad('the reset left a run in progress');
+    if (afterReset.start !== 'Begin') bad(`after a reset the title reads "${afterReset.start}"`);
+
+    /**
+     * HUD countdowns must not drain behind the scrim.
+     *
+     * Self-contained: the reset above deliberately ends the run and returns to
+     * the title, so this has to establish its own running game rather than
+     * inherit one — otherwise `pause()` is a no-op and the test measures a
+     * countdown that was never frozen because it was never paused.
+     */
+    await menu.evaluate(() => window.__game.loadLevel(1, true));
+    await new Promise((r) => setTimeout(r, 700));
+    await menu.evaluate(() => {
+      const g = window.__game;
+      g.hud._tasksT = 3; g.hud._controlsT = 3;
+      g.pause();
+    });
     await new Promise((r) => setTimeout(r, 1400));
     const frozen = await menu.evaluate(() => ({
       tasksT: window.__game.hud._tasksT,
@@ -1713,11 +1770,21 @@ console.log(`  wrote ${OUT}/13-mobile-collapsed.png (tasks collapsed: ${folded})
     if (saved && !/"cleared"\s*:\s*\[[^\]]/.test(saved)) bad(`a win wrote no cleared block: ${saved}`);
   }
 
-  // Forget, and the empty state it restores.
+  // Forget, and the empty state it restores. It asks first — the only action in
+  // the game that destroys something the player cannot get back.
   await menu.click('#forget');
-  await new Promise((r) => setTimeout(r, 250));
-  const relocked = await menu.evaluate(() =>
-    [...document.querySelectorAll('#levels-list .chip')].map((c) => c.classList.contains('locked')));
+  await new Promise((r) => setTimeout(r, 200));
+  if (!await shown('confirm')) bad('forget did not ask before wiping the save');
+  await menu.click('#confirm-yes');
+  await new Promise((r) => setTimeout(r, 900));
+  // A reset returns to the title on the first block, so the ladder has to be
+  // read by re-opening the list — and the title has no Levels button any more,
+  // because a wiped save is a new player.
+  const relocked = await menu.evaluate(() => {
+    window.__game.showLevels();
+    return [...document.querySelectorAll('#levels-list .chip')]
+      .map((c) => c.classList.contains('locked'));
+  });
   if (relocked[0] !== false || relocked[1] !== true) {
     bad(`forget left the ladder as ${JSON.stringify(relocked)}`);
   }
