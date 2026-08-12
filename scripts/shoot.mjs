@@ -432,13 +432,27 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
 
   console.log(`\nloading ${url2}`);
   await p2.goto(url2, { waitUntil: 'domcontentloaded', timeout: 30000 });
-  // 30s, not 20. The second page shares a browser with the first and builds a
-  // larger block; on a cold software-WebGL run it intermittently crossed 20 and
-  // failed a harness that had nothing wrong with it.
+  /**
+   * 30s, not 20 — and it says which kind of failure it was.
+   *
+   * The real boot is ~1.5s on this hardware, so 20 was already twelve times the
+   * measured time and the intermittent failure was never the game being slow: it
+   * is the second page contending for one software-WebGL context. Raising the
+   * ceiling lowers the false-failure rate and treats a symptom, so the useful
+   * half of this change is the diagnosis underneath it — a game that *threw*
+   * leaves "Could not start:" in #loading and now reports that, instead of being
+   * indistinguishable from a slow machine.
+   */
+  const booted2 = Date.now();
   await p2.waitForFunction(
-    () => document.getElementById('loading')?.classList.contains('hidden'),
+    () => document.getElementById('loading')?.classList.contains('hidden')
+       || (document.getElementById('loading')?.textContent || '').startsWith('Could not start'),
     { timeout: 30000 },
-  ).catch(() => errors.push('L2: game never finished booting (30s)'));
+  ).catch(() => errors.push('L2: still booting after 30s — no error thrown, just slow'));
+  const boot2Msg = await p2.$eval('#loading', (el) => (el.classList.contains('hidden') ? null : el.textContent))
+    .catch(() => null);
+  if (boot2Msg) errors.push(`L2 did not start: ${boot2Msg}`);
+  console.log(`  L2 booted in ${Date.now() - booted2} ms`);
 
   const has2 = await p2.evaluate(() => !!window.__game);
   await p2.click('#start');
