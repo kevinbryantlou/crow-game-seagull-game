@@ -49,8 +49,10 @@ the game had never been looked at. Both harnesses exist to close that gap.
 - **`scripts/shoot.mjs`** drives real WebGL in headless Chrome, writes PNGs to
   `shots/`, and fails on any console error or failed request. It runs every
   block: `01`–`13` are the block, `20`–`29` and `l2-dusk-*` are the park,
-  `30`–`39` and `l3-dusk-*` are the roofline, `40`–`49` and `l4-dusk-*` are the
-  lobby, `14` is the ending screen's
+  `30`–`39` and `l3-dusk-*` are the roofline, `50`–`59` and `l4-dusk-*` are the
+  lobby (not `40`–`49`: `40` was already the touch pause control, and two
+  sections writing one filename is a screenshot that silently stops being the
+  thing it is named after), `14` is the ending screen's
   next-level button, and `15`–`20` are the menu — title card new and returning,
   pause, the Levels screen, the forfeit, and the touch pause control. It also
   swaps levels eight times **through the menu** and asserts the GPU gets its
@@ -94,7 +96,7 @@ docs/                  design brief + style guide — the spec, written to be ch
                        park-brief.html    — level 2, the park: design, ladder, what it caught
                        level-2-brief.html — level 3, the roofline (filename predates the slot)
                        menu-brief.html    — progress, level select and pause: PROPOSED, not built
-                       lobby-brief.html   — level 4, the lobby: built and verified, not yet played
+                       lobby-brief.html   — level 4, the lobby: built, played, revised once
 ```
 
 Pure logic goes in its own module so `smoke.mjs` can test it without a DOM.
@@ -221,6 +223,38 @@ That's why `words.js`, `rank.js` and `save.js` are separate from the DOM code.
   sat in. Look at the frame and find the biggest dark thing before adding a lamp
   — and never lower `duskMedianFloor`/`duskShadowFloor` to make a new block pass.
 
+- **An audit asks "can the camera see this pickup"; a playtest asks "is this in
+  the way".** Different questions, and the lobby answered the first and shipped.
+  The glazed lantern cleared every check — no pickup hidden — and a playtest read
+  the panes, the truss and a row of clerestory mullions as junk over the playable
+  area, because "in the way" includes the crow, the people and the light. In an
+  interior, anything above about four metres has to answer the second question
+  before it is allowed to exist.
+- **A hanging light fitting needs a ceiling, and a chain into a ceiling you are
+  not drawing is the same problem in disguise** — it either ends in mid-air or
+  leaves the frame, and both read as unfinished. Losing the lantern cost the
+  chandelier, and the nest moved onto a lobby clock that stands on the floor.
+  Beside the fountain, never in it: the audit forbids building inside the water,
+  and the escape test drops a crow at the exact centre of the basin and requires
+  it to get out, which a stem standing there would prevent. "Ornamental fountain
+  centrepiece" is the obvious idea and it is a trap twice over.
+- **A revolving door is a hole in a wall.** With the near wall sectioned away it
+  had nothing to be a hole in: as a glazed drum it photographed as a teal barrel
+  with an orange lid, and rebuilt as an open brass frame it photographed as a
+  café table with a parasol. Two modelling attempts at a problem that was not
+  about modelling. It is a mat, a rope line and a lamp standard now.
+- **A perchable ledge with an invisible wall above it ejects the crow through the
+  nearer face.** The lobby's frontage was a 1.2m glass screen with the rest of
+  the wall invisible above it on the same footprint, so a crow that landed on the
+  screen was inside the wall above and got resolved out — and on the near wall of
+  a room, the nearer face is the street. It stood on the sidewalk with the lobby
+  behind glass until the map bounds stopped it. One collider now, floor to roof,
+  `perch: false`.
+- **Swapping a width and a depth turns a mullion into a fourteen-metre slab.**
+  The lobby's wall builder took `w` and `d` in the wrong order on its two *short*
+  walls, so seven of them hung over the west end of the room at 6.6m. Invisible
+  in the source, invisible to every check the block has — all of which look at
+  the floor — and obvious in one screenshot.
 - **A camera above a roof means the roof is between it and everything.** The
   lobby's first build had a glazed steel truss over the whole room, which is the
   obvious way to keep a sunset working indoors. The sightline this game uses
@@ -526,11 +560,12 @@ task list (with `when` predicates for the ones that complete by observation),
 smoke, and the ending copy. If another block would need a different one, it is
 level data; if they all need the same one, it is in `world/rules.js`.
 
-The ladder is **$20 / $25 / $30 / $40** and **one deck / two decks / four decks
-/ three decks inside one room**. The first three dollar steps are equal and the
-fourth is not, deliberately: the first three blocks each add one idea to a run
-you already know how to do, and the fourth is the last one and the inside of a
-building whose outside asked $30.
+The ladder is **$20 / $25 / $30 / $35** and **one deck / two decks / four decks
+/ three decks inside one room**. Four equal dollar steps, one rung per block.
+The lobby was built at $40 on an argument about the fiction — the last block is
+the inside of a building whose outside asked $30 — and came down to $35 on a
+playtest note about the run. The fiction argument is still true; it was just not
+worth a run that grinds.
 
 - **Level 1 — the block** (`level.js`). Flat, $20, starts at `dayStart: 0`.
 - **Level 2 — The Park** (`park.js`). Two decks (0 / 3.4, nest at 4.75), $25,
@@ -557,7 +592,7 @@ building whose outside asked $30.
   and renaming would only move the confusion somewhere git blame cannot follow.
 
 - **Level 4 — The Hotel (Inside)** (`lobby.js`). Three decks (0 / 4.4, nest on
-  the chandelier at 7.6), $40, ±22 wide — the *smallest* block in the game —
+  the lobby clock at 6.97), $35, ±22 wide — the *smallest* block in the game —
   starting at `dayStart: 0.55` so the lamps catch at 3m01s.
   `docs/lobby-brief.html` is the spec.
 
@@ -565,11 +600,13 @@ building whose outside asked $30.
   every guard sharing it, and no district next door to work instead. That is
   only playable because of the trade it is paired with — *laterally there is
   nowhere to run, vertically nobody can follow* — since a human's `floorY` is
-  authored and they never leave it. Which is also why the nest is in the
-  chandelier over the middle of the room rather than in a corner: the safest
-  place on the block is also the most conspicuous, and every trip to bank
-  anything is a flight straight up through the centre of it in front of
-  everybody. Built and verified; **not yet playtested**.
+  authored and they never leave it. Which is also why the nest is on the lobby
+  clock in the middle of the room rather than in a corner: the safest place on
+  the block is also the most conspicuous, and every trip to bank anything is a
+  flight straight up through the centre of it in front of everybody. Built,
+  verified and **playtested once** — which removed the ceiling, the chandelier
+  and the front door; the brief's §8 is the record. What is over the room now is
+  a soffit across the back seven metres and open air everywhere anybody plays.
 
 **Finishing a block hands you the next one.** The ending screen carries a brass
 button naming where it goes (`The park →`) with `Again!` beside it in outline;

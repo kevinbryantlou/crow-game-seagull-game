@@ -19,17 +19,20 @@
  * are two rooms nobody in the cast can reach. Drop in, take one thing, climb
  * out of the world.
  *
- * Which is why the nest is in the chandelier over the middle of the room rather
+ * Which is why the nest is on the lobby clock in the middle of the room rather
  * than in a corner like every other block's. The safest place in the lobby is
  * also the most conspicuous, and every trip to bank anything is a flight
  * straight up through the centre of it in front of everybody.
  *
- * The sun still works indoors because there is no ceiling: a glazed steel
- * lantern at 11.2 and a clerestory band from 6.6 up, on all four sides. The
- * panes cast no shadow and the truss members do, so the afternoon key comes
- * through as bars of light lying across the marble and swings and reddens
- * exactly as it does outdoors. Nothing in render/stage.js knows this level is
- * an interior. docs/lobby-brief.html §6.
+ * The sun still works indoors because there is, in the end, no ceiling at all
+ * over the part of the room anybody plays in: a clerestory band from 6.6 m up
+ * on all four sides, a plastered soffit over the back seven metres where the
+ * gallery is, and the rest sectioned away like the near wall. The bars of light
+ * across the marble come off the clerestory mullions on the west and back
+ * walls, which is where the sun is — its azimuth swings from −118° to −138°
+ * across a session, behind the block and to the west, all day. Nothing in
+ * render/stage.js knows this level is an interior.
+ * docs/lobby-brief.html §6.
  */
 
 import * as THREE from 'three';
@@ -55,13 +58,13 @@ export const BOUNDS = { minX: -22, maxX: 22, minZ: -11.4, maxZ: 13.2 };
  * why they stack inside a room a third the size and still do not read as a
  * smaller level.
  *
- * 5.9 is not a deck, it is the chandelier's lower tier, and it exists so the
- * climb to the nest is 5.9 + 1.7 rather than 7.6 in one go. Both halves clear
- * RULES.maxUnbrokenClimb on their own; the point is that you arrive at the
- * bottom of this one having just flown away from somebody.
+ * `crown` is the top of the lobby clock, which is what the nest sits on. The
+ * climb to it is broken in half by the moulded band at 3.3 — 3.3 m and then
+ * 3.7, rather than 7 in one go. Both halves clear RULES.maxUnbrokenClimb on
+ * their own several times over; the point is that you arrive at the bottom of
+ * this one having just flown away from somebody.
  */
-export const DECK = { floor: 0, mezzanine: 4.4, chandelier: 7.6 };
-const TIER = 5.9;
+export const DECK = { floor: 0, mezzanine: 4.4, crown: 6.97 };
 const ROOF = 11.2;
 /** Where the solid wall stops and the clerestory glazing starts. */
 const SILL = 6.6;
@@ -178,8 +181,12 @@ export function buildLevel() {
     // The clerestory. Transparent, so the audit's sightline ray ignores it —
     // and so the skyline behind the block reads through it, which is the only
     // thing telling the player this room is in a city at all.
-    const glaze = box(w, ROOF - SILL, d * 0.5, PAL.waterLit,
-      { transparent: true, opacity: 0.24, shadow: false, receive: false });
+    const long = w > d;
+    const glaze = long
+      ? box(w, ROOF - SILL, d * 0.5, PAL.waterLit,
+        { transparent: true, opacity: 0.24, shadow: false, receive: false })
+      : box(w * 0.5, ROOF - SILL, d, PAL.waterLit,
+        { transparent: true, opacity: 0.24, shadow: false, receive: false });
     glaze.position.set(cx, (SILL + ROOF) / 2, cz);
     g.add(glaze);
     /**
@@ -193,12 +200,20 @@ export function buildLevel() {
      * standing over the east wall hides the bar, and four of them hid four
      * pickups the first time this was measured. The bars come off the two walls
      * that can never occlude anything.
+     *
+     * A mullion is thin in the wall's *long* direction and as deep as the wall
+     * is thick. The first version had `w` and `d` the wrong way round on the two
+     * short walls, which made every "mullion" on the west wall a **fourteen
+     * metre slab** hanging over the room at 6.6 m — seven of them, in a row,
+     * across the whole west end. It was reported from a playtest as bars
+     * obscuring the staircase, which is exactly what it was. Swapping two
+     * letters is the fix; the reason it survived the shipping pass is that
+     * every automated check this block has looks at the floor.
      */
-    const long = w > d;
     for (let i = 1; mullions && i < (long ? Math.round(w / 3.2) : Math.round(d / 3.2)); i++) {
       const m = long
-        ? box(0.14, ROOF - SILL, d * 0.55, PAL.steel, { shadow: false })
-        : box(d * 0.55, ROOF - SILL, 0.14, PAL.steel, { shadow: false });
+        ? box(0.14, ROOF - SILL, d * 0.6, PAL.steel, { shadow: false })
+        : box(w * 0.6, ROOF - SILL, 0.14, PAL.steel, { shadow: false });
       m.position.set(
         long ? cx - w / 2 + i * 3.2 : cx,
         (SILL + ROOF) / 2,
@@ -287,21 +302,26 @@ export function buildLevel() {
         { profile: 'stall', peak: 0.5, warm: 2.4, delay: 0.6, y: DECK.mezzanine });
     }
 
-    const panes = box(44, 0.1, 17.6, PAL.waterLit,
-      { transparent: true, opacity: 0.16, shadow: false, receive: false });
-    panes.position.set(0, ROOF, 4.4);
-    root.add(panes);
-    // The gutter beam capping each wall, the trimmer where the glass meets the
-    // plaster, and one truss over the middle — which is what the chandelier
-    // hangs from, and the reason it is at z = 2.
+    /**
+     * Over the front two thirds there is now *nothing at all*, and that is the
+     * second thing this block learned the hard way.
+     *
+     * The lantern was already sectioned down to panes and two trusses, which
+     * cleared the audit — and a playtest still read it as junk in the way. It
+     * is worth being blunt about why: at 38° above a room, **everything you put
+     * near the ceiling is between the camera and the floor**, and "between the
+     * camera and a *pickup*" is only the part a test can see. Glass tints the
+     * whole frame, a truss lays a bar across it, and neither is load-bearing
+     * for anything a player is trying to do.
+     *
+     * So the roof is cut away exactly like the near wall, and what is left is
+     * a cornice capping each wall head — at the edges of the frame, where the
+     * room needs an edge and nobody is playing.
+     */
     for (const [cx, cz, w, d] of [
-      [-22.0, 0.9, 0.5, 25], [22.0, 0.9, 0.5, 25],
-      [0, CEIL_TO, 44, 0.6], [0, POOL_SPEC.z, 44, 0.5],
+      [-22.0, 0.9, 0.5, 25], [22.0, 0.9, 0.5, 25], [0, CEIL_TO, 44, 0.6],
     ]) {
       root.add(at(box(w, 0.44, d, PAL.steel, { up: PAL.silver, down: PAL.shade }), cx, ROOF - 0.2, cz));
-    }
-    for (let x = -18; x <= 18; x += 6) {
-      root.add(at(box(0.26, 0.3, 1.8, PAL.steel, { up: PAL.silver, down: PAL.shade }), x, ROOF - 0.3, POOL_SPEC.z));
     }
     // One collider, 44 wide. Wide on purpose: the audit probes every overhang
     // narrower than thirty metres from eight headings looking for the shove
@@ -312,28 +332,29 @@ export function buildLevel() {
   // ── the front glass, and the section cut ──────────────────────────────────
   /**
    * The near wall is cut away, the way the roofline cuts away everything under
-   * its terrace. What is left at the section line is a 1.2 m glass screen on a
-   * brass rail — enough that the room stops somewhere, low enough that nothing
-   * ever stands between the camera and the floor.
+   * its terrace — and unlike the roofline, there is nothing standing at the cut.
    *
-   * The glass above it is not drawn and is absolutely still there: the second
-   * collider is the rest of the frontage, invisible, so a crow that hops the
-   * screen finds out that a lobby is a closed room the same way it would in a
-   * real one.
+   * There was: a 1.2 m glass screen on a brass rail, so the room "stopped
+   * somewhere". It stopped somewhere in two senses. The screen was perchable,
+   * and the invisible frontage above it occupied the same footprint from 1.3 up
+   * — so a crow that landed on the screen was standing inside the wall above it
+   * and got resolved out through the **nearer face**, which on the near wall of
+   * a room means *outside*. From there the map bounds thirteen metres up the
+   * street held it, and it was stuck on the sidewalk with the lobby behind
+   * glass. Reported from a playtest, and it is the crow's own lateral-collision
+   * rule doing exactly what it is supposed to.
+   *
+   * One collider now, floor to roof, and **`perch: false`** — there is nothing
+   * to stand on, so there is no way to be pushed off it. A brass threshold in
+   * the floor marks the line, because a room still has to stop somewhere; it is
+   * 12 cm tall, which is under the crow's 0.34 m scramble and reads as a
+   * doorstep rather than a railing.
    */
   {
-    const screen = box(44, 1.2, 0.16, PAL.waterLit,
-      { transparent: true, opacity: 0.3, shadow: false, receive: false });
-    screen.position.set(0, 0.6, 13.0);
-    root.add(screen);
-    const rail = box(44, 0.1, 0.3, PAL.gold, { up: PAL.goldLit, down: PAL.shade });
-    rail.position.set(0, 1.25, 13.0);
-    root.add(rail);
-    for (let x = -21; x <= 21; x += 3) {
-      root.add(at(cyl(0.05, 0.05, 1.2, 6, PAL.gold, { up: PAL.goldLit, down: PAL.shade }), x, 0.6, 13.0));
-    }
-    solid(0, 13.0, 44, 0.4, 1.3);
-    solid(0, 13.0, 44, 0.4, ROOF, 1.3, { perch: false });
+    const sill = box(44, 0.12, 0.5, PAL.gold, { up: PAL.goldLit, down: PAL.shade });
+    sill.position.set(0, 0.06, 13.0);
+    root.add(sill);
+    solid(0, 13.0, 44, 0.5, ROOF, 0, { perch: false });
   }
 
   // Invisible bounds outside the glass, so nothing that gets past the frontage
@@ -475,42 +496,100 @@ export function buildLevel() {
   night.add(POOL.water, PAL.water, { peak: 0.07, warm: 5.0, delay: 1.8 });
 
   // ══════════════════════════════════════════════════════════════════════════
-  // THE CHANDELIER — two tiers, and the nest on top of the upper one
+  // THE LOBBY CLOCK — a landmark that stands on the floor, and the nest on it
   // ══════════════════════════════════════════════════════════════════════════
-  const NEST = { x: POOL_SPEC.x, y: DECK.chandelier, z: POOL_SPEC.z };
+  /**
+   * This was a chandelier, and losing it is the price of losing the ceiling.
+   *
+   * A hanging fitting is the better object — the dusk frame it made was the best
+   * picture this block has ever produced — but it needs something overhead to
+   * hang from, and every candidate for that turned out to be a bar across the
+   * camera. A chain rising into a ceiling that is not drawn is the same problem
+   * wearing a disguise: it either ends in mid-air or it goes out of frame, and
+   * both read as unfinished.
+   *
+   * So the thing the nest sits on now stands on the floor. It is a lobby clock,
+   * which is the one landmark a hotel of this vintage certainly has, and it
+   * keeps everything the chandelier was carrying:
+   *
+   *   - It is on the room's centre line, so banking is still a flight up
+   *     through the middle of the lobby in front of everybody. That sentence is
+   *     the level, and it survives the change intact.
+   *   - Its crown is an open brass lantern — the chandelier's corona, moved
+   *     down and given a pedestal — so the block still has one thing that comes
+   *     on at dusk and owns the middle of the frame.
+   *   - Its cornice is 3.2 m across against a 1.5 m twig ring, which is
+   *     RULES.nestPlatformRatio with room to spare.
+   *   - The moulded band at 3.3 breaks the climb in half, so it is 3.3 m and
+   *     then 3.7 rather than 7 in one go.
+   *
+   * It stands *north of* the fountain rather than in it. A centrepiece in the
+   * basin was the obvious reading of "ornamental fountain feature" and it is a
+   * trap twice over: the audit forbids building inside the water, and the
+   * escape test drops a crow at the exact middle of the basin and requires it
+   * to get out — which a stem standing there would prevent. 5.2 m north puts it
+   * clear of the coping by half a metre and still dead centre in x.
+   */
+  const CLOCK = { x: 2, z: -3.2 };
+  const NEST = { x: CLOCK.x, y: DECK.crown, z: CLOCK.z };
   {
     const g = new THREE.Group();
-    // The rod up to the lantern truss — which is at z = 2 because this is, and
-    // a chandelier hanging off nothing was the first thing a screenshot caught.
-    g.add(at(cyl(0.06, 0.06, ROOF - DECK.chandelier - 0.35, 6, PAL.gold,
-      { up: PAL.goldLit, down: PAL.shade, shadow: false }),
-    0, (ROOF + DECK.chandelier) / 2 - 0.15, 0));
-
     const bulbs = [];
+
+    // Plinth, shaft, and the moulded band that halves the climb.
+    g.add(at(box(2.8, 0.5, 2.8, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }), 0, 0.25, 0));
+    g.add(at(box(2.4, 0.22, 2.4, PAL.stone, { up: PAL.stone, down: PAL.shade }), 0, 0.61, 0));
+    g.add(at(cyl(0.78, 0.92, 2.6, 8, PAL.stone, { up: PAL.stone, down: PAL.shade }), 0, 2.0, 0));
+    g.add(at(cyl(1.15, 1.15, 0.28, 8, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }), 0, 3.16, 0));
+    g.add(at(cyl(0.7, 0.78, 1.6, 8, PAL.stone, { up: PAL.stone, down: PAL.shade }), 0, 4.1, 0));
+
     /**
-     * Neither tier casts a shadow, and that is a decision rather than an
-     * oversight: this is three metres of brass and glass hanging directly over
-     * the middle of the room, and a solid disc of shadow lying across the one
-     * open floor everybody has to cross would cost more median than the whole
-     * fitting is worth. After dark it is a light source; in daylight it is
-     * filigree. It is still opaque geometry, so the audit's sightline ray still
-     * has to get past it.
-     */
-    /**
-     * Two coronas, not two cakes.
+     * The clock stage, and only two faces on it.
      *
-     * The first build was a pair of thick discs with a cone between them, and
-     * from a camera looking down at 38° it photographed as a tiered wedding
-     * cake in wood — nothing about it said light fitting. What says it, from
-     * above, is a *wheel*: a thin ring, candles standing on the ring, spokes to
-     * a hub, and drops hanging off the edge. The rim of a corona is also the
-     * honest reason the crown is three metres across, which is what
-     * RULES.nestPlatformRatio wants of it.
+     * A real one has four and this camera can see two, and the two it cannot
+     * see are forty triangles apiece of nothing. The faces are the level's one
+     * joke about its own sun dial: the block is timed, and there is a clock in
+     * the middle of it that the player will never once read.
+     */
+    g.add(at(box(1.9, 1.5, 1.9, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }), 0, 5.65, 0));
+    const faces = [];
+    for (const ry of [0, Math.PI / 2]) {
+      // One group per face, rotated as a unit. Rotating the dial, the bezel and
+      // two hands independently is four chances to get an Euler order wrong,
+      // and the first attempt got the side face pointing at the floor.
+      const f = new THREE.Group();
+      const dial = cyl(0.62, 0.62, 0.05, 14, PAL.shiny, { up: PAL.shiny, down: PAL.silver, shadow: false });
+      dial.rotation.x = Math.PI / 2;
+      f.add(dial);
+      faces.push(dial);
+      const bezel = new THREE.Mesh(new THREE.TorusGeometry(0.64, 0.075, 4, 14), mat(PAL.gold));
+      f.add(bezel);
+      // Ten past ten, because that is what a clock in a photograph always says.
+      for (const [len, ang] of [[0.44, 2.16], [0.3, 0.87]]) {
+        const h = box(len, 0.055, 0.03, PAL.feather, { shadow: false });
+        h.position.set(Math.cos(ang) * len / 2, Math.sin(ang) * len / 2, 0.04);
+        h.rotation.z = ang;
+        f.add(h);
+      }
+      f.position.set(ry ? 0.99 : 0, 5.65, ry ? 0 : 0.99);
+      f.rotation.y = ry;
+      g.add(f);
+    }
+    night.add(faces, 0xf2e0b0, { peak: 0.85, warm: 2.6, delay: 0.9 });
+
+    // The cornice, which is the landing surface.
+    g.add(at(box(2.9, 0.24, 2.9, PAL.stone, { up: PAL.stone, down: PAL.shade }), 0, 6.52, 0));
+    g.add(at(box(3.2, 0.22, 3.2, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }), 0, 6.75, 0));
+
+    /**
+     * The lantern crown — the chandelier's corona, kept whole.
+     *
+     * A thin pale pan, a brass rim, spokes to a hub, candles standing on the
+     * rim and drops hanging off the edge. It photographed as a wedding cake in
+     * wood before it was any of those things; what says *light fitting* from a
+     * camera looking down at 38° is a wheel, not a disc.
      */
     const corona = (y, r, candles, spokes) => {
-      // Pale and thin, not gold and thick. Gold at 0.09 m across three metres
-      // still photographed as a wooden plate; PAL.shiny reads as the glass pan
-      // of a light fitting, and the brass is left to do the rim and the spokes.
       const band = cyl(r, r, 0.05, 16, PAL.shiny, { up: PAL.shiny, down: PAL.silver, shadow: false });
       band.position.y = y;
       g.add(band);
@@ -533,39 +612,38 @@ export function buildLevel() {
         b.material = mat(PAL.goldLit);
         g.add(b);
         bulbs.push(b);
-        // A drop under every other candle, so the edge reads as glass.
         if (i % 2 === 0) {
           g.add(at(ico(0.06, 0, PAL.shiny, { shadow: false }), cx, y - 0.16, cz));
         }
       }
     };
-    corona(TIER, 1.9, 14, 8);
-    corona(DECK.chandelier - 0.05, 1.6, 12, 8);
-    // The stem between them, and the hub the nest sits in.
-    g.add(at(cyl(0.16, 0.22, 1.6, 8, PAL.gold, { up: PAL.goldLit, down: PAL.shade, shadow: false }),
-      0, TIER + 0.85, 0));
-    g.add(at(cyl(0.72, 0.6, 0.14, 10, PAL.goldLit, { up: PAL.goldLit, down: PAL.gold, shadow: false }),
-      0, DECK.chandelier + 0.03, 0));
+    corona(DECK.crown, 1.5, 12, 8);
     night.add(bulbs, PAL.goldLit, { peak: 1.0, warm: 2.0, delay: 0.15 });
     // The room's event. Everything else on this block catches after it.
-    night.addPool(root, POOL_SPEC.x, POOL_SPEC.z, 13.0,
-      { profile: 'stall', peak: 0.88, warm: 2.0, delay: 0.15 });
+    // Centred between the clock and the fountain rather than on the clock, so
+    // the pool covers the open floor everybody has to cross rather than the one
+    // object nobody stands next to.
+    night.addPool(root, CLOCK.x, CLOCK.z + 4.4, 13.5,
+      { profile: 'stall', peak: 0.9, warm: 2.0, delay: 0.15 });
 
     const nest = makeNest();
-    nest.position.y = DECK.chandelier;
+    nest.position.y = DECK.crown + 0.04;
     g.add(nest);
     root.userData.nestGroup = nest;
 
-    g.position.set(POOL_SPEC.x, 0, POOL_SPEC.z);
+    g.position.set(CLOCK.x, 0, CLOCK.z);
     root.add(g);
 
-    // 3.2 across against a 1.5 m twig ring — RULES.nestPlatformRatio, and worth
-    // more here than anywhere else in the game: this is a disc in mid-air, it is
-    // the only way to bank anything, and you arrive at it carrying.
-    solid(POOL_SPEC.x, POOL_SPEC.z, 3.2, 3.2, DECK.chandelier, DECK.chandelier - 0.22);
-    solid(POOL_SPEC.x, POOL_SPEC.z, 3.5, 3.5, TIER, TIER - 0.16);
-    perch(POOL_SPEC.x, DECK.chandelier, POOL_SPEC.z);
-    perch(POOL_SPEC.x + 1.4, TIER, POOL_SPEC.z);
+    // Three colliders, one per stage, so the outline is what the eye sees. The
+    // shaft is the only one with air under it, and it is under two metres tall,
+    // so the audit will fly a crow at it from eight headings looking for the
+    // shove bug.
+    solid(CLOCK.x, CLOCK.z, 2.8, 2.8, 0.72);
+    solid(CLOCK.x, CLOCK.z, 2.3, 2.3, 3.44, 3.02);
+    solid(CLOCK.x, CLOCK.z, 3.2, 3.2, DECK.crown, DECK.crown - 0.36);
+    perch(CLOCK.x, 0.72, CLOCK.z);
+    perch(CLOCK.x, 3.44, CLOCK.z);
+    perch(CLOCK.x, DECK.crown, CLOCK.z);
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -820,31 +898,66 @@ export function buildLevel() {
   // ══════════════════════════════════════════════════════════════════════════
   // THE WEST END — the door, the luggage, and the kid's suitcase
   // ══════════════════════════════════════════════════════════════════════════
+  /**
+   * The entrance, which is no longer a revolving door.
+   *
+   * It was one, and it went through two builds and failed both. As a glazed
+   * drum it read as a teal barrel with an orange lid; rebuilt as an open brass
+   * frame it read as a café table with a parasol. The diagnosis is the same
+   * both times and it is not about the modelling: **a revolving door is a hole
+   * in a wall, and this block has no near wall.** With the frontage cut away
+   * there is nothing for it to be a hole in, so it stands in the middle of an
+   * open edge as a mystery object three metres wide.
+   *
+   * What is left is the part that was doing the work: a mat, a rope line and a
+   * lamp standard. Two of those are ankle height and the third is thinner than
+   * a person, so the whole entrance now costs the frame nothing — and it still
+   * says which way a guest came in, which is all the door was ever for.
+   */
   {
-    // The revolving door. The other occluder, and the reason there is nothing
-    // takeable in the near-west corner of this room.
-    const g = new THREE.Group();
-    const drum = cyl(1.5, 1.5, 2.6, 12, PAL.waterLit,
-      { transparent: true, opacity: 0.26, shadow: false, receive: false });
-    drum.position.y = 1.3;
-    g.add(drum);
-    for (let i = 0; i < 4; i++) {
-      const a = (i / 4) * Math.PI * 2 + 0.3;
-      g.add(at(box(0.08, 2.5, 1.44, PAL.gold, { up: PAL.goldLit, down: PAL.shade }),
-        Math.cos(a) * 0.72, 1.3, Math.sin(a) * 0.72, -a));
+    addDecal(DOOR.x, DOOR.z + 0.4, 4.4, 2.6, PAL.rugMid);
+    addDecal(DOOR.x, DOOR.z + 0.4, 3.8, 2.0, PAL.rug);
+
+    // The rope line, angled in from the threshold.
+    const posts = [[-2.2, -1.6], [-0.8, -0.2], [2.2, -1.6], [0.8, -0.2]];
+    for (const [px, pz] of posts) {
+      const st = new THREE.Group();
+      st.add(at(cyl(0.22, 0.26, 0.06, 10, PAL.gold, { up: PAL.goldLit, down: PAL.shade }), 0, 0.03, 0));
+      st.add(at(cyl(0.045, 0.045, 0.94, 6, PAL.gold, { up: PAL.goldLit, down: PAL.shade }), 0, 0.5, 0));
+      st.add(at(ico(0.075, 0, PAL.goldLit, { shadow: false }), 0, 1.0, 0));
+      st.position.set(DOOR.x + px, 0, DOOR.z + pz);
+      root.add(st);
     }
-    g.add(at(cyl(1.62, 1.62, 0.22, 12, PAL.gold, { up: PAL.goldLit, down: PAL.shade }), 0, 2.72, 0));
-    const lantern = at(ico(0.16, 0, PAL.goldLit, { shadow: false }), 0, 3.1, 0);
+    for (const side of [-1, 1]) {
+      const rope = box(0.06, 0.06, 2.0, PAL.cloth[0], { up: PAL.clothLit[0], down: PAL.shade });
+      rope.position.set(DOOR.x + side * 1.5, 0.82, DOOR.z - 0.9);
+      // 45°, which is the angle between the two posts it is slung between —
+      // eyeballed at 0.62 it hung off the end of both of them.
+      rope.rotation.y = -side * (Math.PI / 4);
+      root.add(rope);
+    }
+
+    /**
+     * The lamp standard, and the block's first light.
+     *
+     * It catches at delay 0 with the stutter, before anything else in the room —
+     * the entrance lamp goes, then the desk, then the clock. Smoke asserts that
+     * some light on every block flickers from a standing start, which is the
+     * only reason that schedule is worth writing down.
+     */
+    const post = new THREE.Group();
+    post.add(at(cyl(0.28, 0.32, 0.08, 10, PAL.gold, { up: PAL.goldLit, down: PAL.shade }), 0, 0.04, 0));
+    post.add(at(cyl(0.06, 0.06, 2.2, 6, PAL.gold, { up: PAL.goldLit, down: PAL.shade }), 0, 1.1, 0));
+    const lantern = at(box(0.36, 0.5, 0.36, PAL.goldLit, { shadow: false }), 0, 2.42, 0);
     lantern.material = mat(PAL.goldLit);
-    g.add(lantern);
+    post.add(lantern);
+    post.add(at(cyl(0.3, 0.02, 0.16, 4, PAL.gold, { up: PAL.goldLit, down: PAL.shade }), 0, 2.74, 0));
+    post.position.set(DOOR.x + 2.9, 0, DOOR.z - 0.6);
+    root.add(post);
+    solid(DOOR.x + 2.9, DOOR.z - 0.6, 0.6, 0.6, 2.6);
     night.add(lantern, PAL.goldLit, { peak: 0.9, warm: 1.6, delay: 0, flicker: true });
-    night.addPool(root, DOOR.x, DOOR.z, 5.6,
+    night.addPool(root, DOOR.x, DOOR.z, 6.4,
       { profile: 'stall', peak: 0.6, warm: 1.6, delay: 0, flicker: true });
-    g.position.set(DOOR.x, 0, DOOR.z);
-    root.add(g);
-    solid(DOOR.x, DOOR.z, 3.0, 3.0, 2.83);
-    perch(DOOR.x, 2.83, DOOR.z);
-    occluders.push(...g.children.filter((c) => c.isMesh));
   }
 
   // A pair of sconces on the west wall, over the stair and the bell cart —

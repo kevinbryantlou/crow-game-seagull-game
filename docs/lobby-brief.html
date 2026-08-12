@@ -256,15 +256,15 @@
 
 <header class="band">
   <div class="band-inner">
-    <div class="eyebrow">Level Design Brief &nbsp;·&nbsp; The Lobby &nbsp;·&nbsp; Built and verified — not yet played</div>
+    <div class="eyebrow">Level Design Brief &nbsp;·&nbsp; The Lobby &nbsp;·&nbsp; Built, played, revised once</div>
     <h1 class="title">The<br>Lobby<span class="thin">The Atrium</span></h1>
     <p class="deck">Inside the hotel whose roof you already robbed. One room, four walls, a glass
       lantern for a ceiling, and nowhere else to go. The roofline taught you that up is where the
       money is. This is the block that teaches you up is where <em>safety</em> is.</p>
     <dl class="facts">
       <div><dt>Setting</dt><dd>The Atrium, the hotel's front hall</dd></div>
-      <div><dt>Goal</dt><dd>$40.00</dd></div>
-      <div><dt>Decks</dt><dd>Three — 0 / 4.4 / 7.6 m</dd></div>
+      <div><dt>Goal</dt><dd>$35.00</dd></div>
+      <div><dt>Decks</dt><dd>Three — 0 / 4.4 / 6.97 m</dd></div>
       <div><dt>Session</dt><dd>8 min, starting at t=0.55</dd></div>
       <div><dt>Slot</dt><dd>Level 4 — after the roofline, last block</dd></div>
     </dl>
@@ -276,9 +276,11 @@
   <section id="status">
     <h2><span class="sec">§0</span> Where this stands</h2>
     <div class="col">
-      <p><strong>Built and verified. Not yet played.</strong> This document was written before any
+      <p><strong>Built, played, and revised once.</strong> This document was written before any
       geometry existed, as the argument and the numbers, so that the geometry could be checked
-      against something. It has since been built and the claims have been checked:
+      against something. It has since been built, checked, played and corrected — the playtest
+      round is <a href="#played">§8</a>, and it took out the ceiling, the chandelier and the front
+      door. The claims that survived have been checked:
       <span class="mono">smoke</span> runs every level-design rule against it and
       <span class="mono">shoot</span> drives it in real WebGL, photographs eleven frames of it and
       measures six dusk samples. Both pass.</p>
@@ -296,9 +298,10 @@
 
       <div class="note">
         <span class="lbl">The ladder, with a fourth rung</span>
-        $20 on the block · $25 in the park · $30 on the roofline · <strong>$40 here</strong>.
+        $20 on the block · $25 in the park · $30 on the roofline · <strong>$35 here</strong>.
         One deck · two decks · four decks · <strong>three, stacked inside one room</strong>.
-        The dollar step breaks its own pattern on purpose; §3 argues why.
+        Four equal dollar steps, one rung per block. It was built at $40 on an argument about the
+        fiction and came down to $35 on a note about the run; §3 keeps both.
       </div>
 
       <div class="note">
@@ -495,9 +498,10 @@
         <li><strong>4.4 — the mezzanine.</strong> A 4 m gallery the full width of the back wall,
           reachable on foot by the grand stair and in one hop by a crow. The housekeeper works it
           and two gulls have got in and are standing on it.</li>
-        <li><strong>7.6 — the chandelier.</strong> Two tiers, a lower ring at 5.9 and a 3.2 m crown
-          at 7.6 with the nest on top of it. The lower ring is what keeps the climb from the floor
-          honest: 5.9 m, then 1.7 m, against a 9 m rule.</li>
+        <li><strong>6.97 — the top of the lobby clock.</strong> A stone pillar north of the
+          fountain with a brass lantern crown, and the nest in the crown. The moulded band at 3.3 m
+          keeps the climb honest: 3.3 m, then 3.7 m, against a 9 m rule. It was a chandelier until
+          the playtest took the ceiling away — <a href="#played">§8</a>.</li>
       </ul>
       <p>Three decks after the roofline's four is not a step backwards. The roofline's decks are
       <em>places</em> — a forecourt, a terrace, a roof, each with its own economy. The lobby's are
@@ -509,10 +513,10 @@
   <section id="ladder">
     <h2><span class="sec">§3</span> The value ladder</h2>
     <div class="col">
-      <p>$57.05 against a $40 goal, which means you have to land <strong>70%</strong> of everything
-      in the room. The block asks for 62%, the park for 76%. This sits between them on purpose: the
-      lobby is harder than the park to work, so it should not also be tighter than the park to
-      finish.</p>
+      <p>$57.05 against a $35 goal, which means you have to land <strong>61%</strong> of everything
+      in the room — the same fraction the first block asks for, and deliberately looser than the
+      park's 76%. A room with nowhere to run in it should not also be the tightest sum in the
+      game.</p>
     </div>
 
     <div class="exhibit">
@@ -541,26 +545,26 @@
     </div>
 
     <div class="col">
-      <h3>Why $40 and not $35</h3>
-      <p>$20 / $25 / $30 is three equal steps, and the honest fourth term of that series is $35.
-      The argument for breaking it is that the series is not the point — <em>the run</em> is. The
-      first three blocks each add one idea to a run you already know how to do. This one is the last
-      block, it is the inside of a building whose outside asked $30, and a hotel front desk is the
-      only place in this game where a large amount of cash sitting in the open is not a contrivance.
-      $35 in a room with a cash drawer in it would read as the level being coy.</p>
+      <h3>$40, and then $35</h3>
+      <p>It was built at $40. The argument was that $20 / $25 / $30 is three equal steps and the
+      honest fourth term is $35, but the series was never the point — the last block is the inside
+      of a building whose outside asked $30, and a hotel front desk is the only place in this game
+      where a large amount of cash sitting in the open is not a contrivance. $35 in a room with a
+      cash drawer in it would read as the level being coy.</p>
 
-      <p>It is also the number the roofline was originally built at, and rejected — for being too
-      big a leap <em>from the block</em>. After three blocks it is not a leap, it is the top of the
-      ladder. If it plays as a grind, the fix is $35 and it is a one-line change; the geometry does
-      not care.</p>
+      <p>That was an argument about the <em>fiction</em>. The playtest note was about the
+      <em>run</em> — $40 is too much of an ask — and the run wins, which is exactly what this
+      section said would happen if it ever came to it. It cost one line and the geometry did not
+      care. Worth keeping the reasoning on both sides: the fiction argument is still true, it is
+      just not worth a run that grinds.</p>
 
       <h3>The kid's ladder</h3>
       <p><span class="mono">tradeValues: [2.00, 3.00, 4.00, 5.00]</span>, a rung above the
       roofline's. She is sitting in the middle of an open marble floor, which is the easiest kid in
       the game to <em>reach</em> and the worst place in the game to be standing still. Four shinies
       exist — a room key fob, a paper clip, a foil wrapper, and a ring in the fountain — so the
-      entire ladder pays $14.00. With $5.40 of free money that is $19.40 against a $40 goal, so
-      trading can soften this block by about half and can never finish it. That bound is
+      entire ladder pays $14.00. With $5.40 of free money that is $19.40 against a $35 goal, so
+      trading can soften this block by rather more than half and can never finish it. That bound is
       <span class="mono">smoke</span>'s to enforce, not mine to eyeball.</p>
     </div>
   </section>
@@ -768,8 +772,67 @@
     </div>
   </section>
 
+  <section id="played">
+    <h2><span class="sec">§8</span> What the playtest took out</h2>
+    <div class="col">
+      <p>Three notes, and between them they removed the ceiling, the chandelier and the front door.
+      All three are the same note: <strong>this camera sits above the room, so everything near the
+      top of it is between the player and the floor.</strong> §6 and §7 had already learned half of
+      that from an automated check. The half a check cannot see is that "in the way" includes the
+      crow, the people, and the light — not only pickups.</p>
+
+      <h3>The lantern went</h3>
+      <p>The glass panes tinted the whole frame, the truss over the middle laid a bar across it, and
+      a row of clerestory mullions on the west wall hung over the staircase. That last one was a
+      plain bug and a good example of a kind: the mullion builder took the wall's length and
+      thickness in the wrong order on the two <em>short</em> walls, so every "mullion" on the west
+      wall was a <strong>fourteen-metre slab</strong> floating at 6.6 m. Seven of them. Every
+      automated check this block has looks at the floor, so nothing caught it and one screenshot
+      did.</p>
+      <p>What is left over the room is nothing at all: a plastered soffit over the back seven metres
+      where the gallery is, a cornice capping each wall head, and open air over everywhere anybody
+      plays.</p>
+
+      <h3>Which cost the chandelier</h3>
+      <p>A hanging fitting needs something overhead to hang from, and with the ceiling gone every
+      candidate was a bar across the camera. A chain rising into a ceiling that is not drawn is the
+      same problem in disguise — it either ends in mid-air or leaves the frame, and both read as
+      unfinished.</p>
+      <p>So the nest sits on something that stands on the floor: a <strong>lobby clock</strong>,
+      five metres north of the fountain on the room's centre line. It keeps everything the
+      chandelier was carrying — the crown is the same brass corona moved down and given a pedestal,
+      so the block still has one lit thing owning the middle of the frame at dusk; the cornice is
+      3.2 m across against a 1.5 m nest; and banking is still a flight up through the middle of the
+      lobby in front of everybody, which is the sentence this level is built on.</p>
+      <p>It is <em>beside</em> the fountain rather than in it, and that is not taste. The audit
+      forbids building inside the water, and the escape test drops a crow at the exact centre of the
+      basin and requires it to get out — which a stem standing there would prevent. "Ornamental
+      fountain centrepiece" is the obvious reading of the note and it is a trap twice over.</p>
+
+      <h3>And the front door</h3>
+      <p>A crow could get <em>outside</em> and strand itself on the sidewalk. The frontage was a
+      1.2 m glass screen with the invisible rest of the wall above it on the same footprint, so a
+      crow that landed on the screen was standing inside the wall above and got resolved out through
+      the nearer face — which on the near wall of a room means the street. That is the crow's own
+      lateral-collision rule doing exactly what it is supposed to. One collider now, floor to roof,
+      <span class="mono">perch: false</span>: nothing to stand on, so nothing to be pushed off.</p>
+      <p>The revolving door went with it, after two attempts. As a glazed drum it photographed as a
+      teal barrel with an orange lid; rebuilt as an open brass frame it photographed as a café table
+      with a parasol. The diagnosis is not about modelling — <strong>a revolving door is a hole in a
+      wall, and this block no longer has a near wall.</strong> What replaced it is the part that was
+      doing the work: a mat, a rope line and a lamp standard, none of which is taller than a person.</p>
+
+      <div class="note">
+        <span class="lbl">The rule this block adds</span>
+        The audit asks "can the camera see this pickup". A playtest asks "is this in the way", and
+        those are different questions. Anything above about four metres in an interior has to answer
+        the second one before it is allowed to exist.
+      </div>
+    </div>
+  </section>
+
   <section id="wiring">
-    <h2><span class="sec">§8</span> What changes outside this level</h2>
+    <h2><span class="sec">§9</span> What changes outside this level</h2>
     <div class="col">
       <p>Deliberately almost nothing. The progression system is two fields and a function, and it
       was built for this.</p>
@@ -783,6 +846,10 @@
           grows a brass <span class="mono">The lobby →</span> button, the Levels screen grows a
           fourth chip, and <span class="mono">save.js</span> opens the door — all of it off
           <span class="mono">next</span>, which is why the ladder is defined in exactly one place.</li>
+        <li><span class="mono">scripts/shoot.mjs</span> — the lobby's frames are <strong>50–59</strong>,
+          not 40–49: <span class="mono">40</span> was already the touch pause control, and two
+          sections writing one filename is a screenshot that quietly stops being the thing it is
+          named after.</li>
         <li><span class="mono">render/palette.js</span> — two entries, <span class="mono">rug</span>
           and <span class="mono">rugMid</span>, plus the matching swatches in
           <span class="mono">docs/style-guide.html</span>. The doc is the spec; if they disagree the
@@ -802,7 +869,7 @@
   </section>
 
   <section id="copy">
-    <h2><span class="sec">§9</span> The words</h2>
+    <h2><span class="sec">§10</span> The words</h2>
     <div class="col">
       <h3>Tasks</h3>
       <ul>
@@ -835,7 +902,7 @@
   </section>
 
   <section id="open">
-    <h2><span class="sec">§10</span> Questions, open and closed</h2>
+    <h2><span class="sec">§11</span> Questions, open and closed</h2>
     <div class="col">
       <h3>Closed</h3>
       <ul>
@@ -851,11 +918,15 @@
 
       <h3>Open — decide by measuring</h3>
       <ul>
-        <li><strong>$40 or $35.</strong> Built at $40, untested by a human. One line, changed on a
-          playtest note.</li>
+        <li><strike><strong>$40 or $35.</strong></strike> Closed: $35, on a playtest note. §3
+          keeps both arguments.</li>
         <li><strong>Two gulls on the mezzanine, or none.</strong> They are there so the safe deck is
-          not free. If they make the only route to the nest read as punishing, they come out and the
-          housekeeper carries it alone.</li>
+          not free. Untouched by the first playtest, which spent itself on the ceiling. If they make
+          the only route to the nest read as punishing, they come out and the housekeeper carries it
+          alone.</li>
+        <li><strong>Whether the clock is a landmark or an obstacle.</strong> It is seven metres of
+          stone on the room's centre line, which is the trade the chandelier did not make. One
+          playtest has seen it; the frames say it reads, a run has not.</li>
         <li><strong>Whether the runner survives both ends of the light ramp.</strong> Closed by
           measurement, twice — see §7.</li>
         <li><strong>Whether a room this size wants eight people in it.</strong> The park's seven are
@@ -869,7 +940,7 @@
 
 <footer>
   <span>Small Change · Level 4 · The Lobby</span>
-  <span>Built and verified · awaiting playtest</span>
+  <span>Built · playtested · one revision round</span>
 </footer>
 
 </body>

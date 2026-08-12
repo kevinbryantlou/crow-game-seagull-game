@@ -1110,7 +1110,7 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
   if (end3) { await new Promise((r) => setTimeout(r, 1400)); await shoot3('39-l3-ending'); }
 }
 
-// ── level 4: the lobby ───────────────────────────────────────────────────────
+// ── level 4: the lobby (shots 50-59; 40 is the touch pause control) ──────────
 /**
  * The first interior, and its risks are nothing like the other three.
  *
@@ -1164,15 +1164,15 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
     await shoot4(name);
   };
 
-  await shoot4('40-l4-spawn');
-  await look4('41-l4-fountain', 5, 0, 4);
-  await look4('42-l4-desk', -10, 0, -3.6);
-  await look4('43-l4-bell', -6.4, 0, -4.6);
-  await look4('44-l4-bar', 13, 0, -2.6);
-  await look4('45-l4-lounge', 14, 0, 7);
-  await look4('46-l4-west', -17, 0, 6);
-  await look4('47-l4-gallery', -12, 4.4, -8.4);
-  await look4('48-l4-nest', 2, 7.6, 2);
+  await shoot4('50-l4-spawn');
+  await look4('51-l4-fountain', 5, 0, 4);
+  await look4('52-l4-desk', -10, 0, -3.6);
+  await look4('53-l4-bell', -6.4, 0, -4.6);
+  await look4('54-l4-bar', 13, 0, -2.6);
+  await look4('55-l4-lounge', 14, 0, 7);
+  await look4('56-l4-west', -17, 0, 6);
+  await look4('57-l4-gallery', -12, 4.4, -8.4);
+  await look4('58-l4-clock', 2, 6.97, -3.2);
 
   /**
    * The lobby fountain — the third body of water in the game, and the first two
@@ -1433,7 +1433,7 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
   // The ending, with the level's own copy, its own goal, and no next block.
   const end4 = !has4 ? null : await p4.evaluate(() => {
     const g = window.__game;
-    g.total = 41.05; g.elapsed = 289; g.finished = false; g.running = true;
+    g.total = 36.15; g.elapsed = 289; g.finished = false; g.running = true;
     g._finish(true);
     return {
       title: document.getElementById('ending-title').textContent.replace(/\s+/g, ' ').trim(),
@@ -1443,12 +1443,12 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
     };
   });
   if (end4) console.log('  L4 ending:', JSON.stringify(end4));
-  if (end4 && end4.goal !== 40) errors.push(`L4 goal is ${end4.goal}, expected 40`);
-  if (end4 && !/forty-one dollars five cents/i.test(end4.title)) {
+  if (end4 && end4.goal !== 35) errors.push(`L4 goal is ${end4.goal}, expected 35`);
+  if (end4 && !/thirty-six dollars fifteen cents/i.test(end4.title)) {
     errors.push(`L4 ending headline wrong: "${end4.title}"`);
   }
   if (end4 && end4.onward === false) errors.push('L4 is the last block but offered a next one');
-  if (end4) { await new Promise((r) => setTimeout(r, 1400)); await shoot4('49-l4-ending'); }
+  if (end4) { await new Promise((r) => setTimeout(r, 1400)); await shoot4('59-l4-ending'); }
 }
 
 // ── the way from one block to the next ───────────────────────────────────────

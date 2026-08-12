@@ -407,22 +407,22 @@ export const LEVELS = [
     next: null,
     shortName: 'the lobby',
     /**
-     * $40.
+     * $35.
      *
-     * $20 / $25 / $30 is three equal steps and the honest fourth term is $35.
-     * The argument for breaking the series is that the series was never the
-     * point: each of the first three blocks adds one idea to a run you already
-     * know how to do, and this one is the last block, the inside of a building
-     * whose outside asked $30, and the only place in this game where a large
-     * amount of cash sitting in the open is not a contrivance. $35 in a room
-     * with a cash drawer in it reads as the level being coy.
+     * It was built at $40, on the argument that the last block is the inside of
+     * a building whose outside asked $30 and the only place in this game where
+     * a lot of cash sitting in the open is not a contrivance. That argument was
+     * about the fiction. The playtest note was about the run — $40 is too much
+     * of an ask — and the run wins, which is what the brief said would happen
+     * if it ever came to it.
      *
-     * It is also the number the roofline was first built at and rejected — for
-     * being too big a leap *from the block*. After three blocks it is not a
-     * leap, it is the top of the ladder. If it ever plays as a grind the fix is
-     * one line here and the geometry does not care.
+     * $35 also puts the ladder back on its own pattern: 20 / 25 / 30 / 35, four
+     * equal steps, one rung per block. $57.05 exists here, so $35 is 61% of it
+     * — the same fraction the *first* block asks for, and deliberately looser
+     * than the park's 76%. A room with nowhere to run in it should not also be
+     * the tightest sum in the game.
      */
-    goal: 40.00,
+    goal: 35.00,
     sessionSeconds: RULES.sessionSeconds,
     /**
      * The latest start of any block, so the lamps catch at 3m01s against the
@@ -476,8 +476,8 @@ export const LEVELS = [
      * to be standing still: there is no cover on it, the bellhop laps it, and
      * somebody crosses it every twenty seconds. Bounded by the rule rather
      * than by taste: unguarded money plus every trade she will ever make is
-     * $19.40 against $40, so trading can soften this block by about half and
-     * can never finish it.
+     * $19.40 against $35, so trading can soften this block by rather more than
+     * half and can never finish it.
      */
     tradeValues: [2.00, 3.00, 4.00, 5.00],
 
@@ -531,18 +531,20 @@ export const LEVELS = [
        * not — everybody is already here.
        */
       won: () =>
-        'The last bill goes into the nest and the chandelier takes your weight without '
-        + 'a sound, because it was built to hold more than a bird.<br><br>'
-        + 'You come back twenty-five feet over a marble floor, in a hotel you are not a '
+        'The last bill goes into the nest and the clock under you says ten past ten, '
+        + 'which is what it has said all afternoon.<br><br>'
+        + 'You come back twenty-three feet over a marble floor, standing on the cornice '
+        + 'of a hotel clock in a hotel you are not a '
         + 'guest of, with a nest full of somebody else\'s money at your elbow and every '
         + 'face in the room turning up toward you. Every face but one. Down at the front '
         + 'of it all a kid is still holding a room key out at knee height, waiting for a '
         + 'bird that is not there any more.',
       lost: (total) =>
-        `You got to $${total.toFixed(2)}. The chandelier came on an hour ago and the `
-        + 'bell captain has started looking at the ceiling.<br><br>'
-        + 'Still a crow. But nobody in a hotel lobby ever looks up, and there is a nest '
-        + 'full of other people\'s change twenty-five feet over the check-in line.',
+        `You got to $${total.toFixed(2)}. The lamps on the clock came on an hour ago `
+        + 'and the bell captain has started looking up.<br><br>'
+        + 'Still a crow. But nobody in a hotel lobby ever looks up for long, and there '
+        + 'is a nest full of other people\'s change twenty-three feet over the check-in '
+        + 'line.',
     },
   },
 ];
