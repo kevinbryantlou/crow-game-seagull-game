@@ -746,7 +746,7 @@ export function buildLevel() {
  *
  * Where it differs from the block is the shape rather than the size. Level 1
  * spreads its guarded money across three districts with one guard each, so
- * there is always a softer pitch to work. The park puts $10.85 of it on one
+ * there is always a softer pitch to work. The park puts $10 of it on one
  * blanket with three people round it and $13 more at the far end with the
  * vendor on it, so the middle third of a run is a choice between two hard
  * problems rather than a queue of easy ones. docs/park-brief.html §3.
@@ -789,14 +789,26 @@ function pickupPlacements({ FOUNTAIN, BAND_STEP, SHELTER_TABLE, TIP_TABLE }) {
       { inWater: true });
   }
 
-  // — The picnic. Two owners, three bodies, and $10.85 inside four metres. —
+  // — The picnic. Two owners, three bodies, and $10 inside four metres. —
   //
   // The five on the cooler lid is the level's marquee: it is in the open, it
   // glints from anywhere in the west half of the park, and there is no approach
   // to it that is not inside somebody's cone.
   add('bill5', 5.00, -19.6, 0.58, 3.2,
     { owner: 'picnicker', label: 'THE FIVE ON THE COOLER', onCooler: true });
-  add('coins', 0.85, -20.6, 0.06, 5.5, { owner: 'picnicker' });
+  /**
+   * There used to be 85c of loose change on the blanket here, and it was
+   * removed after a playtest: "the picnic blanket is too busy, and the loose
+   * change makes grabbing other high-value objects too clunky".
+   *
+   * It passed the beak-length rule — 1.68m from the five under the paperback,
+   * against a 1.2 minimum — which is the point worth keeping. That rule bounds
+   * when two pickups become one *ambiguous* target; it says nothing about a
+   * cheap pickup sitting close enough to a marquee one to be in the way of it.
+   * Under pressure, in the one place on this block where three people are
+   * watching, competing for the beak is a cost even at twice the legal
+   * distance. The set piece is two fives now, and reads as two decisions.
+   */
   // And the one under the paperback, which costs a SHOVE first.
   add('bill5', 5.00, -19.0, 0.03, 5.0,
     { owner: 'frisbee', pinned: true, label: 'THE FIVE UNDER THE BOOK' });

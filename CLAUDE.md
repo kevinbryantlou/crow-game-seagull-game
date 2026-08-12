@@ -498,7 +498,7 @@ because the gap between the outer two was measured and found too big.
   design constraint is to be a small step: one roof, cleared with 1.0m of
   unbroken climb, and no new verbs. What it spends instead of altitude is
   **social pressure** — the marquee is three people standing round one cooler
-  with $10.85 on and beside it, where the block always gave you a softer
+  with $10 on and beside it, where the block always gave you a softer
   district next door. Built, verified and **playtested — it reads as solid and
   needed no revision round**, which the other two blocks both did. The pavilion
   is settled: right for this map, not to be redesigned.
