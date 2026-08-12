@@ -40,10 +40,35 @@ export function setEndingTitle(total) {
 
   // Everything below the headline waits for the words to finish landing.
   const after = `${0.09 * i + 0.25}s`;
-  for (const id of ['rank', 'ending-body', 'again']) {
+  for (const id of ['rank', 'ending-body', 'ending-actions']) {
     const node = $(id);
     if (node) node.style.animationDelay = after;
   }
+}
+
+/**
+ * Re-arm the ending screen's entrance animation.
+ *
+ * A CSS animation runs once per element per page life, and until now that was
+ * exactly right: the only way to see a second ending was to reload. Now that
+ * "Again!" rebuilds the level in place, the same nodes are shown again in the
+ * same document, and every ending after the first would appear fully-formed
+ * with no fade — visibly different from the first one, for no reason a player
+ * could account for.
+ *
+ * Removing the class, forcing a reflow, and putting it back is the standard
+ * way to restart one. Two things this depends on, both easy to get wrong:
+ * the reflow read is load-bearing, because without it the browser coalesces
+ * both style changes and nothing happens at all; and the screen has to be
+ * *visible* already, because a reflow read on a `display: none` element
+ * measures nothing and restarts nothing. Call it after the reveal.
+ */
+export function replayEndingAnimation() {
+  const screen = $('ending');
+  if (!screen) return;
+  screen.classList.add('no-anim');
+  void screen.offsetWidth;
+  screen.classList.remove('no-anim');
 }
 
 export class Hud {
@@ -83,6 +108,43 @@ export class Hud {
     this._controlsT = 0;
     this.controlsToggle.addEventListener('click', () => this.toggleControls());
     this.tasksToggle.addEventListener('click', () => this.toggleTasks());
+  }
+
+  /**
+   * Point the HUD at a different block, without rebuilding it.
+   *
+   * The DOM nodes and the two toggle listeners are bound once in the
+   * constructor and the nodes are permanent, so a second `new Hud()` would
+   * stack a second click handler on each toggle and every press would fire
+   * twice. Everything that is actually per-run is reset here instead.
+   *
+   * The task list is the part that fails loudest if this is skipped:
+   * `setTasks` keys off task id and only ever appends, so swapping to a block
+   * with different ids leaves the previous block's rows in the list underneath
+   * the new ones, with a count that describes neither.
+   */
+  reset(goal, sessionSeconds) {
+    this.goal = goal;
+    this.sessionSeconds = sessionSeconds;
+    $('goal').textContent = `of $${goal.toFixed(2)}`;
+
+    this.taskList.replaceChildren();
+    this._taskEls.clear();
+    this._doneIds.clear();
+    this._tasksT = 0;
+    this._tasksAuto = false;
+    this.toggleTasks(true);
+
+    this._shown = -1;
+    this._toastT = 0;
+    this.toastEl.classList.remove('on');
+    this.setCarry(null);
+    this.setPrompt(null, null);
+    this.setNestPointer(null);
+    this.setMoney(0);
+
+    this._controlsT = 0;
+    this.toggleControls(true);
   }
 
   toggleControls(force) {

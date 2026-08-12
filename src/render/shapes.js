@@ -11,6 +11,24 @@
 import * as THREE from 'three';
 
 const _matCache = new Map();
+/**
+ * The same materials again, by identity.
+ *
+ * Tearing a block down means freeing its GPU resources, and every geometry in
+ * the game is safe to free because no two meshes share one. Materials are the
+ * exact opposite: `mat()` hands one object to every mesh of a colour — 38 of
+ * them share `goldLit` — so a teardown that walks the scene disposing what it
+ * finds would free materials the *next* block is about to use, and the level
+ * after a replay would render undefined.
+ *
+ * "Do not dispose a cached material" is a rule you can hold in your head right
+ * up until someone adds a fourth kind of surface. This set makes it a question
+ * the code can ask: see `isSharedMaterial`, used by the teardown in main.js.
+ */
+const _sharedMats = new Set();
+
+/** Is this material owned by the cache — i.e. will another block need it? */
+export const isSharedMaterial = (m) => _sharedMats.has(m);
 
 /**
  * Flat-shaded Lambert. Cached, because the block reuses maybe a dozen materials.
@@ -46,6 +64,7 @@ export function mat(color, {
       polygonOffsetUnits: decal ? -4 : 0,
     });
     _matCache.set(key, m);
+    _sharedMats.add(m);
   }
   return m;
 }

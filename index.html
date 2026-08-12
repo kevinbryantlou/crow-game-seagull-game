@@ -321,6 +321,46 @@
     letter-spacing: .16em; text-transform: uppercase; color: #6f8c80;
   }
 
+  /* ── the ending's two ways out ──────────────────────────────────────────
+     One brass button and one outlined one. The brass is whichever action the
+     block wants next: another block if there is one, otherwise a replay — so
+     the ending always has exactly one loud thing on it, and the quiet one only
+     appears when there is genuinely a choice to make.
+
+     Weighting matters here, and it is doing the work a rename would otherwise
+     have done: "Again!" keeps its exclamation mark, so the hierarchy has to be
+     carried by fill against outline rather than by tone of voice. */
+  /* `stretch`, not `center`: the two buttons are deliberately different sizes,
+     and centring them leaves both edges misaligned, which reads as a mistake
+     rather than as hierarchy. Matched heights let the fill and the width carry
+     the weighting on their own. */
+  #ending-actions {
+    display: flex; flex-wrap: wrap; gap: 14px;
+    align-items: stretch; justify-content: center;
+  }
+  #ending-actions .start { margin-top: 34px; }
+  .start.ghost {
+    background: transparent; color: var(--paper);
+    border: 2px solid rgba(233,229,218,.42);
+    border-bottom-width: 4px; border-bottom-color: rgba(233,229,218,.42);
+    font-size: 17px; padding: 12px 30px;
+  }
+  .start.ghost:hover { border-color: var(--paper); }
+  /* The arrow leans out of the button on hover — the only motion that says
+     "this one goes somewhere" rather than "this one repeats". */
+  #onward .arw { display: inline-block; transition: transform .12s ease; }
+  #onward:hover .arw { transform: translateX(3px); }
+  @media (prefers-reduced-motion: reduce) {
+    #onward:hover .arw { transform: none; }
+  }
+  @media (max-width: 30rem) {
+    /* Stacked, primary on top, and the replay loses its top margin so the two
+       do not drift half a screen apart on a phone. */
+    #ending-actions { flex-direction: column; gap: 10px; }
+    #ending-actions .start { width: 100%; max-width: 20rem; }
+    #ending-actions .start + .start { margin-top: 0; }
+  }
+
   #ending .title-h { font-size: clamp(30px, 7.5vw, 72px); }
 
   /* The amount, spelled out and delivered a word at a time — the number is the
@@ -339,13 +379,19 @@
     from { opacity: 0; transform: translateY(.34em) rotate(-1.5deg); }
     to   { opacity: 1; transform: none; }
   }
-  #rank, #ending-body, #again { animation: fade-up .6s ease both; }
+  #rank, #ending-body, #ending-actions { animation: fade-up .6s ease both; }
+  /* Held for one reflow to restart the animations above — see
+     replayEndingAnimation() in ui/hud.js. */
+  #ending.no-anim .w,
+  #ending.no-anim #rank,
+  #ending.no-anim #ending-body,
+  #ending.no-anim #ending-actions { animation: none; }
   @keyframes fade-up {
     from { opacity: 0; transform: translateY(10px); }
     to   { opacity: 1; transform: none; }
   }
   @media (prefers-reduced-motion: reduce) {
-    #ending-title .w, #rank, #ending-body, #again {
+    #ending-title .w, #rank, #ending-body, #ending-actions {
       animation: none !important; opacity: 1; transform: none;
     }
   }
@@ -465,7 +511,10 @@
   <h1 class="title-h" id="ending-title">Twenty<span>Dollars</span></h1>
   <div id="rank"></div>
   <p id="ending-body"></p>
-  <button class="start" id="again">Again!</button>
+  <div id="ending-actions">
+    <button class="start" id="onward" hidden></button>
+    <button class="start" id="again">Again!</button>
+  </div>
 </div>
 
 <div id="loading">Building the block…</div>

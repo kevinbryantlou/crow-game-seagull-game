@@ -1000,9 +1000,20 @@
       on it is not.</p>
 
       <h3>Still open</h3>
-      <p><strong>How a player gets from one block to the next.</strong> Selection is
-      <span class="mono">?level=N</span> and <span class="mono">main.js</span> is the only
-      thing that reads it. That is a seam, not a join, and it is deliberately unresolved.</p>
+      <p><strong>How a player gets from one block to the next — half answered.</strong>
+      Finishing a block now hands you the next one: the ending screen carries a brass button
+      naming where it goes, with a replay beside it in outline. Losing offers only the replay,
+      because the rule is that you reach a block by finishing the one before it. The whole
+      progression system is a <span class="mono">next</span> field on the level descriptor.</p>
+
+      <p>What that bought, besides discoverability, is that a block is now built and torn down
+      inside a live page instead of by reloading it — which is what "Again!" used to do, and why
+      it dropped you back on the title card. A reload also silences the game: the audio context
+      can only be created from a user gesture and a fresh page has not had one yet.</p>
+
+      <p>Still open is the <em>menu</em>: there is no way to reach an arbitrary block, no record
+      of what you have finished, and no route backwards. That needs saved state, which nothing
+      in the game has yet. <span class="mono">?level=N</span> still works and is still the seam.</p>
 
       <p><strong>Whether the park is a big enough step — settled.</strong> The roofline's slot
       was the first open question in this section, and it got answered: a playtest read it as too

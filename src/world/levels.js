@@ -32,6 +32,21 @@ export const LEVELS = [
     build: buildBlock,
     title: 'Small Change',
     district: 'The block',
+    /**
+     * How the ending screen offers the next block, and what it calls it.
+     *
+     * `next` is the whole of the progression system for now: finish a block and
+     * you are handed the one after it. There is no menu and no saved unlock —
+     * a loss offers only a replay, because the rule is that you reach a block by
+     * completing the one before it, and holding that rule is what keeps the
+     * ending screen honest.
+     *
+     * `shortName` is the button's noun, lower case because the button composes
+     * it ("The park →"). The `title` is no use here: "The Hotel (Outside)" is a
+     * headline, not something that fits on a button.
+     */
+    next: 2,
+    shortName: 'the block',
     goal: 20.00,
     sessionSeconds: RULES.sessionSeconds,
     /**
@@ -103,11 +118,21 @@ export const LEVELS = [
 
     ending: {
       lostTitle: 'The Light<span>Goes</span>',
+      /**
+       * The last line is the only piece of copy in the game with a job outside
+       * the fiction: it has to make you want to do this again, and it has to
+       * name the park, because the park is what the button beside it offers.
+       *
+       * Paid for by cutting "from the top of a war memorial you have no
+       * business being on" — the funniest clause here and the most cuttable,
+       * because the memorial is behind you at this point and the kid is not.
+       */
       won: () =>
         'The last coin lands in the nest and the weight of it goes through you '
         + 'like a held breath let go. Fingers. Shoulders. The ache of standing up.<br><br>'
-        + 'The first thing you see, from the top of a war memorial you have no business being on, '
-        + 'is a kid on a bench — still holding out a bottle cap, for a bird that is not there any more.',
+        + 'Below you a kid is still holding out a bottle cap for a bird that is not there '
+        + 'any more. You walk home past the park, and find you know exactly how far it is. '
+        + 'Not in blocks. In wingbeats.',
       lost: (total) =>
         `You got to $${total.toFixed(2)}. The sun is off the block now and the `
         + 'shadows have gone violet all the way across the plaza.<br><br>'
@@ -122,6 +147,8 @@ export const LEVELS = [
     build: buildPark,
     title: 'The Park',
     district: 'The Green',
+    next: 3,
+    shortName: 'the park',
     /**
      * $25.
      *
@@ -219,14 +246,23 @@ export const LEVELS = [
 
     ending: {
       lostTitle: 'The Gates<span>Close</span>',
+      /**
+       * The block's ending is about being changed against your will. This one
+       * cannot be, because you chose it — you arrived here off a button that
+       * said "the park". So the joke is the ending: the curse is over and you
+       * are doing this as a pastime.
+       *
+       * It drops the kid-and-bottle-cap image the other two close on. That
+       * callback lands harder at the first and last block for not being in all
+       * three, and it pays for the line that has to point at the hotel.
+       */
       won: () =>
         'The last coin goes into the nest and the park stops being a map of '
-        + 'distances. It is just a park. Somebody has started packing up a blanket '
-        + 'two hundred feet away and you can hear every word of it.<br><br>'
-        + 'You come back sitting down, on the roof of a building whose door is '
-        + 'locked from the inside, with grass stains you cannot account for. Down '
-        + 'by the water a kid is still holding out a bottle cap for a bird that is '
-        + 'not there any more.',
+        + 'distances. It is just a park.<br><br>'
+        + 'You come back sitting down, on a roof whose door is locked from the '
+        + 'inside, with grass stains you cannot account for. Nobody cursed you this '
+        + 'time. You did this on purpose, as a hobby, and there is a hotel across '
+        + 'town with a roof you have already started thinking about.',
       lost: (total) =>
         `You got to $${total.toFixed(2)}. The keeper has started his last lap and `
         + 'the light through the hedge has gone the colour of a bruise.<br><br>'
@@ -241,6 +277,9 @@ export const LEVELS = [
     build: buildRoofline,
     title: 'The Hotel (Outside)',
     district: 'The Vantage',
+    /** The last block there is. The ending screen offers only a replay. */
+    next: null,
+    shortName: 'the hotel',
     /**
      * $30, not $40.
      *

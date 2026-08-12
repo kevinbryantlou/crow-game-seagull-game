@@ -9,9 +9,10 @@ import * as THREE from 'three';
 import { Stage } from './render/stage.js';
 import { Input } from './core/input.js';
 import { Audio } from './core/audio.js';
-import { Hud, setEndingTitle } from './ui/hud.js';
+import { Hud, setEndingTitle, replayEndingAnimation } from './ui/hud.js';
 import { formatRankLine } from './ui/rank.js';
 import { getLevel } from './world/levels.js';
+import { isSharedMaterial } from './render/shapes.js';
 import { RULES } from './world/rules.js';
 import { Crow } from './entities/crow.js';
 import { Human, Pigeon, Gull } from './entities/human.js';
@@ -22,13 +23,71 @@ const STEP = 1 / 60;
 const REACH = 1.15;
 
 /**
- * Which block to build.
+ * Which block to build first.
  *
- * A URL parameter, on purpose and for now: how a player actually gets from the
- * block to the roofline is a separate question and it is not answered here. This
- * is the seam, not the join.
+ * Read once, at boot, and then never again — which is the point. It used to be
+ * the only answer to "which level am I on", so the level was a module constant
+ * and swapping blocks meant reloading the page. The running answer now lives on
+ * the Game (`this.level`), and this is only where a session starts: a bookmark,
+ * a shared link, or a refresh mid-block.
+ *
+ * How a player gets from one block to the next is no longer a URL question — it
+ * is the ending screen. See `_finish` and `loadLevel`.
  */
-const LEVEL_ID = Number(new URLSearchParams(location.search).get('level')) || 1;
+const START_LEVEL = Number(new URLSearchParams(location.search).get('level')) || 1;
+
+/**
+ * Strip a block down to nothing, freeing what it owns and nothing else.
+ *
+ * Geometry made by this project is always safe: every mesh builds its own, and
+ * `tint()` hands back a private non-indexed clone on top of that. **Sprites are
+ * the exception, and they are not ours** — three.js keeps one module-level
+ * quad and gives it to every Sprite ever constructed, so the fifty-odd glints
+ * and state markers on a block share a single geometry with each other and with
+ * every future block. Disposing it is survivable (the renderer re-uploads on the
+ * next frame) and it is still wrong: it is pure churn, and it is exactly the
+ * assumption a future `InstancedMesh` would break for real.
+ *
+ * Materials are the opposite of geometry — `mat()` caches by colour and 38
+ * meshes share one `goldLit` — so anything the cache owns is left strictly
+ * alone and only the per-build ones (light clones, pool quads, sprite
+ * materials, the pool water, the netting) are freed. `isSharedMaterial` is what
+ * makes that a check rather than a promise.
+ */
+function disposeTree(root) {
+  if (!root) return;
+  root.traverse((o) => {
+    if (!o.isSprite) o.geometry?.dispose();
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    for (const m of mats) if (m && !isSharedMaterial(m)) m.dispose();
+  });
+  root.removeFromParent();
+}
+
+/** "the park" → "The park", for a button that composes its own noun. */
+const sentenceCase = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/**
+ * Say what went wrong, on screen, and stop.
+ *
+ * A thrown error used to be survivable in exactly one place — construction —
+ * which is why the boot path has always been wrapped: a black canvas with the
+ * reason only in a console is no use at all on a phone.
+ *
+ * Building a block is no longer something that happens only at boot. A swap
+ * tears the old one down *first*, so a throw half-way through the rebuild
+ * leaves no world and no crow, and the render loop — which re-arms itself
+ * before it touches anything — then throws on every frame for the rest of the
+ * session behind a frozen picture. Same failure, same remedy, so it is one
+ * function now and the swap uses it too.
+ */
+function fatal(err, headline) {
+  console.error(err);
+  const el = document.getElementById('loading');
+  el.classList.remove('hidden');
+  el.style.cssText += 'flex-direction:column;gap:12px;padding:24px;text-align:center;color:#d95f4c';
+  el.textContent = `${headline}: ${err.message}`;
+}
 
 const _nestWorld = new THREE.Vector3();
 
@@ -46,17 +105,95 @@ const TEST_TRADE_PAYOUT = null;
 const TEST_SESSION_SECONDS = null;
 
 class Game {
-  constructor() {
-    /** Everything about this run that the block decides. See world/levels.js. */
-    this.level = getLevel(LEVEL_ID);
-    const GOAL = this.level.goal;
-    const SESSION_SECONDS = TEST_SESSION_SECONDS ?? this.level.sessionSeconds;
-    this.goal = GOAL;
-
+  /**
+   * Everything here outlives a block: the renderer, the input abstraction, the
+   * audio graph, the HUD's DOM bindings, the UI listeners and the one animation
+   * frame loop. Everything a *block* owns is built in `loadLevel`.
+   *
+   * The split is what lets "Again!" and the next-level button drop you straight
+   * into a level instead of reloading the page. That is not only a nicety: the
+   * Web Audio context can only be created from a user gesture, so a reload
+   * would come back with the whole game silent until the player next pressed
+   * something. Keeping one page alive keeps the audio alive with it.
+   */
+  constructor(levelId) {
     this.stage = new Stage(document.getElementById('c'));
     this.input = new Input();
     this.audio = new Audio();
-    this.hud = new Hud(GOAL, SESSION_SECONDS);
+
+    const first = getLevel(levelId);
+    this.hud = new Hud(first.goal, TEST_SESSION_SECONDS ?? first.sessionSeconds);
+
+    this._screen = { x: 0, y: 0, visible: false };
+    this._acc = 0;
+    this._last = performance.now();
+    /**
+     * Timers that outlive the frame that scheduled them.
+     *
+     * A gull alarm parks a 2.4s callback that writes to a Human; swap blocks in
+     * the meantime and it wakes up holding somebody who is no longer in the
+     * scene. Cheap to track, and it keeps a torn-down cast from being kept
+     * alive by a pending callback.
+     */
+    this._timers = new Set();
+
+    const cheats = [];
+    if (TEST_TRADE_PAYOUT != null) cheats.push(`trade pays $${TEST_TRADE_PAYOUT.toFixed(2)}`);
+    if (TEST_SESSION_SECONDS != null) cheats.push(`day lasts ${TEST_SESSION_SECONDS}s`);
+    if (cheats.length) {
+      const badge = document.getElementById('testmode');
+      badge.textContent = `Test mode · ${cheats.join(' · ')}`;
+      badge.hidden = false;
+      console.warn(`[Small Change] TEST CHEAT ACTIVE: ${cheats.join('; ')}`);
+    }
+
+    this._bindUi();
+    this.loadLevel(levelId);
+    requestAnimationFrame(this._frame);
+  }
+
+  /** setTimeout that a level swap can cancel. */
+  _after(ms, fn) {
+    const id = setTimeout(() => { this._timers.delete(id); fn(); }, ms);
+    this._timers.add(id);
+    return id;
+  }
+
+  /**
+   * Build a block and make it the one being played.
+   *
+   * Safe to call at boot and safe to call over the top of a block already
+   * running — the whole progression system is this function plus a `next` field
+   * on the level descriptor.
+   *
+   * @param {number} id          which block, from world/levels.js
+   * @param {boolean} autoStart  skip the title card and start playing at once,
+   *   which is what both ending-screen buttons want: "Again!" should put you
+   *   back in the park, not in front of a Begin button.
+   */
+  loadLevel(id, autoStart = false) {
+    try {
+      this._build(id, autoStart);
+    } catch (err) {
+      // The old block is already gone by the time anything here can throw, so
+      // there is nothing to fall back to — but the player gets told, and the
+      // loop is stopped rather than left throwing behind a frozen frame.
+      this.running = false;
+      fatal(err, 'Lost the thread');
+    }
+  }
+
+  _build(id, autoStart) {
+    this._teardown();
+
+    /** Everything about this run that the block decides. See world/levels.js. */
+    this.level = getLevel(id);
+    this.goal = this.level.goal;
+    // Exposed because TEST_SESSION_SECONDS makes the day length a variable, and
+    // a harness that wants "60% of the day" has to be able to ask rather than
+    // assume a fixed length — scripts/shoot.mjs measured four identical frames
+    // before this existed.
+    this.sessionSeconds = TEST_SESSION_SECONDS ?? this.level.sessionSeconds;
 
     this.world = this.level.build();
     this.stage.scene.add(this.world.root);
@@ -86,8 +223,8 @@ class Game {
       this.stage.scene.add(p.root);
       return p;
     });
-    // Gulls are pigeons that stay put and object to company. They are level 2's
-    // answer to a roof having no cover on it; the block has none.
+    // Gulls are pigeons that stay put and object to company. They are the
+    // roofline's answer to a roof having no cover on it; the others have none.
     this.gulls = (this.world.gulls || []).map((s) => {
       const g = new Gull(s.x, s.z, s.y ?? 0);
       this.stage.scene.add(g.root);
@@ -99,11 +236,6 @@ class Game {
     this.total = 0;
     this.banked = 0;
     this.elapsed = 0;
-    // Exposed because TEST_SESSION_SECONDS makes the day length a variable, and
-    // a harness that wants "60% of the day" has to be able to ask rather than
-    // assume a fixed length — scripts/shoot.mjs measured four identical frames
-    // before this existed.
-    this.sessionSeconds = SESSION_SECONDS;
     this.running = false;
     this.finished = false;
     this.tradeStep = 0;
@@ -112,44 +244,134 @@ class Game {
     this._taughtNest = false;
     this._taughtTrade = false;
     this._cawCooldown = 0;
-    this._screen = { x: 0, y: 0, visible: false };
     this._acc = 0;
-    this._last = performance.now();
+    this.foodPos = null;
+    this.foodUntil = 0;
+    // Cleared rather than left over from the last ending. Nothing can reach it
+    // while a block is running — both readers are gated on `finished` or on a
+    // button inside the hidden ending screen — but a stale "next block" sitting
+    // on the game between runs is a trap waiting for the next person to add a
+    // third reader.
+    this._nextId = null;
 
     this.tasks = this.level.tasks.map((t) => ({ ...t, done: false }));
+    this.hud.reset(this.goal, this.sessionSeconds);
     this.hud.setTasks(this.tasks);
-    this.hud.setMoney(0);
 
-    const cheats = [];
-    if (TEST_TRADE_PAYOUT != null) cheats.push(`trade pays $${TEST_TRADE_PAYOUT.toFixed(2)}`);
-    if (TEST_SESSION_SECONDS != null) cheats.push(`day lasts ${TEST_SESSION_SECONDS}s`);
-    if (cheats.length) {
-      const badge = document.getElementById('testmode');
-      badge.textContent = `Test mode · ${cheats.join(' · ')}`;
-      badge.hidden = false;
-      console.warn(`[Small Change] TEST CHEAT ACTIVE: ${cheats.join('; ')}`);
-    }
+    // The camera lags the crow by about 0.2s, which is right on every frame
+    // except the first of a new block — `_smoothed` is still parked over the
+    // last one, and without this it sails across the map to catch up.
+    this.stage.snapTo(this.crow.pos);
 
-    this._bindUi();
-    requestAnimationFrame(this._frame);
+    /**
+     * Keep the address bar honest, so a refresh reloads the block you are on
+     * rather than the one the session started with.
+     *
+     * Written from `this.level.id` rather than from `id`, because `getLevel`
+     * falls back to the first block for anything it does not recognise — so
+     * `?level=99` plays the block and the URL should say so instead of
+     * preserving a number that means nothing. Edited through a URL object so a
+     * hash or any other parameter survives being here.
+     */
+    try {
+      const url = new URL(location.href);
+      if (this.level.id === 1) url.searchParams.delete('level');
+      else url.searchParams.set('level', String(this.level.id));
+      history.replaceState(null, '', url);
+    } catch { /* history is unavailable on file://, and this is not worth a crash */ }
+
+    if (autoStart) this.begin();
   }
 
+  /** Drop the free GPU resources of the outgoing block, and only those. */
+  _teardown() {
+    if (!this.world) return;
+
+    for (const t of this._timers) clearTimeout(t);
+    this._timers.clear();
+
+    // Before the meshes go, not after: Stage raycasts its occluder list every
+    // frame and owns a private material clone for each one.
+    this.stage.clearOccluders();
+
+    // A carried or banked pickup has been reparented under the crow's beak or
+    // into the nest, so the scene graph is not a reliable index of them. The
+    // arrays are.
+    for (const p of this.pickups) disposeTree(p.root);
+    for (const h of this.humans) { h.dispose(); disposeTree(h.root); }
+    for (const b of this.birds) disposeTree(b.root);
+    // Optional chaining because a build that threw half-way leaves a world
+    // without a crow, and the teardown that follows must not throw on top of
+    // the failure it is trying to clean up after.
+    disposeTree(this.crow?.root);
+    disposeTree(this.world.root);
+
+    // The night lights are the only lambert materials on level geometry that
+    // are clones rather than cache entries, and the pools are additive quads.
+    for (const item of this.world.nightLights.items) item.material?.dispose();
+
+    this.world = null;
+    this.crow = null;
+    this.pickups = [];
+    this.humans = [];
+    this.pigeons = [];
+    this.gulls = [];
+    this.birds = [];
+  }
+
+  /** Hide the cards and start play. The one entry point into a running game. */
+  begin() {
+    this.audio.unlock();
+    document.getElementById('title').classList.add('hidden');
+    document.getElementById('ending').classList.add('hidden');
+    this.running = true;
+    this._last = performance.now();
+    this._acc = 0;
+    /**
+     * Throw away whatever is already held down.
+     *
+     * Enter is mapped to the beak, and `Input`'s keydown listener is installed
+     * before the game's — so the Enter that dismisses the ending screen has
+     * already registered a beak press by the time this runs, and the first
+     * simulated tick of the new block would spend it. Harmless at all three
+     * current spawns and a trap for the first one placed within reach of
+     * anything: the block would open by grabbing something on its own.
+     */
+    this.input.flush();
+    this.hud.beginControlsCountdown(10);
+    // On touch the list is a real share of a small screen, so it introduces
+    // itself and then folds down to a count. On desktop it stays open.
+    if (this.input.hasTouch) this.hud.enableTaskAutoCollapse(12);
+    this._after(900, () => { if (this.running) this.hud.toast('Collect money', 2.2); });
+  }
+
+  /**
+   * Bound once, to permanent nodes. Nothing in here may be re-run on a level
+   * swap — the DOM survives it, so a second binding would fire every click
+   * twice.
+   */
   _bindUi() {
-    const start = () => {
-      this.audio.unlock();
-      document.getElementById('title').classList.add('hidden');
-      this.running = true;
-      this._last = performance.now();
-      this.hud.beginControlsCountdown(10);
-      // On touch the list is a real share of a small screen, so it introduces
-      // itself and then folds down to a count. On desktop it stays open.
-      if (this.input.hasTouch) this.hud.enableTaskAutoCollapse(12);
-      setTimeout(() => { if (this.running) this.hud.toast('Collect money', 2.2); }, 900);
-    };
-    document.getElementById('start').addEventListener('click', start);
-    document.getElementById('again').addEventListener('click', () => location.reload());
+    document.getElementById('start').addEventListener('click', () => this.begin());
+
+    // Both ending buttons rebuild a block and drop straight into it. "Again!"
+    // used to reload the page, which is why it landed you back on the title
+    // card — a small thing that made replaying feel like starting over.
+    document.getElementById('again')
+      .addEventListener('click', () => this.loadLevel(this.level.id, true));
+    document.getElementById('onward')
+      .addEventListener('click', () => {
+        if (this._nextId) this.loadLevel(this._nextId, true);
+      });
+
     addEventListener('keydown', (e) => {
-      if (e.code === 'Enter' && !this.running && !this.finished) start();
+      // Enter takes whatever the loudest button on screen is: Begin before the
+      // first run, and afterwards the block the ending is offering — falling
+      // back to a replay on the last block and on a loss, which is exactly the
+      // button that is brass in each case.
+      if (e.code === 'Enter' && !this.running) {
+        if (this.finished) this.loadLevel(this._nextId ?? this.level.id, true);
+        else this.begin();
+      }
       if (e.code === 'KeyM') this.audio.setMuted(!this.audio.muted);
     });
     document.getElementById('loading').classList.add('hidden');
@@ -334,7 +556,7 @@ class Game {
       if (d > 11) continue;
       h.lookAt = new THREE.Vector3(gull.pos.x, gull.floorY, gull.pos.z);
       h._suspicion += 0.34;
-      setTimeout(() => { if (h.lookAt && h.lookAt.x === gull.pos.x) h.lookAt = null; }, 2400);
+      this._after(2400, () => { if (h.lookAt && h.lookAt.x === gull.pos.x) h.lookAt = null; });
     }
   }
 
@@ -373,7 +595,7 @@ class Game {
         h.lookAt = at;
         // Overuse makes a person suspicious rather than curious.
         h._suspicion += 0.12;
-        setTimeout(() => { if (h.lookAt === at) h.lookAt = null; }, 2600);
+        this._after(2600, () => { if (h.lookAt === at) h.lookAt = null; });
       }
     }
     for (const p of this.birds) {
@@ -384,12 +606,42 @@ class Game {
     }
   }
 
+  /**
+   * Dress the ending screen's two ways out.
+   *
+   * There is always exactly one brass button, and it is whatever the block
+   * wants to happen next: the block after this one if you earned it, a replay
+   * otherwise. The outlined button only appears when there is a genuine choice
+   * to make, so a losing screen and the last block both offer a single
+   * unambiguous action rather than two of equal weight.
+   *
+   * Losing offers no way forward on purpose. The whole progression rule is that
+   * you reach a block by finishing the one before it, and a next-level button
+   * on a run that ran out of light quietly repeals that.
+   */
+  _setEndingActions(won) {
+    const onward = document.getElementById('onward');
+    const again = document.getElementById('again');
+    this._nextId = won ? (this.level.next ?? null) : null;
+
+    if (this._nextId) {
+      const next = getLevel(this._nextId);
+      onward.innerHTML = `${sentenceCase(next.shortName)} <span class="arw">→</span>`;
+      onward.hidden = false;
+      again.classList.add('ghost');
+    } else {
+      onward.hidden = true;
+      again.classList.remove('ghost');
+    }
+  }
+
   _finish(won) {
     if (this.finished) return;
     this.finished = true;
     this.running = false;
     this.audio.transform();
 
+    this._setEndingActions(won);
 
     const title = document.getElementById('ending-title');
     const body = document.getElementById('ending-body');
@@ -409,8 +661,17 @@ class Game {
     } else {
       title.innerHTML = copy.lostTitle;
       body.innerHTML = copy.lost(this.total);
+      // No spelled-out headline to wait for, so nothing below it should be
+      // holding a delay left over from a win earlier in the session.
+      for (const id of ['rank', 'ending-body', 'ending-actions']) {
+        document.getElementById(id).style.animationDelay = '';
+      }
     }
+    // Shown first, re-armed second, and the order is the whole point: the
+    // screen is `display: none` until that class comes off, and a reflow read
+    // on a `display: none` element measures nothing and restarts nothing.
     document.getElementById('ending').classList.remove('hidden');
+    replayEndingAnimation();
   }
 
   // ── loop ──────────────────────────────────────────────────────────────────
@@ -508,6 +769,19 @@ class Game {
     this._last = now;
     if (dt > 0.25) dt = 0.25;      // a backgrounded tab must not teleport anyone
 
+    /**
+     * There may be no block to draw.
+     *
+     * A swap tears the old one down before building the new one, so a rebuild
+     * that throws leaves this loop with no world and no crow — and the loop
+     * re-arms itself above before it touches either. Without this guard that is
+     * sixty exceptions a second, for the rest of the session, on top of a
+     * frozen picture: the console fills with the same line and the real error
+     * scrolls away. `fatal` has already put the reason on screen; the loop's
+     * job now is to be quiet.
+     */
+    if (!this.world) return;
+
     if (this.running) {
       this._acc += dt;
       let steps = 0;
@@ -556,15 +830,11 @@ class Game {
 // A thrown error during construction would otherwise leave a black screen with
 // the reason only in the console — which is no use at all on a phone.
 try {
-  const game = new Game();
+  const game = new Game(START_LEVEL);
   // Dev-only handle so scripts/shoot.mjs can inspect any part of the block
   // instead of only wherever the crow happens to have flown. Stripped from
   // production builds by Vite's dead-code elimination.
   if (import.meta.env?.DEV) window.__game = game;
 } catch (err) {
-  console.error(err);
-  const el = document.getElementById('loading');
-  el.classList.remove('hidden');
-  el.style.cssText += 'flex-direction:column;gap:12px;padding:24px;text-align:center;color:#d95f4c';
-  el.textContent = `Could not start: ${err.message}`;
+  fatal(err, 'Could not start');
 }

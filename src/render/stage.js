@@ -117,6 +117,35 @@ export class Stage {
     }
   }
 
+  /**
+   * Let go of the outgoing block's occluders.
+   *
+   * Two reasons this has to happen *before* the meshes leave the scene, not
+   * after. `_updateOccluders` raycasts this list every frame, so a stale entry
+   * is a ray against geometry that has been disposed. And the clone above is
+   * the one place in the game where a mesh is moved off the shared material
+   * cache onto a private material — nothing else has a reference to it, so if
+   * this does not free it, nothing ever will.
+   */
+  clearOccluders() {
+    for (const o of this._occluders) o.material?.dispose();
+    this._occluders = [];
+  }
+
+  /**
+   * Put the camera exactly where it belongs, with no lerp.
+   *
+   * `follow` eases toward the crow at ~0.2s of lag, which is right every frame
+   * except the first one of a new block: `_smoothed` still holds wherever the
+   * last block ended, so without this the camera — and the shadow frustum with
+   * it — sails across the whole map on arrival.
+   */
+  snapTo(focus) {
+    this.target.set(focus.x, focus.y * 0.45 + 0.6, focus.z);
+    this._smoothed.copy(this.target);
+    this.follow(focus, 1);
+  }
+
   resize() {
     const w = innerWidth, h = innerHeight;
     this.renderer.setSize(w, h, false);

@@ -138,6 +138,18 @@ export class Human {
     this.root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   }
 
+  /**
+   * Free the one GPU resource a person owns outright.
+   *
+   * Everything else about a Human comes out of the shared material cache or is
+   * geometry the generic teardown walks. The state marker is neither: it is a
+   * 128×128 CanvasTexture built per person in `_build`, so seven of them would
+   * be stranded on every level swap.
+   */
+  dispose() {
+    this._markTex?.dispose();
+  }
+
   _setMarker(glyph, color) {
     if (this._markGlyph === glyph) return;
     this._markGlyph = glyph;

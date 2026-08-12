@@ -1100,6 +1100,195 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
   if (end3) { await new Promise((r) => setTimeout(r, 1400)); await shoot3('39-l3-ending'); }
 }
 
+// ── the way from one block to the next ───────────────────────────────────────
+/**
+ * Finishing a block hands you the one after it, and "Again!" drops you back
+ * into the one you are on. Both rebuild the level inside the same page rather
+ * than reloading, which is the only way the audio survives — a reload comes
+ * back with no user gesture, so the AudioContext cannot be unlocked and the
+ * game is silent until the player next presses something.
+ *
+ * Building in place is also the thing most likely to rot quietly, in two ways
+ * that this checks and a person would not: state from the last block surviving
+ * into the next one, and GPU resources that are never freed. The second is why
+ * the geometry count is asserted rather than eyeballed — every mesh owns its
+ * geometry, so a leak here grows without bound across a session of replays.
+ */
+{
+  const nav = await browser.newPage();
+  await nav.setViewport({ width: 1280, height: 800, deviceScaleFactor: 1 });
+  nav.on('console', (m) => { if (m.type() === 'error') errors.push(`nav console: ${m.text()}`); });
+  nav.on('pageerror', (e) => errors.push(`nav uncaught: ${e.message}`));
+
+  console.log('\nlevel navigation');
+  await nav.goto(URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await nav.waitForFunction(
+    () => document.getElementById('loading')?.classList.contains('hidden'),
+    { timeout: 30000 },
+  ).catch(() => errors.push('nav: game never booted'));
+
+  const hasNav = await nav.evaluate(() => !!window.__game);
+  await nav.click('#start');
+  await new Promise((r) => setTimeout(r, 900));
+
+  if (!hasNav) {
+    console.log('  note: no __game handle (production build) — navigation checks skipped');
+  } else {
+    /** Everything worth knowing about which block is on screen. */
+    const state = () => nav.evaluate(() => {
+      const g = window.__game;
+      const r = g.stage.renderer.info.memory;
+      return {
+        id: g.level.id,
+        goal: g.goal,
+        hudGoal: document.getElementById('goal').textContent,
+        money: document.getElementById('amt').textContent,
+        tasks: [...document.querySelectorAll('#task-list li')].map((li) => li.textContent),
+        // What the block actually asked for, so the rendered list can be
+        // compared against its own source rather than against a guess.
+        wanted: g.tasks.map((t) => t.text),
+        count: document.getElementById('tasks-count').textContent,
+        running: g.running,
+        titleHidden: document.getElementById('title').classList.contains('hidden'),
+        endingHidden: document.getElementById('ending').classList.contains('hidden'),
+        geometries: r.geometries,
+        textures: r.textures,
+        children: g.stage.scene.children.length,
+      };
+    });
+    /** Win the block outright, and report what the ending offers. */
+    const win = () => nav.evaluate(() => {
+      const g = window.__game;
+      g.total = g.goal + 2.66;
+      g.elapsed = 247;
+      g.finished = false;
+      g.running = true;
+      g._finish(true);
+      const on = document.getElementById('onward');
+      const ag = document.getElementById('again');
+      return {
+        onward: on.hidden ? null : on.textContent.trim(),
+        againIsGhost: ag.classList.contains('ghost'),
+        nextId: g._nextId,
+      };
+    });
+
+    const before = await state();
+    const end1 = await win();
+    console.log(`  L${before.id} ending offers: ${JSON.stringify(end1)}`);
+    if (end1.onward !== 'The park →') errors.push(`L1 ending's next button reads "${end1.onward}"`);
+    if (!end1.againIsGhost) errors.push('L1 ending: Again! is not the secondary button');
+
+    await nav.click('#onward');
+    await new Promise((r) => setTimeout(r, 1200));
+    const after = await state();
+    console.log(`  → L${after.id}: goal ${after.hudGoal}, ${after.tasks.length} tasks, `
+      + `${after.geometries} geometries`);
+
+    if (after.id !== 2) errors.push(`the next-level button landed on L${after.id}, expected 2`);
+    if (!after.running) errors.push('the next block is not running — it stopped at a card');
+    if (!after.titleHidden) errors.push('the next block dropped the player on the title screen');
+    if (!after.endingHidden) errors.push("the previous block's ending screen is still up");
+    if (after.hudGoal !== 'of $25.00') errors.push(`HUD goal did not follow the block: ${after.hudGoal}`);
+    if (after.money !== '$0.00') errors.push(`money carried across a level swap: ${after.money}`);
+    /**
+     * The task list keys off task id and `setTasks` only ever appends, so a
+     * level swap is exactly where the previous block's rows would survive
+     * underneath the new ones.
+     *
+     * Checked against the block's own task list rather than against the
+     * previous block's: two blocks legitimately share wording — "Trade
+     * something shiny" is the same job everywhere — so an overlap test reports
+     * a swap that worked perfectly well. Equality is the actual invariant.
+     */
+    if (JSON.stringify(after.tasks) !== JSON.stringify(after.wanted)) {
+      errors.push(`task list is not the new block's: ${JSON.stringify(after.tasks)}`);
+    }
+    if (after.count !== `0/${after.wanted.length}`) {
+      errors.push(`task counter reads ${after.count} on a fresh block`);
+    }
+
+    // The last block has nowhere to send you, so its single action must be the
+    // brass one rather than an outlined button beside an empty slot.
+    await nav.evaluate(() => window.__game.loadLevel(3, true));
+    await new Promise((r) => setTimeout(r, 1000));
+    const end3 = await win();
+    console.log(`  L3 ending offers: ${JSON.stringify(end3)}`);
+    if (end3.onward !== null) errors.push(`the last block offers a next level: "${end3.onward}"`);
+    if (end3.againIsGhost) errors.push('the last block leaves Again! as a secondary button');
+
+    // And losing never hands out the next block — you reach one by finishing
+    // the one before it, and that rule is the whole progression system.
+    const lost = await nav.evaluate(() => {
+      const g = window.__game;
+      g.loadLevel(1, true);
+      g.total = 4.2;
+      g.finished = false;
+      g.running = true;
+      g._finish(false);
+      return {
+        onwardHidden: document.getElementById('onward').hidden,
+        nextId: g._nextId,
+      };
+    });
+    console.log(`  a losing L1 offers: ${JSON.stringify(lost)}`);
+    if (!lost.onwardHidden || lost.nextId) errors.push('running out of light still unlocks the next block');
+
+    /**
+     * The leak, measured.
+     *
+     * Every mesh owns its own geometry, so if teardown missed anything the
+     * count climbs by a whole block on every swap — eight of them would be
+     * about four thousand. Materials are deliberately not counted: they come
+     * from a shared cache by colour and are supposed to outlive any one block.
+     *
+     * Geometry is bounded rather than pinned, because a block is not built the
+     * same way twice: `addSkyline` drops 22% of its windows at random, which
+     * moves the roofline's mesh count over a spread of about ten. Anything
+     * inside a quarter of a block is that; anything above it is a leak. Scene
+     * children *are* deterministic — a missed root shows up there exactly —
+     * so that one is pinned.
+     */
+    const SLACK = 120;
+    await nav.evaluate(() => window.__game.loadLevel(3, true));
+    await new Promise((r) => setTimeout(r, 900));
+    const base = await state();
+    for (let i = 0; i < 4; i++) {
+      await nav.evaluate(() => window.__game.loadLevel(1, true));
+      await new Promise((r) => setTimeout(r, 350));
+      await nav.evaluate(() => window.__game.loadLevel(3, true));
+      await new Promise((r) => setTimeout(r, 350));
+    }
+    const leaked = await state();
+    console.log(`  after 8 swaps: ${leaked.geometries} geometries (was ${base.geometries}), `
+      + `${leaked.textures} textures (was ${base.textures}), `
+      + `${leaked.children} scene children (was ${base.children})`);
+    if (leaked.geometries > base.geometries + SLACK) {
+      errors.push(`level swaps leak geometry: ${base.geometries} → ${leaked.geometries} after 8`);
+    }
+    if (leaked.textures > base.textures + 4) {
+      errors.push(`level swaps leak textures: ${base.textures} → ${leaked.textures} after 8`);
+    }
+    if (leaked.children !== base.children) {
+      errors.push(`level swaps leak scene children: ${base.children} → ${leaked.children} after 8`);
+    }
+
+    writeFileSync(`${OUT}/14-ending-onward.png`, await (async () => {
+      await nav.evaluate(() => window.__game.loadLevel(1, true));
+      await new Promise((r) => setTimeout(r, 900));
+      await nav.evaluate(() => {
+        const g = window.__game;
+        g.total = 22.66; g.elapsed = 247; g.finished = false; g.running = true;
+        g._finish(true);
+      });
+      await new Promise((r) => setTimeout(r, 1600));
+      return nav.screenshot({ type: 'png' });
+    })());
+    console.log(`  wrote ${OUT}/14-ending-onward.png`);
+  }
+  await nav.close();
+}
+
 // ── mobile pass ──────────────────────────────────────────────────────────────
 // Phone layout cannot be eyeballed any other way, and the bottom-right corner
 // is contested there: the sun dial and the touch buttons both want it.

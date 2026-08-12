@@ -49,7 +49,9 @@ the game had never been looked at. Both harnesses exist to close that gap.
 - **`scripts/shoot.mjs`** drives real WebGL in headless Chrome, writes PNGs to
   `shots/`, and fails on any console error or failed request. It runs every
   block: `01`–`13` are the block, `20`–`29` and `l2-dusk-*` are the park,
-  `30`–`39` and `l3-dusk-*` are the roofline. Read the PNGs. It can
+  `30`–`39` and `l3-dusk-*` are the roofline, and `14` is the ending screen's
+  next-level button. It also swaps levels eight times and asserts the GPU gets
+  its memory back. Read the PNGs. It can
   place the crow anywhere via `window.__game` (dev builds only) for spot checks,
   and asserts behaviour like trade auto-equip.
 
@@ -332,6 +334,41 @@ That's why `words.js` and `rank.js` are separate from `hud.js`.
   and stands there solid the rest of the time. Nothing that is core loop — the
   kid, the trade — goes behind the thing whose job is to be in the way.
 
+- **Geometry is safe to dispose and materials are not, and the difference is the
+  whole of teardown.** Every mesh owns its geometry — `tint()` even hands back a
+  private non-indexed clone — so a level rebuild can free all of it. `mat()`
+  caches by colour and 38 meshes share one `goldLit`, so a teardown that walks
+  the scene disposing what it finds frees materials the *next* block needs and
+  the level after a replay renders undefined. `isSharedMaterial()` in
+  `shapes.js` makes that a question the code asks rather than a rule someone
+  remembers. The per-build exceptions worth freeing by hand: the night-light
+  clones, the pool quads, `Stage`'s occluder clones, and each `Human`'s marker
+  texture.
+- **Reloading the page to restart would silence the game.** `audio.unlock()`
+  has to run inside a user gesture, and a freshly loaded page has not had one —
+  so the obvious implementation of "Again!" (`location.reload()`) comes back
+  with a suspended AudioContext and no sound until the player next presses
+  something. That single fact is why levels are swapped in place.
+- **Three things survive a level swap that should not.** `stage._smoothed` holds
+  the old crow position, so the camera and the shadow frustum sail across the
+  map on arrival unless you `snapTo` the new spawn. `stage._occluders` must be
+  cleared *before* the meshes leave the scene or the per-frame raycast hits
+  freed geometry. And `hud.setTasks` keys off task id and only ever appends, so
+  a new block inherits the old block's rows — worse, ids that match keep the
+  *old wording*, so four of five tasks silently read as the previous level's.
+- **A CSS animation plays once per element per page.** The ending screen's
+  fade-up was correct for as long as the only way to see a second ending was a
+  reload. Now that replaying rebuilds in place, every ending after the first
+  would appear fully formed with no fade unless the animation is re-armed —
+  remove the class, force a reflow, put it back. The reflow read is
+  load-bearing; without it the browser coalesces both changes and nothing
+  happens.
+- **A block is not built the same way twice.** `addSkyline` drops 22% of its
+  windows at random, so the roofline's mesh count ranges over about ten between
+  builds. Any assertion on mesh or geometry counts has to be a bound, not an
+  equality — but scene *children* are deterministic, so that one can be pinned,
+  and it is the sharper leak detector anyway.
+
 ## Level-design rules (asserted, not aspirational)
 
 In `RULES` in `world/rules.js`, enforced by `smoke.mjs` via `audit-level.mjs`,
@@ -421,9 +458,22 @@ because the gap between the outer two was measured and found too big.
   number in its name at all; order is a registry question, not a filename one,
   and renaming would only move the confusion somewhere git blame cannot follow.
 
-Selection is `?level=N`, read once in `main.js`. **How the player actually gets
-from one block to the next is not decided yet** — that is a seam, not a join,
-and it was left open deliberately.
+**Finishing a block hands you the next one.** The ending screen carries a brass
+button naming where it goes (`The park →`) with `Again!` beside it in outline;
+the last block and every loss show only `Again!`, in brass, because you reach a
+block by completing the one before it. The whole progression system is two
+fields on the descriptor — `next` and `shortName` — plus `Game.loadLevel(id)`.
+
+Both buttons **rebuild the level inside the live page**; nothing reloads. That
+is not polish. `audio.unlock()` needs a user gesture, and a reloaded page has
+not had one, so a reload comes back with the game silent until the player next
+presses something.
+
+`?level=N` still works and is still how a session starts; `loadLevel` keeps the
+address bar in step so a refresh returns you to the block you are on. **There is
+still no menu** — no way to reach an arbitrary block, no record of what you have
+finished, no route backwards. That needs saved state, which nothing in the game
+has yet.
 
 `world/kit.js` holds anything a fourth block would otherwise copy-paste: tables,
 benches, lamps, bins, planters, trees, the skyline, the nest, and the water body.
