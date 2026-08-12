@@ -370,6 +370,33 @@ export class Human {
     this.legs[0].rotation.z = swing;
     this.legs[1].rotation.z = -swing;
 
+    /**
+     * Sitting.
+     *
+     * The only posture in the game that is not a variation on standing, and it
+     * exists for exactly one person. On level 1 the kid reads instantly because
+     * she is the only human in an empty corner of a plaza; drop the same figure
+     * onto a restaurant terrace with a maître d' and a busser on it and she is a
+     * slightly shorter adult in a crowd of adults. Nothing about her colour or
+     * her cup fixes that at the distance the camera sits.
+     *
+     * A silhouette does. Nobody else in either block sits down, so the shape
+     * alone says *this one is different* before you are close enough to see what
+     * she is holding.
+     */
+    if (this.sits) {
+      const sc = this.small ? 0.72 : 1;
+      this.body.position.y = -0.62 * sc;
+      this.legs[0].rotation.z = -1.28;
+      this.legs[1].rotation.z = -1.16;      // one leg swinging a little wider
+      this.legs[0].position.y = 0.70 * sc;
+      this.legs[1].position.y = 0.70 * sc;
+      this.arms[0].rotation.z = -0.55;
+      this.arms[1].rotation.z = -0.15;
+      this.body.rotation.z = -0.06;
+      return;
+    }
+
     if (this.state === SHOOING) {
       // Arms up and flapping — the silhouette changes so intent reads at
       // distance without needing the marker.

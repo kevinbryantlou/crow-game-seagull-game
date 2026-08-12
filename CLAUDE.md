@@ -69,7 +69,7 @@ src/
   world/rules.js       RULES — the level-design contract, shared by both blocks
   world/kit.js         the shared prop kit: tables, lamps, bins, the nest, the pool
   world/level.js       LEVEL 1 — the block: plaza, café row, cart corner. Flat.
-  world/level2.js      LEVEL 2 — The Hotel (Outside): forecourt, fire escape, terrace, roof
+  world/level2.js      LEVEL 2 — The Hotel (Outside): forecourt, balconies, terrace, roof
   world/levels.js      the registry: goal, tasks, teach copy, bait rules, endings, per level
   world/collide.js     the collider format, and going round things (pure, unit tested)
   world/pickups.js     the money
@@ -230,6 +230,24 @@ That's why `words.js` and `rank.js` are separate from `hud.js`.
   "buried" is a volume test and does not care whether anything can be stopped by
   it. Put nothing takeable inside one.
 
+- **A coin on the far side of a fountain is looking at the fountain.** Its one
+  sightline to the camera leaves at 38°, and on a 3.2m basin with a 2.3m
+  centrepiece that ray goes straight through the stem and the dish. Wishing coins
+  now sit only in the arc where the ray leaves outward, and there are five rather
+  than six, because a basin that size cannot hold six coins and a shiny with a
+  beak-length between every pair. Level 1's basin is 5.2m and its coins sit
+  further out than its bowl is wide, which is why it never came up.
+- **A dark band across the foreground is a third of the frame the lamps never
+  reach.** A kerb gives the forecourt an edge and is worth having; the strip of
+  road first drawn beyond it took the dusk median from 53 to 42 against a floor
+  of 48. Narrow, and no darker than the paving.
+- **Legible in the source is not legible on screen.** The kid was moved onto the
+  terrace and became invisible — a slightly shorter adult among a maître d', a
+  busser and two diners, and a playtester could not tell who to trade with.
+  Colour and props did not fix it; a *silhouette* did. She sits, and nothing else
+  in either block sits. When a character has to be identified at the distance
+  this camera sits, change the shape, not the shade.
+
 ## Level-design rules (asserted, not aspirational)
 
 In `RULES` in `world/level.js`, enforced by `smoke.mjs`:
@@ -284,9 +302,9 @@ smoke, and the ending copy. If a second block would need a different one, it is
 level data; if both need the same one, it is in `world/rules.js`.
 
 - **Level 1 — the block** (`level.js`). Flat, $20, starts at `dayStart: 0`.
-- **Level 2 — The Hotel (Outside)** (`level2.js`). Four decks (0 / 2.0 / 5.4 /
-  9.2, nest at 12.35), $30, starts at `dayStart: 0.42` so the lamps catch at
-  4m08s. `docs/level-2-brief.html` is the spec.
+- **Level 2 — The Hotel (Outside)** (`level2.js`). Four decks (0 / 3.2 / 5.4 /
+  9.2, nest at 12.35), $30, ±32 wide, starts at `dayStart: 0.42` so the lamps
+  catch at 4m08s. `docs/level-2-brief.html` is the spec.
 
   Playtested and revised once: it reads as **too big a scale leap to follow the
   block directly**, so it is parked for slot 3 or 4. That is why the goal is $30

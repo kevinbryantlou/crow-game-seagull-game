@@ -28,7 +28,13 @@ import { NightLights } from '../render/nightlights.js';
 import { makeKit } from './kit.js';
 import { RULES } from './rules.js';
 
-export const BOUNDS = { minX: -25, maxX: 25, minZ: -13, maxZ: 15 };
+/**
+ * Wider than the block. The courtyard read as cramped at ±25 — a fountain, a
+ * garden, an entrance and a loading bay inside fifty metres is a lot of objects
+ * per square metre, and the fixed camera cannot back off to compensate. Sixty-
+ * four metres of frontage is what a hotel wants anyway.
+ */
+export const BOUNDS = { minX: -32, maxX: 32, minZ: -13, maxZ: 16 };
 
 /**
  * The four floors, and the only numbers in this file that anything else needs.
@@ -36,29 +42,34 @@ export const BOUNDS = { minX: -25, maxX: 25, minZ: -13, maxZ: 15 };
  * Every height in the level is written as one of these plus an offset, so a deck
  * can be moved without hunting for the props standing on it — and so the climb
  * between two of them can be read off rather than measured. RULES.maxUnbrokenClimb
- * is 9 and the largest gap here is 5.4; every one of them is broken up further by
- * something to stand on.
+ * is 9 and the largest gap here is 3.8.
+ *
+ * `balcony` used to be `escape`, at 2.0, and was a fire escape bolted to the
+ * front of the building. That made sense while the ground floor was a service
+ * yard and stopped making sense the moment it became a forecourt: hotels do not
+ * put fire escapes across their frontage. Juliet balconies do the same three
+ * jobs — a rest on the way up, somewhere to put a coin, and something to draw
+ * the eye above the ground — and they belong on the building.
  */
-export const DECK = { yard: 0, escape: 2.0, terrace: 5.4, roof: 9.2 };
+export const DECK = { forecourt: 0, balcony: 3.2, terrace: 5.4, roof: 9.2 };
 
-/**
- * The fountain is on the ground, in the middle of the forecourt garden, where a
- * hotel would actually put one. It spent a version of this level on the roof
- * terrace as a plunge pool, which was a good excuse to prove the water code
- * works at height and a bad piece of level design: it put the dive, the money
- * and the guards all on the same deck, and left the ground floor reading as
- * nothing but a loading bay.
- */
-const POOL = { x: -11, z: 8.5, r: 4.2 };
-const LECTERN = { x: -15.5, z: -3.5 };
-const TANK = { x: -16, z: -9 };
-const CRADLE = { x: 14, z: 2.4, y: 4.0 };
+const POOL = { x: -16, z: 9, r: 3.2 };
+const LECTERN = { x: -24, z: -3.5 };
+const TANK = { x: -22, z: -9 };
+const CRADLE = { x: 7, z: 2.4, y: 4.0 };
 /** The guest entrance, and the service door at the loading end. */
-const ENTRANCE = { x: -11, z: 1.5 };
-const SERVICE = { x: 13, z: 1.5 };
-const DOCK = { x: 18, z: 5.5 };
-/** Where the kid sits — on the terrace, one hop inside the parapet gap. */
-const KID = { x: -5, z: -1.45 };
+const ENTRANCE = { x: -4, z: 1.5 };
+const SERVICE = { x: 17, z: 1.5 };
+const DOCK = { x: 24, z: 5.5 };
+/**
+ * Where the kid sits — on the parapet, feet over the courtyard, at the end of
+ * the terrace furthest from the restaurant. Sitting on a wall is a silhouette
+ * nobody else in the game has.
+ */
+const KID = { x: -3, z: 1.2 };
+/** Windows on the frontage, each with a shallow balcony under it. */
+const BALCONIES = [-27, -20, -13, 3, 10, 23, 29];
+
 /**
  * Five tables, and each one holds exactly one idea: loose change, the tip glass,
  * the check under the lantern, the chips, more loose change. Level 1's cart
@@ -66,8 +77,8 @@ const KID = { x: -5, z: -1.45 };
  * lucky dip, and the fix was to give each surface one story.
  */
 const TABLES = [
-  { x: -3, z: -2 }, { x: 3.5, z: -3.5 }, { x: -9, z: -1.5 },
-  { x: 7.5, z: -1 }, { x: -18, z: -1.5 },
+  { x: -8, z: -2 }, { x: 0, z: -3.5 }, { x: -15, z: -1.5 },
+  { x: 8, z: -1 }, { x: 16, z: -3 },
 ];
 
 export function buildLevel() {
@@ -83,129 +94,133 @@ export function buildLevel() {
     addSkyline, makeNest, addPool,
   } = kit;
 
-  // ── the yard floor ────────────────────────────────────────────────────────
-  // Wet asphalt rather than the plaza's warm paving: the yard is the bottom of a
-  // light well, it is in shadow all day, and it should look like somewhere you
-  // would rather not be for long.
-  // The same paving as the block. It was one step darker — "wet asphalt, the
-  // bottom of a light well" — and the fiction was not worth what it cost: the
-  // yard is the largest surface in the frame from every camera position on the
-  // level, and a 15% darker floor took the whole median under the navigability
-  // floor after sundown. The yard reads as a yard from what is standing in it.
-  const ground = plane(140, 90, PAL.paving, { receive: true });
+  // ── the forecourt floor ───────────────────────────────────────────────────
+  const ground = plane(170, 96, PAL.paving, { receive: true });
   root.add(ground);
   for (const [x, z, w, d, c] of [
-    [-14, 8, 22, 14, PAL.pavingMid], [10, 9, 26, 12, PAL.paving], [0, 3.4, 50, 4, PAL.stoneMid],
+    [-16, 9, 26, 16, PAL.pavingMid], [18, 10, 30, 14, PAL.paving], [0, 3.4, 64, 4, PAL.stoneMid],
   ]) {
-    const s = plane(w, d, c, { receive: true });
-    s.position.set(x, 0.012, z);
-    root.add(s);
+    const sl = plane(w, d, c, { receive: true });
+    sl.position.set(x, 0.012, z);
+    root.add(sl);
   }
 
-  // ── backdrop, and the far wall of the light well ──────────────────────────
+  // A kerb and a strip of road along the near edge, so the forecourt stops
+  // somewhere instead of fading out into paving. It is also what the guest is
+  // waiting for a car on.
+  {
+    // Narrow, and no darker than the paving. A wide dark band across the
+    // foreground is a third of the frame the lamps never reach, and it took the
+    // forecourt's dusk median from 53 to 42 against a floor of 48 — a kerb is
+    // worth having, a black river in front of it is not.
+    const road = plane(170, 5, PAL.stoneMid, { receive: true });
+    road.position.set(0, 0.008, 19);
+    root.add(road);
+    const kerb = box(170, 0.34, 1.2, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
+    kerb.position.set(0, 0.17, 15.8);
+    root.add(kerb);
+    solid(0, 15.8, 170, 1.2, 0.34);
+  }
+
+  // ── backdrop ──────────────────────────────────────────────────────────────
   addSkyline([
-    [13, 26, PAL.stoneMid], [16, 21, PAL.terracotta], [11, 30, PAL.bark],
-    [18, 24, PAL.stoneMid], [14, 19, PAL.terracotta],
-  ], -26, { startX: -42 });
-  solid(0, -22, 140, 10, 26);
+    [15, 26, PAL.stoneMid], [18, 21, PAL.terracotta], [13, 30, PAL.bark],
+    [20, 24, PAL.stoneMid], [16, 19, PAL.terracotta],
+  ], -26, { startX: -50 });
+  solid(0, -22, 170, 10, 26);
 
   // Invisible bounds. Higher than level 1's, because this block is climbed.
-  solid(BOUNDS.minX - 2, 0, 4, 90, 34, 0, { perch: false });
-  solid(BOUNDS.maxX + 2, 0, 4, 90, 34, 0, { perch: false });
-  solid(0, BOUNDS.maxZ + 2.5, 140, 4, 34, 0, { perch: false });
+  solid(BOUNDS.minX - 2, 0, 4, 96, 34, 0, { perch: false });
+  solid(BOUNDS.maxX + 2, 0, 4, 96, 34, 0, { perch: false });
+  solid(0, BOUNDS.maxZ + 2.5, 170, 4, 34, 0, { perch: false });
 
   // ══════════════════════════════════════════════════════════════════════════
   // THE HOTEL — one mass, with the terrace on top of it
   // ══════════════════════════════════════════════════════════════════════════
-  // x −25…25, z −12…1.5. Its front face at z = 1.5 is the wall the fire escape
-  // is bolted to and the wall the yard looks at.
   {
     const g = new THREE.Group();
-    // Stone, not terracotta. It was terracotta, and a fifty-metre wall of it
+    // Stone, not terracotta. It was terracotta, and a sixty-metre wall of it
     // facing away from a sun that comes from behind the block is the darkest
     // thing anyone has ever put on screen: it filled a third of the frame, took
     // the 5th-percentile luminance to 6 against a floor of 24, and dragged the
     // whole dusk average red at the exact hour the palette says shade goes
     // violet. Both failures were one material.
-    const face = box(50, DECK.terrace, 13.5, PAL.stone, { up: PAL.stone, down: PAL.shade });
+    const face = box(64, DECK.terrace, 13.5, PAL.stone, { up: PAL.stone, down: PAL.shade });
     face.position.set(0, DECK.terrace / 2, -5.25);
     g.add(face);
 
-    // A painted dado at pavement level, so fifty metres of wall has a horizon in
-    // it. It was terracotta for one round of tuning and that was the same
-    // mistake in miniature — at dusk the band alone was most of the darkest 5%
-    // of the frame and most of the red in its average. An accent on a wall this
-    // big has to be lighter than the wall, not darker.
-    const dado = box(50.3, 1.0, 13.6, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
+    // A painted dado at pavement level, so the frontage has a horizon in it. It
+    // was terracotta for one round of tuning and that was the same mistake in
+    // miniature: an accent on a wall this big has to be lighter than the wall.
+    const dado = box(64.3, 1.0, 13.6, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
     dado.position.set(0, 0.5, -5.25);
     g.add(dado);
 
-    // A band of service windows onto the yard. They come on at dusk and they are
-    // the only thing that stops the hotel wall being fifty metres of flat brick.
-    const lit = [];
-    for (const wx of [-19, -14.5, 1.5, 6, 10.5, 19]) {
-      // waterLit, not water. Six dark-teal panels on a pale wall were the last
-      // thing standing between this level and the navigability floor — in
-      // daylight they measured darker than the shadow they sat in, which is also
-      // just wrong: glass seen from outside on a sunny afternoon is a mirror of
-      // the sky, not a hole.
-      const win = box(2.2, 1.5, 0.22, PAL.waterLit, { shadow: false });
-      win.position.set(wx, 3.3, 1.62);
+    /**
+     * Windows, each with a shallow Juliet balcony under it.
+     *
+     * They replace the fire escape and do its job better. A ledge 0.55 deep is
+     * a perch, a place to leave a coin, and — strung along sixty metres of
+     * frontage at 3.2m — the thing that tells a player at ground level that this
+     * block goes up. The fire escape said the same thing by being an eyesore.
+     *
+     * waterLit, not water: six dark-teal panels on a pale wall were the last
+     * thing standing between this level and the navigability floor, and in
+     * daylight they measured darker than the shadow they sat in. Glass seen from
+     * outside on a sunny afternoon is a mirror of the sky, not a hole.
+     */
+    for (const wx of BALCONIES) {
+      const win = box(2.0, 1.9, 0.22, PAL.waterLit, { shadow: false });
+      win.position.set(wx, DECK.balcony + 1.1, 1.62);
       g.add(win);
-      lit.push(win);
+      night.add(win, PAL.goldLit, { peak: 0.5, warm: 3.6, delay: 1.0 + Math.random() * 1.2 });
+
+      const slab = box(1.9, 0.14, 0.6, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
+      slab.position.set(wx, DECK.balcony - 0.07, 1.85);
+      g.add(slab);
+      const rail = box(1.9, 0.06, 0.06, PAL.steelDark);
+      rail.position.set(wx, DECK.balcony + 0.62, 2.13);
+      g.add(rail);
+      for (const rx of [-0.75, -0.25, 0.25, 0.75]) {
+        g.add(at(cyl(0.03, 0.03, 0.64, 4, PAL.steelDark), wx + rx, DECK.balcony + 0.32, 2.13));
+      }
+      // Thin, with air underneath, so the crow flies below the whole frontage
+      // and people walk under it.
+      solid(wx, 1.85, 1.9, 0.6, DECK.balcony, DECK.balcony - 0.2);
+      perch(wx, DECK.balcony, 1.85);
     }
-    night.add(lit, PAL.goldLit, { peak: 0.52, warm: 3.6, delay: 1.0 });
-
-    // The kitchen door — propped open, which is why the chef is standing in it.
-    const door = box(1.9, 2.9, 0.22, PAL.barkShade, { shadow: false });
-    door.position.set(-10, 1.45, 1.62);
-    g.add(door);
-    night.add(door, 0xe0a860, { peak: 0.62, warm: 2.6, delay: 0.5 });
-    night.addPool(root, -10, 3.6, 4.6, { profile: 'stall', peak: 0.74, warm: 2.6, delay: 0.5 });
-
-    // A caged bulkhead lamp further along, so the yard has two sources and one
-    // dark stretch between them rather than one lit patch and a void.
-    const cage = at(ico(0.16, 0, PAL.goldLit, { shadow: false }), 12, 3.2, 1.75);
-    cage.material = mat(PAL.goldLit);
-    g.add(cage);
-    g.add(at(box(0.34, 0.06, 0.3, PAL.steelDark), 12, 3.44, 1.75));
-    night.add(cage, PAL.goldLit, { peak: 0.9, warm: 1.5, delay: 1.5, flicker: true });
-    night.addPool(root, 12, 2.9, 4.4, { profile: 'stall', peak: 0.62, warm: 1.5, delay: 1.5, flicker: true });
 
     root.add(g);
-    solid(0, -5.25, 50, 13.5, DECK.terrace);
+    solid(0, -5.25, 64, 13.5, DECK.terrace);
   }
 
   // ── the terrace deck surface and its parapet ──────────────────────────────
   {
-    const deck = plane(49, 13, PAL.stone, { receive: true });
+    const deck = plane(63, 13, PAL.stone, { receive: true });
     deck.position.set(0, DECK.terrace + 0.014, -5.25);
     root.add(deck);
 
-    // The front parapet, in two spans with a gap at the head of the fire escape.
-    // The gap is not decoration: the parapet is 0.7 above the deck, which is
-    // over the crow's 0.34 scramble, so without a way through, arriving by the
-    // stairs would mean one more flap for no reason at the top of every climb.
-    const wall = (cx, w) => {
-      const b = box(w, 0.7, 0.6, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
-      b.position.set(cx, DECK.terrace + 0.35, 1.2);
-      root.add(b);
-      solid(cx, 1.2, w, 0.6, DECK.terrace + 0.7, DECK.terrace);
-      return b;
-    };
-    const parapetL = wall(-15.5, 19);
-    const parapetR = wall(10.75, 28.5);
-    // The near-side parapet is the one thing on this block that regularly stands
-    // between the camera and a crow on the terrace, so it fades like the café
-    // awning does on level 1.
-    occluders.push(parapetL, parapetR);
-    perch(-15.5, DECK.terrace + 0.7, 1.2);
-    perch(18, DECK.terrace + 0.7, 1.2);
-    perch(4, DECK.terrace + 0.7, 1.2);
+    /**
+     * The front parapet, unbroken.
+     *
+     * It used to have a gap in it at the head of the fire escape, so a crow
+     * arriving on foot did not have to clear a 0.7m lip with its 0.34m scramble.
+     * With the fire escape gone nobody arrives on foot, and an unbroken parapet
+     * is both a cleaner frontage and — because it is the one ledge on the block
+     * a person could sit on — where the kid ended up.
+     */
+    const parapet = box(63, 0.7, 0.6, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
+    parapet.position.set(0, DECK.terrace + 0.35, 1.2);
+    root.add(parapet);
+    solid(0, 1.2, 63, 0.6, DECK.terrace + 0.7, DECK.terrace);
+    // The one thing on this block that regularly stands between the camera and a
+    // crow on the terrace, so it fades like the café awning does on level 1.
+    occluders.push(parapet);
+    for (const px of [-24, -12, 4, 20]) perch(px, DECK.terrace + 0.7, 1.2);
 
     // Ends and the back edge, so the terrace is a room rather than a plateau.
     for (const [cx, cz, w, d] of [
-      [-24.6, -5.25, 0.6, 13.5], [24.6, -5.25, 0.6, 13.5], [8.5, -11.7, 33, 0.6],
+      [-31.6, -5.25, 0.6, 13.5], [31.6, -5.25, 0.6, 13.5], [10.5, -11.7, 43, 0.6],
     ]) {
       const b = box(w, 0.7, d, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
       b.position.set(cx, DECK.terrace + 0.35, cz);
@@ -219,34 +234,34 @@ export function buildLevel() {
   // and it is the deck the nest sits above.
   {
     const g = new THREE.Group();
-    const mass = box(16, DECK.roof, 6.5, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
-    mass.position.set(-16, DECK.roof / 2, -8.75);
+    const mass = box(18, DECK.roof, 6.5, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
+    mass.position.set(-21, DECK.roof / 2, -8.75);
     g.add(mass);
     root.add(g);
-    solid(-16, -8.75, 16, 6.5, DECK.roof);
+    solid(-21, -8.75, 18, 6.5, DECK.roof);
 
-    const deck = plane(15.6, 6.1, PAL.stoneMid, { receive: true });
-    deck.position.set(-16, DECK.roof + 0.014, -8.75);
+    const deck = plane(17.6, 6.1, PAL.stoneMid, { receive: true });
+    deck.position.set(-21, DECK.roof + 0.014, -8.75);
     root.add(deck);
 
-    const rail = box(16, 0.6, 0.5, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
-    rail.position.set(-16, DECK.roof + 0.3, -5.75);
+    const rail = box(18, 0.6, 0.5, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
+    rail.position.set(-21, DECK.roof + 0.3, -5.75);
     root.add(rail);
-    solid(-16, -5.75, 16, 0.5, DECK.roof + 0.6, DECK.roof);
-    perch(-16, DECK.roof + 0.6, -5.75);
+    solid(-21, -5.75, 18, 0.5, DECK.roof + 0.6, DECK.roof);
+    perch(-21, DECK.roof + 0.6, -5.75);
 
     // The way in. A terrace with two staff on it and no door says everybody
     // climbed the fire escape, which is both silly and — now that the kid has
     // moved up here — the opposite of what the level is trying to say about the
     // fire escape being optional.
     const door = box(1.7, 2.4, 0.22, PAL.barkShade, { shadow: false });
-    door.position.set(-14, DECK.terrace + 1.2, -5.38);
+    door.position.set(-19, DECK.terrace + 1.2, -5.38);
     root.add(door);
     night.add(door, 0xe0a860, { peak: 0.5, warm: 2.8, delay: 1.3 });
-    night.addPool(root, -14, -4.4, 3.6,
+    night.addPool(root, -19, -4.4, 3.6,
       { profile: 'stall', peak: 0.5, warm: 2.8, delay: 1.3, y: DECK.terrace });
     const frame = box(2.1, 2.7, 0.1, PAL.stone, { shadow: false });
-    frame.position.set(-14, DECK.terrace + 1.35, -5.45);
+    frame.position.set(-19, DECK.terrace + 1.35, -5.45);
     root.add(frame);
   }
 
@@ -255,15 +270,15 @@ export function buildLevel() {
   // from the pool end is broken up too.
   {
     const g = new THREE.Group();
-    g.add(at(box(4.5, 2.4, 4, PAL.steelDark, { up: PAL.steel, down: PAL.shade }), 19, DECK.terrace + 1.2, -9.5));
-    g.add(at(cyl(0.5, 0.5, 1.0, 8, PAL.steel, { up: PAL.silver, down: PAL.steelDark }), 18, DECK.terrace + 3.1, -9.5));
-    g.add(at(cyl(0.62, 0.62, 0.14, 8, PAL.steelDark, { up: PAL.steel }), 18, DECK.terrace + 3.65, -9.5));
+    g.add(at(box(4.5, 2.4, 4, PAL.steelDark, { up: PAL.steel, down: PAL.shade }), 24, DECK.terrace + 1.2, -9.5));
+    g.add(at(cyl(0.5, 0.5, 1.0, 8, PAL.steel, { up: PAL.silver, down: PAL.steelDark }), 23, DECK.terrace + 3.1, -9.5));
+    g.add(at(cyl(0.62, 0.62, 0.14, 8, PAL.steelDark, { up: PAL.steel }), 23, DECK.terrace + 3.65, -9.5));
     const svc = box(1.3, 2.0, 0.2, PAL.steel, { shadow: false });
-    svc.position.set(19, DECK.terrace + 1.0, -7.42);
+    svc.position.set(24, DECK.terrace + 1.0, -7.42);
     g.add(svc);
     root.add(g);
-    solid(19, -9.5, 4.5, 4, DECK.terrace + 2.4, DECK.terrace);
-    perch(19, DECK.terrace + 2.4, -9.5);
+    solid(24, -9.5, 4.5, 4, DECK.terrace + 2.4, DECK.terrace);
+    perch(24, DECK.terrace + 2.4, -9.5);
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -308,50 +323,6 @@ export function buildLevel() {
     // here than it did on the memorial: you arrive at this one out of breath.
     solid(TANK.x, TANK.z, 3.35, 3.35, legTop + 2.32, legTop);
     perch(TANK.x, legTop + 2.32, TANK.z);
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // THE FIRE ESCAPE — the authored route up, and the one the kid sits on
-  // ══════════════════════════════════════════════════════════════════════════
-  {
-    const g = new THREE.Group();
-    // Landings are thin: 0.25 of steel with air under them, so the crow can fly
-    // beneath the whole assembly and the porter can walk under it.
-    const landing = (cx, top) => {
-      const b = box(3.0, 0.12, 1.8, PAL.steelDark, { up: PAL.steel, down: PAL.shade });
-      b.position.set(cx, top - 0.06, 2.3);
-      g.add(b);
-      for (const s of [-1, 1]) {
-        const rail = box(3.0, 0.07, 0.07, PAL.steel);
-        rail.position.set(cx, top + 0.75, 2.3 + s * 0.85);
-        g.add(rail);
-        for (const rx of [-1.4, 0, 1.4]) {
-          g.add(at(cyl(0.04, 0.04, 0.8, 4, PAL.steel), cx + rx, top + 0.4, 2.3 + s * 0.85));
-        }
-      }
-      solid(cx, 2.3, 3.0, 1.8, top, top - 0.25);
-      perch(cx, top, 2.3);
-    };
-    landing(-5.0, DECK.escape);
-    landing(-1.6, 3.65);
-    landing(-5.0, 5.25);
-
-    // The flights between them. Visual only — the crow has wings and a staircase
-    // it cannot use is a staircase that only ever gets in the way.
-    // Only the two diagonals. There was a third, from the ground to the first
-    // landing, and because it was vertical it rendered as a 1.8m slab stood on
-    // end against the wall.
-    for (const [x0, x1, y0, y1] of [[-5.0, -1.6, DECK.escape, 3.65], [-1.6, -5.0, 3.65, 5.25]]) {
-      const dx = x1 - x0, dy = y1 - y0;
-      const len = Math.hypot(dx, dy) || 1.8;
-      const flight = box(len, 0.09, 0.9, PAL.steel, { up: PAL.silver, down: PAL.shade });
-      flight.position.set((x0 + x1) / 2, (y0 + y1) / 2, 2.3);
-      flight.rotation.z = Math.atan2(dy, dx);
-      g.add(flight);
-    }
-    root.add(g);
-    // It stands between the camera and anything on the hotel wall behind it.
-    occluders.push(...g.children.filter((c) => c.isMesh));
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -423,11 +394,11 @@ export function buildLevel() {
     for (const [sx, sz] of [[-0.85, -0.28], [-0.85, 0.28], [0.85, -0.28], [0.85, 0.28]]) {
       g.add(at(box(0.06, 0.36, 0.06, PAL.steel), sx, 0.2, sz));
     }
-    g.position.set(18, DECK.terrace, -2);
+    g.position.set(22, DECK.terrace, -2);
     g.rotation.y = 0.4;
     root.add(g);
-    solid(18, -2, 2.1, 1.4, DECK.terrace + 0.48, DECK.terrace);
-    perch(18, DECK.terrace + 0.48, -2);
+    solid(22, -2, 2.1, 1.4, DECK.terrace + 0.48, DECK.terrace);
+    perch(22, DECK.terrace + 0.48, -2);
   }
 
   // Festoon lights, strung the length of the terrace on two poles. They are the
@@ -435,14 +406,14 @@ export function buildLevel() {
   {
     const g = new THREE.Group();
     const bulbs = [];
-    for (const px of [-21, 21]) {
+    for (const px of [-28, 28]) {
       g.add(at(cyl(0.07, 0.09, 3.0, 6, PAL.steelDark), px, DECK.terrace + 1.5, -1.4));
     }
-    const wire = box(42, 0.03, 0.03, PAL.steelDark, { shadow: false });
+    const wire = box(56, 0.03, 0.03, PAL.steelDark, { shadow: false });
     wire.position.set(0, DECK.terrace + 2.86, -1.4);
     g.add(wire);
     for (let i = 0; i < 11; i++) {
-      const x = -20 + i * 4;
+      const x = -27 + i * 5.4;
       // A shallow catenary, faked with a cosine. Nobody will measure it.
       const sag = Math.cos((i / 10 - 0.5) * Math.PI) * 0.34;
       const b = at(ico(0.13, 0, PAL.goldLit, { shadow: false }), x, DECK.terrace + 2.78 - sag, -1.4);
@@ -454,14 +425,14 @@ export function buildLevel() {
     night.add(bulbs, PAL.goldLit, { peak: 0.92, warm: 2.2, delay: 0.35 });
     // Three overlapping plateaus rather than eleven point sources: a strung wire
     // lights a strip, and eleven pools would cost eleven quads to say so.
-    for (const px of [-13, 0, 12]) {
-      night.addPool(root, px, -1.4, 6.4,
+    for (const px of [-18, 0, 18]) {
+      night.addPool(root, px, -1.4, 8.0,
         { profile: 'stall', peak: 0.52, warm: 2.2, delay: 0.35, y: DECK.terrace });
     }
   }
 
-  addPlanter(-20.5, -1.2, DECK.terrace, { w: 1.5 });
-  addPlanter(22, -6.5, DECK.terrace, { w: 1.5 });
+  addPlanter(-28, -1.2, DECK.terrace, { w: 1.5 });
+  addPlanter(28, -6.5, DECK.terrace, { w: 1.5 });
 
   // The kid's bench, on the terrace a step inside the gap in the parapet.
   //
@@ -469,11 +440,11 @@ export function buildLevel() {
   // wrong: trading shinies is core loop, and it put the core loop on a 3×1.8m
   // steel platform three metres up a wall — the single most awkward place to
   // land on the block. The fire escape stays; nothing requires it any more.
-  addBench(KID.x, KID.z + 0.95);
+
 
   // Aerials and chimney pots, for the silhouette. No colliders — they are too
   // thin to land on and pretending otherwise would only produce invisible walls.
-  for (const [cx, cz, h] of [[-21, -10.5, 1.4], [-12.5, -10.8, 1.1], [-19, -6.8, 0.9]]) {
+  for (const [cx, cz, h] of [[-27, -10.5, 1.4], [-16.5, -10.8, 1.1], [-25, -6.8, 0.9]]) {
     const pot = cyl(0.22, 0.26, h, 6, PAL.terracotta, { up: PAL.terracottaLit, down: PAL.shade });
     pot.position.set(cx, DECK.roof + h / 2, cz);
     root.add(pot);
@@ -484,53 +455,60 @@ export function buildLevel() {
     for (let i = 0; i < 5; i++) {
       a.add(at(box(0.03, 0.03, 1.1 - i * 0.13, PAL.steelDark, { shadow: false }), 0, 1.5 + i * 0.22, 0));
     }
-    a.position.set(-10.5, DECK.roof, -10.8);
+    a.position.set(-14.5, DECK.roof, -10.8);
     root.add(a);
   }
 
   // ══════════════════════════════════════════════════════════════════════════
   // THE FORECOURT — the guest side, and the reason to be on the ground at all
   // ══════════════════════════════════════════════════════════════════════════
-  // It was a service yard: bins, crates, a van, and nothing a person would ever
-  // walk into on purpose. A hotel has a front, the front is where a fountain
-  // belongs, and giving the ground floor something worth looking at is what
-  // stops the whole level being "the terrace, plus a walk".
-  const FOUNTAIN_ = addPool(POOL.x, POOL.z, POOL.r, DECK.yard, { tag: 'fountain-rim' });
+  // Laid out for air rather than for density. The first version put a fountain,
+  // a garden, an entrance and a loading bay inside fifty metres and read as a
+  // junk drawer: the fixed camera cannot back off, so the only lever is space.
+  // The block is fourteen metres wider, the fountain is a metre smaller, and the
+  // garden is four corner beds instead of a continuous band round the water.
+  const FOUNTAIN_ = addPool(POOL.x, POOL.z, POOL.r, DECK.forecourt, { tag: 'fountain-rim' });
   const FOUNTAIN = FOUNTAIN_.spec;
   root.userData.fountainWater = FOUNTAIN_.water;
   {
     const g = FOUNTAIN_.group;
-    const stem = cyl(0.32, 0.5, 1.5, 8, PAL.stone, { up: PAL.stone, down: PAL.shade });
-    stem.position.y = FOUNTAIN.rim + 0.75;
+    const stem = cyl(0.26, 0.42, 1.4, 8, PAL.stone, { up: PAL.stone, down: PAL.shade });
+    stem.position.y = FOUNTAIN.rim + 0.7;
     g.add(stem);
-    const dish = cyl(1.15, 0.34, 0.34, 12, PAL.stone, { up: PAL.stone, down: PAL.shade });
-    dish.position.y = FOUNTAIN.rim + 1.62;
+    const dish = cyl(0.9, 0.3, 0.3, 12, PAL.stone, { up: PAL.stone, down: PAL.shade });
+    dish.position.y = FOUNTAIN.rim + 1.5;
     g.add(dish);
-    perch(POOL.x, FOUNTAIN.rim + 1.85, POOL.z);
+    perch(POOL.x, FOUNTAIN.rim + 1.7, POOL.z);
     // Faint, from under the water. The brief's rule is that nothing added may
     // outshine a pickup glint, and this is the largest emissive surface down here.
     night.add(FOUNTAIN_.water, PAL.water, { peak: 0.055, warm: 5.0, delay: 1.6 });
   }
 
-  // The garden the fountain stands in — four low kerbed beds, so the forecourt
-  // has a shape rather than being paving with things on it.
-  //
-  // At 0.3 they are under the crow's 0.34 scramble and the walker's 0.45 step,
-  // so they stop nobody and are pure silhouette. The one thing they can still do
-  // is swallow a coin, so nothing takeable goes inside one.
-  for (const [gx, gz, gw, gd] of [
-    [-11, 2.8, 13, 1.0], [-11, 14.2, 13, 1.0], [-17, 8.5, 1.0, 12.4], [-5, 8.5, 1.0, 12.4],
-  ]) {
-    const bed = box(gw, 0.3, gd, PAL.canopy, { up: PAL.canopyLit, down: PAL.canopyShade });
+  // Four corner beds rather than a ring. At 0.3 they are under the crow's 0.34
+  // scramble and a walker's 0.45 step, so they stop nobody and are pure
+  // silhouette — and they will still swallow a coin, so nothing takeable goes
+  // inside one.
+  for (const [gx, gz] of [[-21, 5.5], [-11, 5.5], [-21, 12.5], [-11, 12.5]]) {
+    const bed = box(3.0, 0.3, 1.2, PAL.canopy, { up: PAL.canopyLit, down: PAL.canopyShade });
     bed.position.set(gx, 0.15, gz);
     root.add(bed);
-    const kerb = box(gw + 0.3, 0.22, gd + 0.3, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
+    // Shrubs. Without them a bed is a green rectangle lying on the ground; with
+    // three it is planting, for the cost of three icosahedrons.
+    for (let i = 0; i < 3; i++) {
+      const shrub = ico(0.34 + Math.random() * 0.12, 0, PAL.canopy,
+        { up: PAL.canopyLit, down: PAL.canopyShade });
+      shrub.position.set(gx - 0.95 + i * 0.95 + (Math.random() - 0.5) * 0.2, 0.42, gz + (Math.random() - 0.5) * 0.3);
+      shrub.rotation.set(Math.random(), Math.random(), Math.random());
+      root.add(shrub);
+    }
+    const kerb = box(3.3, 0.22, 1.5, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
     kerb.position.set(gx, 0.11, gz);
     root.add(kerb);
-    solid(gx, gz, gw + 0.3, gd + 0.3, 0.3);
+    solid(gx, gz, 3.3, 1.5, 0.3);
   }
 
-  // The entrance canopy. The one deliberate near-side occluder on this deck.
+  // The entrance canopy. The one deliberate near-side occluder on this deck, and
+  // a 3.42m perch on the way up.
   {
     const g = new THREE.Group();
     const awn = box(7.0, 0.24, 2.4, PAL.awning, { up: PAL.awningLit, down: PAL.awning });
@@ -550,27 +528,26 @@ export function buildLevel() {
     night.add(door, 0xe0a860, { peak: 0.66, warm: 2.6, delay: 0.5 });
     g.position.set(ENTRANCE.x, 0, ENTRANCE.z);
     root.add(g);
-    occluders.push(awn, ...g.children.filter((c) => c.isMesh && c.position.z > 1.0));
+    occluders.push(awn);
     solid(ENTRANCE.x, ENTRANCE.z + 1.3, 7.0, 2.4, 3.42, 3.1);
     perch(ENTRANCE.x - 2, 3.42, ENTRANCE.z + 1.3);
     perch(ENTRANCE.x + 2, 3.42, ENTRANCE.z + 1.3);
     night.addPool(root, ENTRANCE.x, ENTRANCE.z + 2.0, 5.0, { profile: 'stall', peak: 0.76, warm: 2.6, delay: 0.5 });
   }
 
-  addBench(-20, 6.5, Math.PI / 2);
-  addBench(-20, 11.5, Math.PI / 2);
-  addBench(-2.0, 9.5, Math.PI / 2);
-  addLamp(-22.5, 9.0);
-  addLamp(-2.0, 4.5);
-  addTree(-23.5, 13.5, 0.85, { occlude: true });
-  addPlanter(-1.5, 13.5, 0, { w: 1.4 });
+  addBench(-26, 8, Math.PI / 2);
+  addBench(-8, 14);
+  addBench(3, 7, Math.PI / 2);
+  addLamp(-28, 13);
+  addLamp(-8, 5.5);
+  addLamp(8, 12.5);
+  addLamp(-16, 14.2);
+  addTree(-30, 4.5, 0.9);
+  addPlanter(1, 13.5, 0, { w: 1.4 });
 
   // ══════════════════════════════════════════════════════════════════════════
   // THE LOADING END — everything the forecourt is not
   // ══════════════════════════════════════════════════════════════════════════
-  // Half the ground floor is still back-of-house, because the chef has to be
-  // standing in something and because the crow needs one stretch of the block
-  // that is not a garden.
   {
     const door = box(1.9, 2.7, 0.22, PAL.barkShade, { shadow: false });
     door.position.set(SERVICE.x, 1.35, 1.62);
@@ -578,10 +555,10 @@ export function buildLevel() {
     night.add(door, 0xe0a860, { peak: 0.6, warm: 2.6, delay: 1.1 });
     night.addPool(root, SERVICE.x, 3.4, 4.4, { profile: 'stall', peak: 0.7, warm: 2.6, delay: 1.1 });
   }
-  addLamp(9, 11);
-  addBin(6.5, 12.4, PAL.canopy);
-  addBin(8.0, 13.8, PAL.steel);
-  addBin(22.5, 9.5, PAL.canopy);
+  addLamp(20, 13.5);
+  addBin(11, 13.5, PAL.canopy);
+  addBin(12.6, 15, PAL.steel);
+  addBin(30.5, 9, PAL.canopy);
 
   const addCrates = (x, z, n = 3) => {
     const g = new THREE.Group();
@@ -601,9 +578,9 @@ export function buildLevel() {
     perch(x, top, z);
     return top;
   };
-  const dockCrateTop = addCrates(20.5, 4.2, 3);
-  addCrates(11.5, 6.6, 2);
-  const doorCrateTop = addCrates(11.0, 3.4, 1);
+  const dockCrateTop = addCrates(29, 3.5, 3);
+  addCrates(18, 7.5, 2);
+  const doorCrateTop = addCrates(14.5, 3.6, 1);
 
   // The loading dock — a raised lip, and the first thing to stand on out of the
   // forecourt. Everything about this block is a staircase.
@@ -638,15 +615,34 @@ export function buildLevel() {
       w.position.set(wx, 0.45, wz);
       g.add(w);
     }
-    g.position.set(17, 0, 11);
+    g.position.set(25, 0, 11.5);
     root.add(g);
     occluders.push(body, cab);
     // Body and cab share a z extent exactly. They used to differ by 0.1, which
     // left a 0.1m notch at the join — and a walker steered into that notch is in
     // a concave pocket it cannot commit its way out of.
-    solid(17, 11, 4.8, 2.2, 2.55);
-    solid(13.4, 11, 2.4, 2.2, 1.85);
-    perch(17, 2.55, 11);
+    solid(25, 11.5, 4.8, 2.2, 2.55);
+    solid(21.4, 11.5, 2.4, 2.2, 1.85);
+    perch(25, 2.55, 11.5);
+  }
+
+  /**
+   * The kid's pitch: her cup, and the trinkets she has already been given.
+   *
+   * Three tiny props on the parapet beside her, none of them takeable. They are
+   * the affordance — a person sitting on a wall with a row of bottle caps next
+   * to her is visibly the person who collects bottle caps, which is a thing the
+   * game can say without a marker or a tooltip.
+   */
+  {
+    const g = new THREE.Group();
+    g.add(at(cyl(0.055, 0.055, 0.016, 8, PAL.cloth[0], { up: PAL.clothLit[0], down: PAL.shade }), -0.32, 0.02, 0));
+    const marble = ico(0.055, 1, PAL.waterLit, { shadow: false });
+    marble.position.set(-0.1, 0.05, 0.06);
+    g.add(marble);
+    g.add(at(box(0.14, 0.02, 0.05, PAL.gold, { up: PAL.goldLit, down: PAL.shade }), 0.16, 0.02, -0.04));
+    g.position.set(KID.x + 0.85, DECK.terrace + 0.7, KID.z);
+    root.add(g);
   }
 
   return {
@@ -687,42 +683,43 @@ function pickupPlacements({ FOUNTAIN, tableTops, dockCrateTop, doorCrateTop }) {
   const add = (kind, value, x, y, z, extra = {}) =>
     p.push({ kind, value, pos: [x, y, z], ...extra });
 
-  const Y = DECK.yard, T = DECK.terrace, R = DECK.roof;
+  const Y = DECK.forecourt, T = DECK.terrace, R = DECK.roof;
 
   // — The forecourt: free, plentiful, and priced by the climb rather than by a
   //   guard. This is the level's whole argument in coin form.
   //
-  //   All of it outside the garden ring (x −17.5…−4.5, z 2.3…14.7): a bed is
-  //   only 0.3 tall and stops nobody, but it will happily swallow a penny. —
+  //   Spread over the wider block and kept out of the garden beds, which are
+  //   only 0.3 tall but will still swallow anything takeable. —
   for (const [x, z] of [
-    [-22.0, 4.0], [-19.5, 14.0], [-2.5, 6.5], [-1.0, 12.0], [-24.0, 7.5],
-    [2.5, 5.0], [4.0, 13.5], [12.0, 13.8], [22.0, 12.5], [-20.5, 14.3],
+    [-29, 8.5], [-24.5, 13.0], [-6.5, 8.5], [-2.0, 12.5], [-30.5, 11.5],
+    [5.5, 4.5], [6.0, 14.0], [15.0, 12.0], [27.5, 14.2], [-13.5, 14.2],
   ]) add('penny', 0.01, x, Y + 0.06, z);
-  for (const [x, z] of [[-24.0, 11.0], [-2.5, 14.5], [6.5, 8.5], [23.5, 5.5]]) {
+  for (const [x, z] of [[-31, 5.5], [-1.5, 6.0], [10.5, 8.5], [31, 6.0]]) {
     add('nickel', 0.05, x, Y + 0.06, z);
   }
   // On the loading dock rather than in front of it: at ground level the dock's
   // own 1.15m lip stood between this coin and the camera.
   add('nickel', 0.05, DOCK.x - 2.2, 1.15 + 0.06, DOCK.z);
-  for (const [x, z] of [[-21.5, 6.0], [1.0, 9.0], [12.0, 8.5], [-7.0, 15.0]]) {
+  for (const [x, z] of [[-30.5, 14.0], [3.5, 10.5], [16.5, 5.0], [-17.5, 14.2]]) {
     add('dime', 0.10, x, Y + 0.06, z);
   }
-  // In the drain grate by the door of the service end.
-  add('quarter', 0.25, 8.0, Y + 0.09, 11.5);
-  add('quarter', 0.25, 8.3, Y + 0.09, 12.2);
+  // In the drain grate by the service end.
+  add('quarter', 0.25, 12.5, Y + 0.09, 10.5);
+  add('quarter', 0.25, 12.8, Y + 0.09, 11.2);
 
   // The porter's open crate, and the chef's tin by the service door.
-  add('coins', 1.20, 20.5, dockCrateTop + 0.04, 4.2, { owner: 'porter' });
-  add('bill5', 5.00, 11.0, doorCrateTop + 0.04, 3.4, { owner: 'chef', label: 'THE TIN' });
+  add('coins', 1.20, 29, dockCrateTop + 0.04, 3.5, { owner: 'porter' });
+  add('bill5', 5.00, 14.5, doorCrateTop + 0.04, 3.6, { owner: 'chef', label: 'THE TIN' });
 
-  // — The fire escape: still worth climbing, no longer required to. —
-  add('coins', 0.70, -5.9, DECK.escape + 0.04, 2.4);
-  add('dime', 0.10, -1.6, 3.65 + 0.04, 2.5);
+  // — The balconies: the reward for looking up, and the first rest on the climb —
+  add('coins', 0.70, BALCONIES[2], DECK.balcony + 0.04, 1.85);
+  add('dime', 0.10, BALCONIES[4], DECK.balcony + 0.04, 1.85);
 
   // — The cradle: unguarded, and hard for entirely geometric reasons —
   // Beside the bucket, not in it: inside, the bucket hid it, and further back
   // the cradle's own guard rail did.
-  add('bill5', 5.00, 13.6, 4.05, 2.1, { label: "THE CLEANER'S FIVE", inCradle: true });
+  add('bill5', 5.00, CRADLE.x + 0.6, CRADLE.y + 0.05, CRADLE.z - 0.3,
+    { label: "THE CLEANER'S FIVE", inCradle: true });
 
   // — The terrace: one idea per table —
   add('coins', 0.85, tableTops[0].x - 0.18, tableTops[0].y + 0.04, tableTops[0].z + 0.14, { owner: 'busser' });
@@ -743,7 +740,21 @@ function pickupPlacements({ FOUNTAIN, tableTops, dockCrateTop, doorCrateTop }) {
   // the inside of the basin wall on the way up: the rim is 0.28 above the coins
   // and the camera climbs at 38°, which buys 0.36 of horizontal travel to clear
   // it. Level 1's 5.2m basin is wide enough that nobody had to think about this.
-  for (const [deg, r] of [[30, 1.6], [95, 1.9], [160, 1.5], [215, 1.9], [285, 1.65], [340, 1.85]]) {
+  /**
+   * Five, not six, and all of them on one side of the basin.
+   *
+   * Two constraints, both new to a 3.2m fountain with a centrepiece in it. A
+   * 3.2m basin has room for five coins and a shiny with a beak-length between
+   * every pair and does not have room for six and a shiny — so the sixth slot
+   * is the money clip's. And a coin sitting on the far side of the stem has its
+   * one sightline to the camera pass straight through the stem and the dish: the
+   * ray leaves at 38° and the centrepiece is 2.3m tall, so anything in the arc
+   * around 245° is looking at the back of the fountain's own ornament.
+   *
+   * Level 1's basin is 5.2m across and its coins are further out than its bowl
+   * is wide, which is why none of this came up there.
+   */
+  for (const [deg, r] of [[348, 1.7], [36, 1.75], [84, 1.8], [132, 1.7], [180, 1.65]]) {
     const a = (deg * Math.PI) / 180;
     add('quarter', 0.25,
       FOUNTAIN.x + Math.cos(a) * r, FOUNTAIN.rim - 0.28, FOUNTAIN.z + Math.sin(a) * r,
@@ -751,17 +762,28 @@ function pickupPlacements({ FOUNTAIN, tableTops, dockCrateTop, doorCrateTop }) {
   }
 
   // The wallet on the lounger, and the bill-fold on the stand.
-  add('bill10', 10.00, 17.6, T + 0.54, -2.3, { owner: 'maitre', label: 'A WALLET' });
+  add('bill10', 10.00, 21.6, T + 0.54, -2.3, { owner: 'maitre', label: 'A WALLET' });
   add('bill20', 20.00, LECTERN.x - 0.05, T + 1.20, LECTERN.z + 0.12,
     { owner: 'maitre', label: 'THE BILL-FOLD' });
 
   // — Shinies: worthless, tradeable. One per deck, so a lap of the block is
   //   always worth something even when the money you wanted has gone. —
-  add('shiny', 0, 5.0, Y + 0.07, 3.6, { shinyKind: 'foil' });
-  add('shiny', 0, -4.1, DECK.escape + 0.07, 2.15, { shinyKind: 'screw' });
-  add('shiny', 0, FOUNTAIN.x + 2.6, FOUNTAIN.rim - 0.28, FOUNTAIN.z + 0.9, { inWater: true, shinyKind: 'clip' });
-  add('shiny', 0, -21.5, R + 0.07, -8.5, { shinyKind: 'fob' });
-  add('shiny', 0, KID.x + 3.4, T + 0.07, KID.z - 0.6, { shinyKind: 'marble' });
+  add('shiny', 0, 9.0, Y + 0.07, 5.5, { shinyKind: 'foil' });
+  add('shiny', 0, BALCONIES[5], DECK.balcony + 0.07, 1.85, { shinyKind: 'screw' });
+  /**
+   * The money clip takes the sixth coin's slot.
+   *
+   * Two constraints fight over a small basin. It has to be inside r − 0.7 = 2.5,
+   * or the crow does not count as in the water when it reaches for it; and
+   * inside about 2.24, or its sightline out clips the inside of the basin wall
+   * on the way up — the rim is 0.28 above the coins and the camera climbs at
+   * 38°, which buys 0.36 of horizontal travel to clear it. Level 1's 5.2m
+   * fountain is wide enough that nobody had to think about either.
+   */
+  add('shiny', 0, FOUNTAIN.x + 0.88, FOUNTAIN.rim - 0.28, FOUNTAIN.z - 1.52,
+    { inWater: true, shinyKind: 'clip' });
+  add('shiny', 0, -27.5, R + 0.07, -8.0, { shinyKind: 'fob' });
+  add('shiny', 0, KID.x - 4.2, T + 0.07, KID.z - 1.6, { shinyKind: 'marble' });
 
   // — The chips. Not money; the only way to move six gulls and a maître d'. —
   add('chips', 0, tableTops[3].x, tableTops[3].y + 0.02, tableTops[3].z,
@@ -775,14 +797,14 @@ function humanPlacements() {
   return [
     {
       id: 'maitre', name: "the maître d'", cloth: 1, skin: 1, hair: 1,
-      pos: [-13, DECK.terrace, -3.5], home: [-13, DECK.terrace, -3.5],
-      patrol: [[-13, -3.5], [-6, -1], [2, -3], [-9, -4.5]],
+      pos: [-21, DECK.terrace, -3.5], home: [-21, DECK.terrace, -3.5],
+      patrol: [[-21, -3.5], [-12, -1], [-3, -3], [-17, -4.5]],
       speed: 1.4, chaseSpeed: 4.4, viewDist: 10.5, viewCos: 0.25, guardRadius: 4.0, alertness: 1.3,
     },
     {
       id: 'busser', name: 'the busser', cloth: 0, skin: 2, hair: 0,
-      pos: [-4.8, DECK.terrace, -3.4], home: [-4.8, DECK.terrace, -3.4],
-      patrol: [[-4.8, -3.4], [2.0, -4.8], [6.0, 0.0], [-10.6, -0.3]],
+      pos: [-10.5, DECK.terrace, -3.4], home: [-10.5, DECK.terrace, -3.4],
+      patrol: [[-10.5, -3.4], [-3.5, -5.0], [4.5, -0.5], [12.5, -4.6]],
       speed: 1.6, chaseSpeed: 4.2, viewDist: 9.0, viewCos: 0.35, guardRadius: 3.2, alertness: 1.0,
     },
     {
@@ -790,14 +812,14 @@ function humanPlacements() {
       // In the service doorway, facing out. He is not watching the loading bay,
       // he is watching the middle distance, which is why his cone is narrow and
       // his tin is not.
-      pos: [SERVICE.x, DECK.yard, 3.0], home: [SERVICE.x, DECK.yard, 3.0],
+      pos: [SERVICE.x, DECK.forecourt, 3.2], home: [SERVICE.x, DECK.forecourt, 3.2],
       patrol: null, speed: 1.0, chaseSpeed: 3.6, viewDist: 8, viewCos: 0.45, guardRadius: 3.0, alertness: 0.8,
       faces: [0, 1],
     },
     {
       id: 'porter', name: 'the porter', cloth: 3, skin: 3, hair: 3,
-      pos: [8, DECK.yard, 8], home: [8, DECK.yard, 8],
-      patrol: [[8, 8], [14, 13.5], [22, 12], [23, 4], [15.5, 8.5], [3, 11]],
+      pos: [16, DECK.forecourt, 9], home: [16, DECK.forecourt, 9],
+      patrol: [[16, 9], [21, 15], [30, 13], [31, 4], [22, 9.5], [9.5, 10]],
       speed: 1.35, chaseSpeed: 3.4, viewDist: 3.2, viewCos: 0.8, guardRadius: 1.8, alertness: 0.3,
       oblivious: true,
     },
@@ -806,19 +828,28 @@ function humanPlacements() {
       // Somebody has to be standing in a hotel forecourt. He owns nothing and
       // notices nothing; he is a body to steer round on the deck the level's
       // cheapest money is lying on.
-      pos: [-8.4, DECK.yard, 3.4], home: [-8.4, DECK.yard, 3.4],
+      pos: [-4.5, DECK.forecourt, 4.8], home: [-4.5, DECK.forecourt, 4.8],
       patrol: null, speed: 1.0, chaseSpeed: 3.0, viewDist: 3.0, viewCos: 0.8, guardRadius: 1.4, alertness: 0.2,
       oblivious: true, faces: [1, 0],
     },
     {
-      id: 'kid', name: 'the kid on the terrace', cloth: 2, skin: 2, hair: 2,
-      // On the terrace, a step inside the gap in the parapet, facing the head of
-      // the fire escape. She used to sit on the first fire-escape landing, which
-      // put the core loop — trade a shiny, get cash — on the most awkward landing
-      // surface on the block.
-      pos: [KID.x, DECK.terrace, KID.z], home: [KID.x, DECK.terrace, KID.z],
+      id: 'kid', name: 'the kid on the parapet', cloth: 2, skin: 2, hair: 2,
+      /**
+       * Sitting on the parapet with her feet over the courtyard, at the end of
+       * the terrace furthest from the restaurant, with her cup and a row of
+       * trinkets beside her.
+       *
+       * Three earlier homes, each wrong for a different reason: a fire-escape
+       * landing (the most awkward surface on the block to land on, for something
+       * that is core loop), then standing beside a bench on the terrace — where
+       * she was one more standing figure among a maître d', a busser and two
+       * diners, and a playtester could not tell who to hand things to.
+       *
+       * Nobody else in either block sits down. The silhouette does the work.
+       */
+      pos: [KID.x, DECK.terrace + 0.7, KID.z], home: [KID.x, DECK.terrace + 0.7, KID.z],
       patrol: null, speed: 0, chaseSpeed: 0, viewDist: 0, viewCos: 1, guardRadius: 0, alertness: 0,
-      kid: true, small: true, faces: [0, 1],
+      kid: true, small: true, sits: true, faces: [0, 1],
     },
   ];
 }
@@ -834,19 +865,19 @@ function humanPlacements() {
  */
 function gullPlacements() {
   return [
-    { x: -18.5, z: 1.2, y: DECK.terrace + 0.7 },
-    { x: -9.5, z: 1.2, y: DECK.terrace + 0.7 },
-    { x: 15.5, z: 1.2, y: DECK.terrace + 0.7 },
-    { x: 9.6, z: -8.4, y: DECK.terrace },
-    { x: -13.5, z: -9.6, y: DECK.roof },
-    { x: -19.5, z: -7.4, y: DECK.roof },
+    { x: -26, z: 1.2, y: DECK.terrace + 0.7 },
+    { x: -14, z: 1.2, y: DECK.terrace + 0.7 },
+    { x: 20, z: 1.2, y: DECK.terrace + 0.7 },
+    { x: 13, z: -8.4, y: DECK.terrace },
+    { x: -18, z: -9.6, y: DECK.roof },
+    { x: -26, z: -7.4, y: DECK.roof },
   ];
 }
 
 /** Forecourt pigeons, round the fountain where the tourists drop things. */
 function pigeonPlacements() {
   return [
-    { x: -7.5, z: 11.5 }, { x: -14.5, z: 12.0 }, { x: -19, z: 7.5 },
-    { x: 4, z: 11 }, { x: 10.5, z: 9.5 },
+    { x: -12.5, z: 12.5 }, { x: -20, z: 12.5 }, { x: -25, z: 8.5 },
+    { x: -5, z: 10.5 }, { x: 4, z: 11.5 },
   ];
 }

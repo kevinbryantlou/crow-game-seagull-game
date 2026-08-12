@@ -127,7 +127,7 @@ export const LEVELS = [
      * roof at the hour a hotel roof gets busy.
      */
     dayStart: 0.42,
-    spawn: [-1, 0, 9.5],
+    spawn: [-2, 0, 11.5],
 
     tasks: [
       { id: 'dive', text: 'Dive the fountain', when: (g) => g.crow.inWater },
@@ -140,7 +140,7 @@ export const LEVELS = [
 
     teach: {
       money: 'Take it to your nest',
-      shiny: 'The kid on the terrace will trade for that',
+      shiny: 'The kid on the parapet will trade for that',
       bait: 'Chips. Gulls like chips.',
     },
 
@@ -170,14 +170,14 @@ export const LEVELS = [
      * a water tank.
      */
     chaseProbes: (w) => [
-      ['the forecourt, round the fountain', 0, [w.fountain.x, 3.2], [w.fountain.x, 14.0]],
-      ['the forecourt, corner to corner', 0, [-19, 3.2], [-3, 14.0]],
-      ['the loading end, round the van', 0, [17, 14.6], [17, 8.5]],
-      ['the loading end, round the dock', 0, [18, 8.8], [18, 2.6]],
-      ['the terrace, through the tables', 5.4, [-12, -0.5], [6, -4]],
-      ['the terrace, past the stand', 5.4, [-22.5, -3.5], [-8, -4]],
-      ['the terrace, the far end', 5.4, [14, 0], [14, -10]],
-      ['the roof, round the water tank', 9.2, [-20, -7], [-11, -10.5]],
+      ['the forecourt, round the fountain', 0, [w.fountain.x, 3.4], [w.fountain.x, 15.0]],
+      ['the forecourt, corner to corner', 0, [-25, 3.4], [-8, 15.0]],
+      ['the loading end, round the van', 0, [25, 15.2], [25, 9.0]],
+      ['the loading end, round the dock', 0, [24, 9.0], [24, 2.6]],
+      ['the terrace, through the tables', 5.4, [-19, -0.5], [4, -4]],
+      ['the terrace, past the stand', 5.4, [-30, -3.5], [-14, -4]],
+      ['the terrace, the far end', 5.4, [20, 0], [20, -10]],
+      ['the roof, round the water tank', 9.2, [-26, -7], [-17, -10.5]],
     ],
 
     ending: {
