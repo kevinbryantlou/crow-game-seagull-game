@@ -47,8 +47,9 @@ the game had never been looked at. Both harnesses exist to close that gap.
   1 the day it was written for level 2. Everything but the renderer is plain three.js maths, so it catches NaN,
   falling through geometry, and — critically — *level-design defects* (see below).
 - **`scripts/shoot.mjs`** drives real WebGL in headless Chrome, writes PNGs to
-  `shots/`, and fails on any console error or failed request. It runs both
-  blocks: `01`–`13` are the block, `20`–`29` and `l2-dusk-*` are the roofline. Read the PNGs. It can
+  `shots/`, and fails on any console error or failed request. It runs every
+  block: `01`–`13` are the block, `20`–`29` and `l2-dusk-*` are the park,
+  `30`–`39` and `l3-dusk-*` are the roofline. Read the PNGs. It can
   place the crow anywhere via `window.__game` (dev builds only) for spot checks,
   and asserts behaviour like trade auto-equip.
 
@@ -69,7 +70,9 @@ src/
   world/rules.js       RULES — the level-design contract, shared by both blocks
   world/kit.js         the shared prop kit: tables, lamps, bins, the nest, the pool
   world/level.js       LEVEL 1 — the block: plaza, café row, cart corner. Flat.
-  world/level2.js      LEVEL 2 — The Hotel (Outside): forecourt, balconies, terrace, roof
+  world/park.js        LEVEL 2 — The Park: lawn, pond, pavilion roof. Two decks.
+  world/level2.js      LEVEL 3 — The Hotel (Outside): forecourt, balconies, terrace, roof
+                       (built second, slotted third — filenames are not slot numbers)
   world/levels.js      the registry: goal, tasks, teach copy, bait rules, endings, per level
   world/collide.js     the collider format, and going round things (pure, unit tested)
   world/pickups.js     the money
@@ -80,7 +83,8 @@ src/
   ui/rank.js           end-of-run titles (pure, unit tested)
 docs/                  design brief + style guide — the spec, written to be checked against
                        lighting-brief.html — dusk lighting exploration, NOT implemented
-                       level-2-brief.html — the roofline: design, engine cost, what it caught
+                       park-brief.html    — level 2, the park: design, ladder, what it caught
+                       level-2-brief.html — level 3, the roofline (filename predates the slot)
 ```
 
 Pure logic goes in its own module so `smoke.mjs` can test it without a DOM.
@@ -291,9 +295,47 @@ That's why `words.js` and `rank.js` are separate from `hud.js`.
   the near edge ends up half-sunk in it — a bin was. Tagged `edge-kerb` and
   asserted against.
 
+- **A material has to survive both ends of the light ramp, and the two ends pull
+  opposite ways.** The park's lawn is the biggest surface in the game and it took
+  three attempts. Painted in the tree greens it failed dusk twice over — median
+  35 against a floor of 48, *and* the blue-beats-red check, because a saturated
+  green swallows the violet sky fill that every block's shadows are made of. The
+  correction to a pale sage fixed both numbers and made the **daylight** a beach:
+  the afternoon key is 0xffd9a0 at 2.6, warm and strong enough to pull anything
+  under-saturated to tan, and it took the paving with it, so a park with paths in
+  it rendered as one continuous sandpit. `PAL.lawn` is the third try — green
+  beats red by 29 so it survives the key, blue stays at 0.85 of red so it catches
+  the violet. **Check a new large-surface colour at t=0 and t=0.98, never one or
+  the other.**
+- **Adding a lamppost can make a frame darker.** At this camera a lamp is a pool
+  on the ground *plus* a 4.6m opaque column and its shadow standing in the frame.
+  A ninth lamp at the park's west gate bought two points of median and cost four
+  of 5th percentile. Light the ground — paths, aprons, brighter road — and treat
+  the lamp count as the last resort, not the first.
+- **A lamppost is also 4.6m of opaque nothing on somebody's sightline.** One
+  stood exactly on the ray from the bandstand step's loose change to the camera.
+  Rule 6 caught it; the fix is to move the lamp, not the coin, because the coin
+  is where the level wants it.
+- **A ledge's collider has to sit where the ledge *mesh* sits.** The park's
+  noticeboard has a 0.12m ledge proud of a solid board, and 0.12m is the entire
+  clearance the dollar on it has: collider at the board's z and the bill is
+  buried, collider anywhere further out and it is standing on air. When a prop is
+  offset from its parent, offset the collider by the same amount.
+- **A silhouette that identifies someone is inherited, not owned.** The roofline
+  made the kid legible by sitting her down, because nothing else in the game sits.
+  A park is *mostly benches* — so the park is designed around defending that: the
+  picnic stands round its cooler, the keeper walks, the jogger runs, and all four
+  benches are empty. If a later block seats anybody, the kid stops working on
+  every block at once.
+- **A near-side occluder only fades on one ray.** `stage._updateOccluders` casts
+  a single ray from camera to crow, so the shelter fades when it is between them
+  and stands there solid the rest of the time. Nothing that is core loop — the
+  kid, the trade — goes behind the thing whose job is to be in the way.
+
 ## Level-design rules (asserted, not aspirational)
 
-In `RULES` in `world/level.js`, enforced by `smoke.mjs`:
+In `RULES` in `world/rules.js`, enforced by `smoke.mjs` via `audit-level.mjs`,
+once per entry in `LEVELS`:
 
 - A nest's landing surface is **at least 2× the nest footprint**. Banking happens
   under pressure; the last obstacle should never be a pixel-accurate landing.
@@ -342,34 +384,50 @@ In `RULES` in `world/level.js`, enforced by `smoke.mjs`:
   eyeballed.
 - **Nothing is standing in the edge kerb.**
 
-## Two levels
+## Three levels
 
 `world/levels.js` is the registry. A level descriptor holds everything about a
 block that is not geometry: `goal`, `sessionSeconds`, `dayStart`, `spawn`, the
 task list (with `when` predicates for the ones that complete by observation),
 `bankTicks`, the teaching toasts, the `bait` set-piece rules, `chaseProbes` for
-smoke, and the ending copy. If a second block would need a different one, it is
-level data; if both need the same one, it is in `world/rules.js`.
+smoke, and the ending copy. If another block would need a different one, it is
+level data; if they all need the same one, it is in `world/rules.js`.
+
+The ladder is **$20 / $25 / $30** and **one deck / two decks / four decks**.
+Both rows are deliberate: each block is one step, and the middle one exists
+because the gap between the outer two was measured and found too big.
 
 - **Level 1 — the block** (`level.js`). Flat, $20, starts at `dayStart: 0`.
-- **Level 2 — The Hotel (Outside)** (`level2.js`). Four decks (0 / 3.2 / 5.4 /
+- **Level 2 — The Park** (`park.js`). Two decks (0 / 3.4, nest at 4.75), $25,
+  ±30 wide, starts at `dayStart: 0.20` so the lamps catch at 5m12s.
+  `docs/park-brief.html` is the spec.
+
+  Written *because* the roofline was too big a leap from the block, so its whole
+  design constraint is to be a small step: one roof, cleared with 1.0m of
+  unbroken climb, and no new verbs. What it spends instead of altitude is
+  **social pressure** — the marquee is three people standing round one cooler
+  with $10.85 on and beside it, where the block always gave you a softer
+  district next door. Built and verified; **not yet playtested**.
+- **Level 3 — The Hotel (Outside)** (`level2.js`). Four decks (0 / 3.2 / 5.4 /
   9.2, nest at 12.35), $30, ±32 wide, starts at `dayStart: 0.42` so the lamps
   catch at 4m08s. `docs/level-2-brief.html` is the spec.
 
-  Playtested and revised across three rounds: it reads as **too big a scale leap to follow the
-  block directly**, so it is parked for slot 3 or 4. That is why the goal is $30
-  and not $40 — above the block, below a doubling. Do not renumber the file; the
-  order is a registry question, not a filename one.
+  Playtested and revised across three rounds: it reads as **too big a scale leap
+  to follow the block directly**, so it moved to slot 3 once the park existed.
+  That is why the goal is $30 and not $40 — above the block, below a doubling.
+  **Do not renumber the file.** `level2.js` is level 3 and `park.js` has no
+  number in its name at all; order is a registry question, not a filename one,
+  and renaming would only move the confusion somewhere git blame cannot follow.
 
-Selection is `?level=2`, read once in `main.js`. **How the player actually gets
-from one block to the other is not decided yet** — that is a seam, not a join,
+Selection is `?level=N`, read once in `main.js`. **How the player actually gets
+from one block to the next is not decided yet** — that is a seam, not a join,
 and it was left open deliberately.
 
-`world/kit.js` holds anything a third block would otherwise copy-paste: tables,
-benches, lamps, bins, planters, the skyline, the nest, and the water body. A café
-table is kit; a war memorial with a nest on it is not. Level 1 was rebuilt on the
-kit and re-verified *before* level 2 was written, so the refactor and the new
-level never had to be debugged at the same time. Do that again.
+`world/kit.js` holds anything a fourth block would otherwise copy-paste: tables,
+benches, lamps, bins, planters, trees, the skyline, the nest, and the water body.
+A café table is kit; a war memorial with a nest on it is not. Level 1 was rebuilt
+on the kit and re-verified *before* level 2 was written, so the refactor and the
+new level never had to be debugged at the same time. Do that again.
 
 ## Art direction
 

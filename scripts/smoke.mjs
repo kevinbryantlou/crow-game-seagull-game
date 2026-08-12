@@ -37,7 +37,7 @@ const { RULES } = await import('../src/world/rules.js');
 const { overlaps, blocksWalker, deckAt, WALKER_RADIUS } = await import('../src/world/collide.js');
 const { Crow, TUNING: CROW } = await import('../src/entities/crow.js');
 const { Human, Pigeon, Gull } = await import('../src/entities/human.js');
-const { Pickup } = await import('../src/world/pickups.js');
+const { Pickup, BAIT_KINDS } = await import('../src/world/pickups.js');
 const { NightLights } = await import('../src/render/nightlights.js');
 const { PAL, SKY_RAMP } = await import('../src/render/palette.js');
 const { mat } = await import('../src/render/shapes.js');
@@ -277,7 +277,7 @@ console.log('\nthe sky ramp');
 // ── every block, every rule ─────────────────────────────────────────────────
 const deps = {
   RULES, overlaps, blocksWalker, deckAt, WALKER_RADIUS,
-  Crow, CROW, Human, Pigeon, Gull, Pickup,
+  Crow, CROW, Human, Pigeon, Gull, Pickup, BAIT_KINDS,
 };
 const summary = [];
 for (const level of LEVELS) {
@@ -286,7 +286,7 @@ for (const level of LEVELS) {
   auditLights(level, world);
 }
 
-console.log('\nthe two blocks, side by side');
+console.log('\nthe blocks, side by side');
 console.log('       level                meshes  colliders   money  unguarded  climb');
 for (const s of summary) {
   console.log(`       ${String(s.level.id + '. ' + s.level.title).padEnd(20)} `

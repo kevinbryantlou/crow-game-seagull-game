@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<title>Small Change — The Park</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  html { -webkit-text-size-adjust: 100%; }
+  :root {
+    --paper:      #E9E5DA;
+    --paper-2:    #DFDACB;
+    --ink:        #141C18;
+    --ink-soft:   #3E4A44;
+    --nickel:     #8B948F;
+    --rule:       #C3BFB1;
+    --enamel:     #1F4D3D;
+    --enamel-2:   #17392E;
+    --brass:      #A87C22;
+    --brass-lit:  #C79A34;
+    --sheen:      #4B4B7A;
+    --band-text:  #EDEAE0;
+    --band-dim:   #9FB5AB;
+    --chip-bg:    #D7D2C2;
+    --shadow:     rgba(20,28,24,.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:     #131815;
+      --paper-2:   #1A211D;
+      --ink:       #E4E2D7;
+      --ink-soft:  #A3ADA6;
+      --nickel:    #7C857F;
+      --rule:      #2C3630;
+      --enamel:    #16332A;
+      --enamel-2:  #102520;
+      --brass:     #D2A644;
+      --brass-lit: #E0B85C;
+      --sheen:     #8A8AC4;
+      --band-text: #E4E2D7;
+      --band-dim:  #7E9A8D;
+      --chip-bg:   #212925;
+      --shadow:    rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:     #131815;
+    --paper-2:   #1A211D;
+    --ink:       #E4E2D7;
+    --ink-soft:  #A3ADA6;
+    --nickel:    #7C857F;
+    --rule:      #2C3630;
+    --enamel:    #16332A;
+    --enamel-2:  #102520;
+    --brass:     #D2A644;
+    --brass-lit: #E0B85C;
+    --sheen:     #8A8AC4;
+    --band-text: #E4E2D7;
+    --band-dim:  #7E9A8D;
+    --chip-bg:   #212925;
+    --shadow:    rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .display {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold",
+                 "Arial Narrow", "Helvetica Neue", sans-serif;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-wrap: balance;
+  }
+  .mono {
+    font-family: Menlo, ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: .82em;
+    letter-spacing: .01em;
+  }
+
+  /* ---- sign band ---- */
+  .band {
+    background: var(--enamel);
+    color: var(--band-text);
+    padding: 3.2rem 1.5rem 2.4rem;
+    border-bottom: 6px solid var(--brass);
+  }
+  .band-inner { max-width: 62rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1.1rem; }
+  .band .eyebrow {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .72rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--band-dim);
+  }
+  h1.title {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: clamp(3rem, 11vw, 6.5rem);
+    line-height: .86;
+    letter-spacing: .005em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  h1.title .thin { display: block; color: var(--brass-lit); }
+  .band .deck {
+    font-size: 1.12rem; max-width: 34rem; color: var(--band-text);
+    opacity: .88; margin: 0;
+  }
+  .facts {
+    display: flex; flex-wrap: wrap; gap: 0 2.2rem;
+    border-top: 1px solid rgba(159,181,171,.28);
+    padding-top: 1rem; margin-top: .4rem;
+  }
+  .facts div { display: flex; flex-direction: column; gap: .1rem; }
+  .facts dt {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .18em; text-transform: uppercase; color: var(--band-dim);
+  }
+  .facts dd { margin: 0; font-size: .95rem; }
+
+  /* ---- document body ---- */
+  main { max-width: 62rem; margin: 0 auto; padding: 0 1.5rem 6rem; }
+  .col { max-width: 38rem; }
+
+  section { padding-top: 3.4rem; }
+  section > * + * { margin-top: 1rem; }
+
+  h2 {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase;
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+    line-height: 1.05; letter-spacing: .015em;
+    margin: 0 0 .2rem; padding-bottom: .55rem;
+    border-bottom: 2px solid var(--ink);
+    display: flex; align-items: baseline; gap: .7rem;
+  }
+  h2 .sec {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .7rem; font-weight: 400; letter-spacing: .12em;
+    color: var(--brass); flex: none;
+  }
+  h3 {
+    font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    font-size: .95rem; margin: 1.8rem 0 .3rem; color: var(--ink);
+  }
+  p { margin: 0; }
+  section p + p { margin-top: .85rem; }
+  a { color: var(--brass); }
+
+  ul, ol { margin: .2rem 0; padding-left: 1.15rem; }
+  li { margin: .3rem 0; }
+  li::marker { color: var(--nickel); }
+
+  strong { font-weight: 700; }
+  em.term { font-style: normal; font-weight: 700; color: var(--sheen); }
+
+  /* ---- exhibits (break the column) ---- */
+  .exhibit { margin: 2rem 0 0; }
+  .exhibit-cap {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--nickel); margin-top: .6rem;
+  }
+  .plate {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    padding: 1.2rem;
+    overflow-x: auto;
+  }
+  .plate svg { display: block; width: 100%; height: auto; min-width: 30rem; }
+
+  /* ---- tables ---- */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--rule); background: var(--paper-2); }
+  table { border-collapse: collapse; width: 100%; min-width: 34rem; font-size: .92rem; }
+  th, td { text-align: left; padding: .6rem .85rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); background: var(--chip-bg); border-bottom: 2px solid var(--ink);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num { font-family: Menlo, ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.val { font-family: Menlo, ui-monospace, monospace; font-variant-numeric: tabular-nums; color: var(--brass); white-space: nowrap; }
+
+  /* ---- key caps ---- */
+  kbd {
+    font-family: Menlo, ui-monospace, monospace; font-size: .74rem;
+    background: var(--chip-bg); border: 1px solid var(--rule);
+    border-bottom-width: 2px; border-radius: 3px;
+    padding: .1rem .38rem; color: var(--ink); white-space: nowrap;
+  }
+
+  /* ---- callout ---- */
+  .note {
+    border-left: 4px solid var(--brass);
+    background: var(--paper-2);
+    padding: .9rem 1.1rem;
+    font-size: .95rem;
+  }
+  .note .lbl {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--brass); display: block; margin-bottom: .25rem;
+  }
+
+  /* ---- scope columns ---- */
+  .scope { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0; border: 1px solid var(--rule); }
+  .scope > div { padding: 1rem 1.15rem; border-right: 1px solid var(--rule); }
+  .scope > div:last-child { border-right: 0; }
+  .scope h4 {
+    font-family: Menlo, ui-monospace, monospace; font-weight: 400;
+    font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+    margin: 0 0 .5rem; color: var(--ink-soft);
+  }
+  .scope ul { padding-left: 1rem; font-size: .9rem; }
+  .scope.in  > div:first-child { background: var(--paper-2); }
+
+  /* ---- milestones ---- */
+  .miles { border-top: 2px solid var(--ink); }
+  .mile {
+    display: grid; grid-template-columns: 5.5rem 1fr; gap: 1.2rem;
+    padding: .85rem 0; border-bottom: 1px solid var(--rule); align-items: baseline;
+  }
+  .mile .m-id {
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; color: var(--brass); padding-top: .15rem;
+  }
+  .mile .m-body strong { display: block; font-family: "Avenir Next Condensed","Arial Narrow",sans-serif; text-transform: uppercase; letter-spacing: .04em; font-size: 1rem; }
+  .mile .m-body span { font-size: .9rem; color: var(--ink-soft); }
+
+  footer {
+    border-top: 2px solid var(--ink); margin-top: 4rem; padding-top: 1rem;
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--nickel);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+  }
+
+  @media (max-width: 40rem) {
+    body { font-size: 16px; }
+    .mile { grid-template-columns: 1fr; gap: .1rem; }
+    .plate svg { min-width: 26rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="band">
+  <div class="band-inner">
+    <div class="eyebrow">Level Design Brief &nbsp;·&nbsp; The Park &nbsp;·&nbsp; Built and verified, not yet playtested</div>
+    <h1 class="title">The<br>Park<span class="thin">The Green</span></h1>
+    <p class="deck">A city park at five in the afternoon. One roof, one pond, and three people
+      standing round a cooler with ten dollars on it. The block taught you to read a guard; this
+      is the first block that makes you read three at once.</p>
+    <dl class="facts">
+      <div><dt>Setting</dt><dd>The Green, a municipal park</dd></div>
+      <div><dt>Goal</dt><dd>$25.00</dd></div>
+      <div><dt>Decks</dt><dd>Two — 0 / 3.4 m</dd></div>
+      <div><dt>Session</dt><dd>8 min, starting at t=0.20</dd></div>
+      <div><dt>Slot</dt><dd>Level 2 — between the block and the roofline</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main>
+
+  <section id="status">
+    <h2><span class="sec">§0</span> Where this stands</h2>
+    <div class="col">
+      <p>Built and verified. Both harnesses pass: <span class="mono">smoke</span> runs every
+      level-design rule against it and <span class="mono">shoot</span> drives it in real WebGL,
+      photographs it, and measures the dusk frames. It has not been played by a person yet, so
+      every claim on this page about <em>feel</em> is a hypothesis and every claim about
+      <em>fact</em> is asserted somewhere in the repo.</p>
+
+      <p>The reason it exists is a note from the roofline's playtest: the roofline reads as
+      <strong>too big a scale leap to follow the block directly</strong>. It went to slot 3 and
+      left a hole at slot 2. This is the block that fills it — and the whole design constraint is
+      that it must be a <em>small</em> step, not a good level in isolation.</p>
+
+      <div class="note">
+        <span class="lbl">The ladder, now that there are three rungs</span>
+        $20 on the block · <strong>$25 here</strong> · $30 on the roofline. One deck · two decks ·
+        four decks. The park's job is to be the second number in each of those rows, and nothing
+        more ambitious than that.
+      </div>
+    </div>
+  </section>
+
+  <section id="step">
+    <h2><span class="sec">§1</span> What a small step is made of</h2>
+    <div class="col">
+      <p>A level that follows the block has two things it can spend: <em class="term">height</em>
+      and <em class="term">pressure</em>. The roofline spent everything on height — four decks, a
+      nest twelve metres up, money priced entirely by the climb. That is what made it a leap.</p>
+
+      <p>So the park spends almost nothing on height and most of what it has on pressure. There is
+      exactly one roof, it is 3.4 m up, and the nest sits 1.35 m above that on the pavilion's vent
+      housing. A crow arriving at the bottom of that climb with a mostly-empty stamina bar clears
+      it; <span class="mono">RULES.maxUnbrokenClimb</span> is 9 m and the smoke report puts the
+      tallest unbroken climb to this nest at <strong>1.0 m</strong>, because the roof itself is a
+      landing. The y axis is introduced as a fact, not as a problem.</p>
+
+      <p>What is harder is <em>who is looking at you</em>. The block gives each district one guard
+      with one pitch to watch, and the answer is always "work the district next door". The park's
+      marquee is one object with three people standing round it, and there is no district next
+      door — the other guarded money is forty metres away at the far end.</p>
+
+      <div class="note">
+        <span class="lbl">No new verbs</span>
+        Fly, take one thing, bank it, shove the weight off a note, bait a guard with food, trade a
+        shiny with a kid. All six are level 1's, taught on level 1. The only new noun is the
+        <strong>soft pretzel</strong>, which is a hot dog with a different smell — a third member
+        of <span class="mono">BAIT_KINDS</span>, and adding it made the audit's bait rule read the
+        vocabulary instead of naming two kinds by hand.
+      </div>
+    </div>
+  </section>
+
+  <section id="plan">
+    <h2><span class="sec">§2</span> The plan</h2>
+    <div class="col">
+      <p>Five places, laid out so that the two ends are both guarded and the middle is not. The
+      block ran money-rich to money-poor left to right; the park runs safe in the middle to
+      dangerous at both edges, which is a different shape of run and is meant to be.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate">
+        <svg viewBox="0 0 960 465" role="img" aria-label="Top-down plan of the park: pond in the middle, picnic west, pavilion and pretzel cart east, bandstand and tool store along the back, picnic shelter on the near edge.">
+          <defs>
+            <style>
+              .lawn  { fill: #A2BF8A; }
+              .stripe{ fill: #93B07B; }
+              .path  { fill: #E4DACB; }
+              .apron { fill: #C9BDA8; }
+              .road  { fill: #D8C6A8; }
+              .water { fill: #4E9BB0; }
+              .rim   { fill: #E4DACB; stroke: #C3BFB1; stroke-width: 1; }
+              .bldg  { fill: #C9BDA8; stroke: #141C18; stroke-width: 1.5; }
+              .prop  { fill: #A87C22; stroke: #141C18; stroke-width: 1.2; }
+              .hedge { fill: #4E6B3E; }
+              .lbl   { font-family: Menlo, ui-monospace, monospace; font-size: 11px; fill: #141C18; }
+              .lbl-s { font-family: Menlo, ui-monospace, monospace; font-size: 9px; fill: #3E4A44; }
+              .lbl-w { font-family: Menlo, ui-monospace, monospace; font-size: 11px; fill: #E9E5DA; }
+              .pin   { fill: #1F4D3D; }
+              .cam   { fill: none; stroke: #4B4B7A; stroke-width: 1.5; stroke-dasharray: 5 4; }
+            </style>
+          </defs>
+
+          <!-- ground -->
+          <rect class="lawn" x="0" y="0" width="960" height="465"/>
+          <!-- mown stripes: z = -10, -4, 2, 8, 14 -->
+          <rect class="stripe" x="0" y="37"  width="960" height="45"/>
+          <rect class="stripe" x="0" y="127" width="960" height="45"/>
+          <rect class="stripe" x="0" y="217" width="960" height="45"/>
+          <rect class="stripe" x="0" y="307" width="960" height="45"/>
+          <rect class="stripe" x="0" y="397" width="960" height="45"/>
+
+          <!-- hedge & railing along the back -->
+          <rect class="hedge" x="0" y="4" width="960" height="36"/>
+          <text class="lbl-w" x="14" y="27">HEDGE &amp; RAILING</text>
+
+          <!-- paths -->
+          <rect class="path" x="0"   y="312" width="960" height="51"/>
+          <rect class="path" x="202" y="112" width="45"  height="241"/>
+          <rect class="path" x="547" y="45"  width="45"  height="300"/>
+          <rect class="path" x="97"  y="165" width="45"  height="195"/>
+          <rect class="path" x="210" y="142" width="390" height="45"/>
+          <rect class="path" x="585" y="142" width="210" height="45"/>
+          <rect class="path" x="817" y="210" width="45"  height="195"/>
+          <rect class="path" x="484" y="330" width="51"  height="105"/>
+          <rect class="path" x="132" y="337" width="66"  height="120"/>
+          <rect class="path" x="657" y="337" width="66"  height="120"/>
+          <!-- aprons -->
+          <rect class="apron" x="322" y="180" width="195" height="180"/>
+          <rect class="apron" x="682" y="202" width="195" height="135"/>
+          <rect class="apron" x="480" y="120" width="180" height="67"/>
+          <!-- road beyond the kerb -->
+          <rect class="road" x="0" y="457" width="960" height="8"/>
+
+          <!-- pond -->
+          <circle class="rim"   cx="420" cy="270" r="67"/>
+          <circle class="water" cx="420" cy="270" r="54"/>
+          <text class="lbl-w" x="391" y="274">POND</text>
+          <!-- the kid, on the near-west arc at 118 deg -->
+          <circle class="pin" cx="392" cy="384" r="6"/>
+          <text class="lbl-s" x="284" y="399">THE KID · trades</text>
+
+          <!-- picnic -->
+          <rect class="prop" x="179" y="253" width="15" height="10"/>
+          <rect x="176" y="273" width="52" height="40" fill="#D95F4C" stroke="#141C18" stroke-width="1"/>
+          <circle class="pin" cx="162" cy="255" r="5"/>
+          <circle class="pin" cx="186" cy="237" r="5"/>
+          <circle class="pin" cx="189" cy="250" r="5"/>
+          <text class="lbl" x="118" y="200">THE PICNIC</text>
+          <text class="lbl-s" x="118" y="214">$10.85 · 3 people</text>
+
+          <!-- bandstand -->
+          <circle class="bldg" cx="225" cy="127" r="49"/>
+          <text class="lbl-s" x="196" y="131">BANDSTAND</text>
+
+          <!-- tool store -->
+          <rect class="bldg" x="46" y="60" width="57" height="45"/>
+          <text class="lbl-s" x="44" y="118">TOOL STORE</text>
+
+          <!-- pavilion + nest -->
+          <rect class="bldg" x="502" y="48" width="135" height="83"/>
+          <rect x="545" y="65" width="48" height="48" fill="#8B948F" stroke="#141C18" stroke-width="1.2"/>
+          <circle cx="569" cy="89" r="11" fill="#A87C22" stroke="#141C18" stroke-width="1.2"/>
+          <text class="lbl" x="502" y="40">PAVILION</text>
+          <text class="lbl-s" x="502" y="145">roof 3.4 m · NEST 4.75 m · keeper's two tins</text>
+
+          <!-- cart -->
+          <rect class="prop" x="755" y="182" width="50" height="26"/>
+          <rect class="prop" x="815" y="164" width="20" height="14"/>
+          <circle class="pin" cx="741" cy="189" r="5"/>
+          <text class="lbl" x="740" y="230">PRETZEL CART</text>
+          <text class="lbl-s" x="740" y="244">$13.00 · the ten · the bait</text>
+
+          <!-- shelter -->
+          <rect class="bldg" x="442" y="366" width="135" height="66"/>
+          <text class="lbl-s" x="452" y="403">PICNIC SHELTER (occluder)</text>
+
+          <!-- noticeboard -->
+          <rect class="prop" x="643" y="318" width="34" height="6"/>
+          <text class="lbl-s" x="628" y="337">NOTICEBOARD</text>
+
+          <!-- spawn -->
+          <circle cx="360" cy="352" r="7" fill="none" stroke="#141C18" stroke-width="2"/>
+          <text class="lbl-s" x="292" y="344">SPAWN</text>
+
+          <!-- camera -->
+          <path class="cam" d="M 480 462 L 372 400 M 480 462 L 588 400"/>
+          <text class="lbl-s" x="296" y="458">CAMERA (fixed, 38°)</text>
+        </svg>
+      </div>
+      <div class="exhibit-cap">Exhibit A — the park in plan. North is up; the camera is fixed below,
+        looking up-screen at 38°. Grid is roughly 15 px to the metre.</div>
+    </div>
+  </section>
+
+  <section id="ladder">
+    <h2><span class="sec">§3</span> The value ladder</h2>
+    <div class="col">
+      <p>$32.85 exists against a $25 goal. Where it sits is the whole design.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Where</th><th>What</th><th>Value</th><th>Guarded by</th><th>Costs you</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Paths and grass</td><td>10 pennies, 5 nickels, 4 dimes, 3 quarters</td><td class="val">$1.50</td><td>—</td><td>Walking</td></tr>
+            <tr><td>Shelter table, bandstand step, noticeboard</td><td>Two heaps and a dollar</td><td class="val">$2.35</td><td>—</td><td>Noticing furniture</td></tr>
+            <tr><td>The pond floor</td><td>5 quarters</td><td class="val">$1.25</td><td>The water</td><td>Getting wet, and the climb out</td></tr>
+            <tr><td>The cooler lid</td><td>A five, in the open</td><td class="val">$5.00</td><td>picnicker</td><td>Three cones at once</td></tr>
+            <tr><td>The blanket</td><td>Loose change</td><td class="val">$0.85</td><td>picnicker</td><td>Same three cones</td></tr>
+            <tr><td>Under the paperback</td><td>A five, pinned</td><td class="val">$5.00</td><td>frisbee</td><td>A SHOVE first, then the same three cones</td></tr>
+            <tr><td>The pavilion</td><td>Honesty box, lost-property tin</td><td class="val">$3.90</td><td>keeper</td><td>Timing a patrol</td></tr>
+            <tr><td>The cart counter</td><td>The ten, in the cash tin</td><td class="val">$10.00</td><td>vendor</td><td>The whole set piece</td></tr>
+            <tr><td>The vendor's table</td><td>Three singles in a jar</td><td class="val">$3.00</td><td>vendor</td><td>His cone, at arm's length</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="exhibit-cap">Exhibit B — every dollar in the park. Totals: $3.85 unguarded and
+        dry, $1.25 in the water, $27.75 owned by somebody.</div>
+    </div>
+
+    <div class="col">
+      <p>Four shinies pay a maximum of $9.00 across the kid's ladder
+      (<span class="mono">[1.25, 1.75, 2.50, 3.50]</span>). So the honest route — everything you
+      can pick up without crossing anybody, plus every trade she will ever make — tops out at
+      <strong>$12.85 of $25</strong>. That bound is asserted rather than eyeballed, because a
+      trade ladder is a knob with an obvious failure mode: pay enough and a game about robbing a
+      pretzel vendor becomes a game about finding bottle caps.</p>
+
+      <p>The ladder pays more than the block's and less than the roofline's, for the reason it
+      always does — a trade here costs a walk across open grass past a picnic that is watching the
+      grass. Worse odds than an empty plaza corner, far better than carrying a marble up a hotel.</p>
+    </div>
+  </section>
+
+  <section id="picnic">
+    <h2><span class="sec">§4</span> The picnic</h2>
+    <div class="col">
+      <p>Three people stand round a cooler. On the lid, in plain sight, glinting from anywhere in
+      the west half of the park, is a five-dollar bill. Two and a half metres away on the blanket
+      is another one, face-down under a paperback. That is $10.85 — 43% of the goal — inside a
+      four-metre circle.</p>
+
+      <p>The three are not the same. <strong>picnicker</strong> owns the cooler five and the loose
+      change and stands still, facing across the cooler, with a wide cone.
+      <strong>frisbee</strong> owns the pinned five and paces a three-metre triangle.
+      <strong>phone</strong> owns nothing, notices nothing, and stands exactly where you want to
+      land.</p>
+
+      <p>That third one is doing the most work. A guard you can be seen by is a puzzle; a body you
+      cannot walk through is a constraint on the solution. And the pacing one is what stops the
+      whole thing being solved once — a cone you can memorise is a cone you beat forever, while a
+      cone that walks three metres and comes back makes the same approach safe and unsafe at
+      different moments, without anything on screen moving fast enough to feel unfair.</p>
+
+      <div class="note">
+        <span class="lbl">Asserted, not admired</span>
+        <span class="mono">shoot.mjs</span> lifts the cooler five and counts how many
+        non-oblivious people are within five metres at that instant. If a later edit walks somebody
+        away, the check fails with "the set piece has gone soft" rather than the level quietly
+        becoming easy.
+      </div>
+
+      <p>The pinned five is level 1's saltshaker in a different hat, and deliberately so. SHOVE is
+      taught on the block, in an empty corner of a café row where nothing is watching. Here the
+      identical two-step happens on a blanket with three people round it, and the extra second it
+      costs is the entire difference.</p>
+    </div>
+  </section>
+
+  <section id="kid">
+    <h2><span class="sec">§5</span> Defending a silhouette</h2>
+    <div class="col">
+      <p>The roofline learned this the expensive way: the kid you trade with was moved onto a
+      restaurant terrace and became invisible — a slightly shorter adult among a maître d', a
+      busser and two diners. Colour did not fix it and props did not fix it. A <em>silhouette</em>
+      did. She sits down, and nothing else in either block sits down.</p>
+
+      <p>A park is where that inheritance stops being free. A park is the one setting that is
+      mostly benches. If the picnic sat on its blanket and the four benches had anybody on them,
+      "the one who is sitting" would identify five people and therefore nobody.</p>
+
+      <p>So the park is designed around keeping that silhouette unique. The picnic
+      <strong>stands</strong> round its cooler — which is also what the set piece needs, because
+      three standing cones cover more ground than three sitting ones. The keeper walks, the jogger
+      runs, the vendor stands. Four benches, all empty. She is still the only person in the game
+      who is sitting down.</p>
+
+      <p>Where she sits took two attempts, and both failures were about the fixed camera rather
+      than about her:</p>
+
+      <ul>
+        <li><strong>Far side of the pond.</strong> Correct in plan, useless on screen — the pond's
+          own 0.62 m wall stands between a fixed camera and anybody behind it, so she rendered as
+          a tan head above a tan kerb in front of a tan path.</li>
+        <li><strong>Near side, but east.</strong> Visible, and directly behind the picnic shelter,
+          which is this block's deliberate near-side occluder. An occluder only fades when it is
+          on the one ray between camera and crow — which is most of the time and not all of it.
+          Trading is core loop. It does not go behind the thing whose job is to be in the way.</li>
+      </ul>
+
+      <p>She ended up on the near-west arc, 118° round from due east, with the water behind her.
+      A small figure against teal is a small figure you can see.</p>
+    </div>
+  </section>
+
+  <section id="pretzel">
+    <h2><span class="sec">§6</span> The pretzel, and one rule the park refuses to teach</h2>
+    <div class="col">
+      <p>Every block's marquee puzzle is the same shape: food dropped far enough from what it
+      guards pulls every bird within reach, and the guard leaves his post to deal with them.
+      Twelve seconds of an unguarded ten.</p>
+
+      <p>The roofline adds a second condition and teaches it by failing you — birds do not use
+      stairs, so chips dropped in the yard feed the yard and the terrace carries on exactly as it
+      was. That is a good lesson and it belongs on a block with four decks.</p>
+
+      <p>The park declines it. <span class="mono">bait.deck</span> is <span class="mono">null</span>
+      here, the same as level 1's. There is one deck that matters, the pavilion roof is somewhere
+      to stand rather than somewhere to solve anything, and a level whose job is to be a small step
+      should not smuggle in the next level's rule.</p>
+
+      <div class="note">
+        <span class="lbl">Why a pretzel</span>
+        Because a hot dog is level 1's and a cone of chips is level 3's, and the bait is the one
+        object a player will remember a district by. It is also the cheapest new mesh in the
+        project — a torus at four radial segments, a twist box, and three grains of salt — and
+        adding it turned <span class="mono">BAIT_KINDS</span> from a pair into a vocabulary, so the
+        audit's bait rules now cover a fourth kind nobody has written yet.
+      </div>
+    </div>
+  </section>
+
+  <section id="harness">
+    <h2><span class="sec">§7</span> What the harnesses caught</h2>
+    <div class="col">
+      <p>Every one of these was found by a machine before it was found by a person, which is the
+      entire argument for the two scripts existing.</p>
+    </div>
+
+    <div class="miles">
+      <div class="mile">
+        <div class="m-id">smoke</div>
+        <div class="m-body">
+          <strong>A dime in a planter, a dollar inside a noticeboard</strong>
+          <span>Rule 6 — no pickup buried in solid geometry. The dollar's ledge collider sat where
+          the board was rather than where the ledge mesh was; the 0.12 m the ledge stands proud is
+          the whole clearance that bill has.</span>
+        </div>
+      </div>
+      <div class="mile">
+        <div class="m-id">smoke</div>
+        <div class="m-body">
+          <strong>A lamppost standing in a coin's one sightline</strong>
+          <span>Rule 6 again — no pickup hidden from the fixed camera. A 4.6 m column is opaque all
+          the way up, and it was exactly on the ray from the bandstand step's loose change.</span>
+        </div>
+      </div>
+      <div class="mile">
+        <div class="m-id">smoke</div>
+        <div class="m-body">
+          <strong>Two patrol waypoints inside solids</strong>
+          <span>The keeper walked into the noticeboard and the jogger into a planter, both by less
+          than half a metre, both invisible in the source.</span>
+        </div>
+      </div>
+      <div class="mile">
+        <div class="m-id">shoot</div>
+        <div class="m-body">
+          <strong>The lawn was the darkest thing anyone had put on screen</strong>
+          <span>Painted in the tree greens, it failed dusk twice over: median 35 against a floor of
+          48, and the frame stopped being violet, because saturated green swallows the violet sky
+          fill every other block's shadows are made of. One material, both failures.</span>
+        </div>
+      </div>
+      <div class="mile">
+        <div class="m-id">shoot</div>
+        <div class="m-body">
+          <strong>…and then the correction over-corrected</strong>
+          <span>At a pale sage the dusk numbers were fine and the <em>daylight</em> was a beach: the
+          afternoon key is warm and strong enough to pull an under-saturated green straight to tan,
+          and it took the paving with it. A park with paths in it rendered as one continuous
+          sandpit. Both ends of the ramp, or neither.</span>
+        </div>
+      </div>
+      <div class="mile">
+        <div class="m-id">shoot</div>
+        <div class="m-body">
+          <strong>A road darker than the lawn in front of it</strong>
+          <span>The roofline's "black river across the foreground", arriving from the other
+          direction. A kerb reads by being a lit edge above a surface, not by being lighter than
+          it — so the road went back up to full paving and took four points of median with it.</span>
+        </div>
+      </div>
+      <div class="mile">
+        <div class="m-id">shoot</div>
+        <div class="m-body">
+          <strong>A ninth lamppost that made things worse</strong>
+          <span>It bought two points of median and cost four of 5th percentile. At this camera a
+          lamp is a pool on the ground plus a 4.6 m column and its shadow in the frame. Light the
+          ground, not the lamp count — six paths became ten instead.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <p>The dusk frames now sit at <span class="mono">p50 52 / p05 27</span> at the picnic and
+      <span class="mono">p50 48 / p05 30</span> at the cart, against floors of 48 and 24, with blue
+      beating red at both. That is the same band the shipped roofline occupies. The floors were not
+      touched, and must not be.</p>
+    </div>
+  </section>
+
+  <section id="cost">
+    <h2><span class="sec">§8</span> What it costs the engine</h2>
+    <div class="col">
+      <p>Nothing structural. There is no asset pipeline, no new system, and no new per-frame work.</p>
+      <ul>
+        <li><strong>Meshes:</strong> 445, against the block's 371 and the roofline's 504.</li>
+        <li><strong>Colliders:</strong> 57, against 52 and 62.</li>
+        <li><strong>Night lights:</strong> eight lamps and nine ground pools, all emissive or
+          additive quads — no scene lights added, same as both other blocks.</li>
+        <li><strong>New code paths:</strong> one, the <span class="mono">pretzel</span> case in
+          <span class="mono">buildMesh</span>. Everything else is <span class="mono">world/kit.js</span>
+          and existing level data.</li>
+        <li><strong>Bundle:</strong> unchanged at ~170 kB gzipped, still almost entirely three.js.</li>
+      </ul>
+      <p>The one shared value that moved is the palette: <span class="mono">PAL.lawn</span> and
+      <span class="mono">PAL.lawnMid</span> are new, and nothing outside this level uses them.</p>
+    </div>
+  </section>
+
+  <section id="open">
+    <h2><span class="sec">§9</span> Open questions</h2>
+    <div class="col">
+      <ul>
+        <li><strong>Is $25 the right ask?</strong> The bound that matters is asserted — the honest
+          route reaches $12.85 of $25 — but whether the last ten dollars feel like a grind or like
+          an endgame is a playtest question, and the only lever that is cheap to move is the goal.</li>
+        <li><strong>Is one roof enough of a step?</strong> The climb is 1.0 m of unbroken air. A
+          player might reasonably finish the park without ever having thought about altitude, which
+          would leave the roofline exactly as steep a leap as it was.</li>
+        <li><strong>Does the picnic read as dangerous before it is?</strong> Three standing figures
+          around a glinting note is legible in a screenshot. Whether it reads as a <em>problem to
+          plan around</em> rather than a coin to walk at is the thing to watch in the first
+          playtest.</li>
+        <li><strong>The jogger.</strong> Fast, oblivious, and on the one path every route across the
+          park uses. Either that is good friction or it is a person who keeps bumping into you for
+          no reason, and there is no way to tell from here.</li>
+        <li><strong>How the player gets from block to block.</strong> Still not decided, still
+          <span class="mono">?level=N</span>, still deliberately a seam rather than a join.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <span>Small Change — The Park</span>
+    <span>$25.00 · two decks · slot 2</span>
+  </footer>
+
+</main>
+</body>
+</html>

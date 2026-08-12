@@ -19,6 +19,36 @@ export const PAL = {
   stone:       0xe4dacb,
   stoneMid:    0xc9bda8,
 
+  /**
+   * Mown grass — the park's ground, and therefore the single biggest surface
+   * in any block of this game.
+   *
+   * It is not `canopy`, and finding that out cost a round of measurement. The
+   * lawn was first painted in the same greens as the trees, which is what you
+   * would write down without thinking, and it failed dusk twice over: the
+   * median fell to 35 against a floor of 48, and — worse — the frame stopped
+   * being violet. A saturated leaf green absorbs blue, so the violet sky fill
+   * that makes every other block's shadows read cool came back off the grass
+   * as mud, and the 5th-percentile check caught the brightness while the
+   * blue-beats-red check caught the hue. One material, both failures, exactly
+   * as the roofline's terracotta wall did.
+   *
+   * A sun-bleached sage is also just truer. Parkland in late summer at six in
+   * the evening is not the colour of a leaf, and keeping leaf green for the
+   * trees is what stops the canopies dissolving into the ground they stand on.
+   *
+   * The correction after that one over-corrected, which is the other half of
+   * the lesson: at 0xb8c6a2 the dusk numbers were fine and the *daylight* was
+   * a beach. The afternoon key is 0xffd9a0 at 2.6, warm and strong enough to
+   * pull anything under-saturated straight to tan — and the paving went with
+   * it, so a park with paths in it rendered as one continuous sandpit. Green
+   * has to beat red by enough to survive that light (here, by 29) while blue
+   * stays high enough to catch the violet at the other end of the day. Both
+   * ends of the ramp, or neither.
+   */
+  lawn:        0xa2bf8a,
+  lawnMid:     0x93b07b,
+
   // planting & water
   canopy:      0x7fa05c,
   canopyLit:   0x8fb06a,

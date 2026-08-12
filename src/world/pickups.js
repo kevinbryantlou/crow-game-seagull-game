@@ -16,6 +16,7 @@ export const KIND_LABEL = {
   coins: 'LOOSE CHANGE', bill1: 'DOLLAR BILL', bill5: 'FIVE', bill10: 'TEN',
   bill20: 'TWENTY',
   shiny: 'SOMETHING SHINY', hotdog: 'HOT DOG', chips: 'A CONE OF CHIPS',
+  pretzel: 'A SOFT PRETZEL',
 };
 
 const SHINY_LABEL = {
@@ -24,12 +25,14 @@ const SHINY_LABEL = {
 };
 
 /**
- * Bait — the kinds that pull birds. Level 1 has one hot dog, level 2 has a cone
- * of chips; both are takeable, neither is money, and both exist so the crow can
- * move a guard by moving a smell. Named here rather than in either level so the
- * game's one bait rule reads off the pickup vocabulary.
+ * Bait — the kinds that pull birds. A hot dog on the block, a soft pretzel in
+ * the park, a cone of chips on the roofline; all three are takeable, none of
+ * them is money, and each exists so the crow can move a guard by moving a
+ * smell. Named here rather than in any level so the game's one bait rule reads
+ * off the pickup vocabulary — and so a block that invents a fourth gets the
+ * audit's bait checks for free.
  */
-export const BAIT_KINDS = new Set(['hotdog', 'chips']);
+export const BAIT_KINDS = new Set(['hotdog', 'chips', 'pretzel']);
 
 /**
  * The glint texture: a soft radial falloff with a faint four-point star.
@@ -203,6 +206,30 @@ function buildMesh(spec) {
       const mustard = box(0.22, 0.012, 0.02, PAL.gold, { shadow: false });
       mustard.position.y = 0.072;
       g.add(mustard);
+      return g;
+    }
+    case 'pretzel': {
+      // Level 2's bait, and the one pickup in the game that is a torus. A
+      // pretzel is a knot, and a knot is the cheapest possible silhouette that
+      // is not a box — at four radial segments it reads as baked rather than
+      // smooth, which is exactly the register everything else is in.
+      const g = new THREE.Group();
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.085, 0.034, 4, 9),
+        mat(PAL.terracotta),
+      );
+      ring.rotation.x = Math.PI / 2;
+      ring.castShadow = true;
+      g.add(ring);
+      // The twist across the middle, which is the half that says "pretzel"
+      // rather than "doughnut".
+      const knot = box(0.11, 0.05, 0.05, PAL.terracottaLit, { up: PAL.terracottaLit, down: PAL.shade });
+      knot.position.y = 0.012;
+      knot.rotation.y = 0.5;
+      g.add(knot);
+      for (const [sx, sz] of [[0.05, 0.05], [-0.06, 0.03], [0.02, -0.07]]) {
+        g.add(at(box(0.016, 0.016, 0.016, PAL.stone, { shadow: false }), sx, 0.04, sz));
+      }
       return g;
     }
     case 'chips': {

@@ -9,11 +9,19 @@
  * The rule for what belongs here: if a second block would need a different one,
  * it is level data. If both blocks need the same one, it is in world/rules.js.
  *
- * How the player gets from one to the other is deliberately not decided here —
- * for now `?level=2` selects, and `main.js` is the only thing that reads it.
+ * How the player gets from one block to the next is deliberately not decided
+ * here — for now `?level=N` selects, and `main.js` is the only thing that reads
+ * it.
+ *
+ * Order is a registry question, not a filename one. The roofline lives in
+ * `level2.js` and is level 3: it was built second and it reads as too big a
+ * scale leap to follow the block directly, so the park was written to sit
+ * between them. Renaming the file would only move the confusion somewhere the
+ * git history cannot follow it.
  */
 
 import { buildLevel as buildBlock } from './level.js';
+import { buildLevel as buildPark } from './park.js';
 import { buildLevel as buildRoofline } from './level2.js';
 import { RULES } from './rules.js';
 
@@ -110,6 +118,125 @@ export const LEVELS = [
 
   {
     id: 2,
+    slug: 'the-park',
+    build: buildPark,
+    title: 'The Park',
+    district: 'The Green',
+    /**
+     * $25.
+     *
+     * The rungs matter more than the numbers: $20 on the block, $25 here, $30
+     * on the roofline. A quarter more than the block is a step you feel in the
+     * last minute of a run and never in the first, which is exactly the size of
+     * step this level is for — it is the one that teaches the game has floors,
+     * and asking for a harder sum at the same time would be two lessons.
+     */
+    goal: 25.00,
+    sessionSeconds: RULES.sessionSeconds,
+    /**
+     * Mid-afternoon. The block gets the whole ramp from 0 and the roofline
+     * starts at 0.42 with the light already going; the park sits between them,
+     * so its lamps catch at 5m12s of an eight-minute day against the block's
+     * 5m46s. Same reward structure — finish well and you never see dusk — with
+     * half a minute less rope.
+     */
+    dayStart: 0.20,
+    /**
+     * On the main path west of the shelter, looking over the pond.
+     *
+     * It was under the shelter, and the opening frame was four square metres
+     * of striped canvas: the shelter is this block's deliberate near-side
+     * occluder, and an occluder only fades when it is between the camera and
+     * the crow — standing *under* one just fills the screen with it. From here
+     * the first thing anybody sees is the water, the free money in it, and the
+     * kid sitting on its edge, which is the whole opening lesson.
+     */
+    spawn: [-8, 0, 9.5],
+
+    tasks: [
+      { id: 'dive', text: 'Dive the pond', when: (g) => g.crow.inWater },
+      /**
+       * Observed rather than banked, because the risk is in the lifting. Get
+       * the five off the cooler with three people round it and the task is
+       * done; whether you make it to the nest with it is a different problem
+       * and the level is happy to let you find that out.
+       */
+      { id: 'picnic', text: 'Lift the five off the cooler', when: (g) => !!g.crow.carried?.onCooler },
+      { id: 'trade', text: 'Trade something shiny' },
+      { id: 'cart', text: 'Get the vendor away from his cart' },
+      { id: 'ten', text: 'Get the ten' },
+    ],
+    bankTicks: { bill10: 'ten' },
+
+    teach: {
+      money: 'Take it to your nest',
+      // Plain words for a place, as always: "pond edge", not "kerb", not
+      // "coping". The whole job of this line is to send someone somewhere.
+      shiny: 'The kid on the pond edge will trade for that',
+      bait: 'A pretzel. Every pigeon here can smell it.',
+    },
+
+    /**
+     * A little above the block's ladder and a little below the roofline's.
+     *
+     * A trade here costs a walk across open grass past a picnic that is
+     * watching the grass, which is worse odds than the block's empty plaza
+     * corner and much better than carrying something up a hotel. Bounded by the
+     * rule rather than by taste: unguarded money plus every trade this kid will
+     * ever make still cannot reach $25.
+     */
+    tradeValues: [1.25, 1.75, 2.50, 3.50],
+
+    bait: {
+      task: 'cart',
+      guard: 'vendor',
+      seconds: 12,
+      mobFor: 13,
+      anchor: (world) => world.cart,
+      minDist: 6.5,
+      tooClose: 'Too close to the cart',
+      onDrop: 'Every pigeon in the park has seen it',
+      /**
+       * Null, deliberately. The roofline teaches "birds do not use stairs" by
+       * failing you for dropping food on the wrong deck; this level has one
+       * deck that matters and no business teaching that lesson early. The
+       * pavilion roof is somewhere to stand, not somewhere to solve anything.
+       */
+      deck: null,
+    },
+
+    pinToast: 'The five is loose',
+
+    chaseProbes: (w) => [
+      ['the pond, north to south', 0, [w.fountain.x, w.fountain.z - 8], [w.fountain.x, w.fountain.z + 8]],
+      ['the pond, corner to corner', 0, [-11, -2], [3, 10]],
+      ['the picnic, past the cooler', 0, [-23.5, 3.2], [-15.5, 3.2]],
+      ['the bandstand', 0, [-17, -9.5], [-17, -1.5]],
+      ['the shelter', 0, [-4, 12.6], [8, 12.6]],
+      ['the pavilion, end to end', 0, [12, -8], [0, -8]],
+      ['the cart', 0, [w.cart.x, w.cart.z - 5], [w.cart.x, w.cart.z + 5]],
+    ],
+
+    ending: {
+      lostTitle: 'The Gates<span>Close</span>',
+      won: () =>
+        'The last coin goes into the nest and the park stops being a map of '
+        + 'distances. It is just a park. Somebody has started packing up a blanket '
+        + 'two hundred feet away and you can hear every word of it.<br><br>'
+        + 'You come back sitting down, on the roof of a building whose door is '
+        + 'locked from the inside, with grass stains you cannot account for. Down '
+        + 'by the water a kid is still holding out a bottle cap for a bird that is '
+        + 'not there any more.',
+      lost: (total) =>
+        `You got to $${total.toFixed(2)}. The keeper has started his last lap and `
+        + 'the light through the hedge has gone the colour of a bruise.<br><br>'
+        + 'Still a crow. But nobody locks a park, not really, and there are five '
+        + 'quarters at the bottom of that pond that have been there since June.',
+    },
+  },
+
+  {
+    id: 3,
     slug: 'the-roofline',
     build: buildRoofline,
     title: 'The Hotel (Outside)',
@@ -118,10 +245,10 @@ export const LEVELS = [
      * $30, not $40.
      *
      * The playtest read of this block was "too much of a scale leap from level
-     * 1", and it is going to sit later in the order — level 3 or 4 — once the
-     * blocks between it and the first one exist. So the goal has to be above
-     * the block's $20 and below the $40 it was first built at: a step on the
-     * ladder rather than a doubling.
+     * 1", so it sits at slot 3 with the park between it and the block. The goal
+     * has to be above the block's $20 and below the $40 it was first built at:
+     * a step on the ladder rather than a doubling. With the park at $25 the
+     * ladder now reads 20 / 25 / 30, which is the shape it always wanted.
      */
     goal: 30.00,
     sessionSeconds: RULES.sessionSeconds,

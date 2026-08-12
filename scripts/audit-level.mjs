@@ -27,7 +27,7 @@ const finite = (v) => Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isF
 export function auditLevel({ level, world, check, deps }) {
   const {
     RULES, overlaps, blocksWalker, deckAt, WALKER_RADIUS,
-    Crow, CROW, Human, Pigeon, Gull, Pickup,
+    Crow, CROW, Human, Pigeon, Gull, Pickup, BAIT_KINDS,
   } = deps;
 
   const name = `L${level.id}`;
@@ -85,7 +85,10 @@ export function auditLevel({ level, world, check, deps }) {
   // set piece — without a glint the player cannot tell the puzzle is there.
   check(say('every takeable pickup carries a glint'), pickups.every((p) => !!p.glint),
     `(missing: ${pickups.filter((p) => !p.glint).map((p) => p.kind).join(', ') || 'none'})`);
-  const bait = pickups.filter((p) => p.kind === 'hotdog' || p.kind === 'chips');
+  // Read off the pickup vocabulary rather than naming the two kinds that
+  // existed when this was written. The park's pretzel is the third, and a rule
+  // that has to be edited to notice a new block is not a rule.
+  const bait = pickups.filter((p) => BAIT_KINDS.has(p.kind));
   check(say('the level has exactly one piece of bait, and it glints'),
     bait.length === 1 && !!bait[0].glint, `(${bait.length})`);
 

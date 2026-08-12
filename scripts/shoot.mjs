@@ -414,13 +414,16 @@ if (ending && !/twenty-two dollars sixty-six cents/i.test(ending.title)) {
 if (ending && /\$/.test(ending.rank)) errors.push(`amount still in the eyebrow: "${ending.rank}"`);
 if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-ending'); }
 
-// ── level 2: the roofline ────────────────────────────────────────────────────
+// ── level 2: the park ────────────────────────────────────────────────────────
 /**
- * A second block gets a second pass, because almost nothing that goes wrong on
- * it would show up on the first. The four decks are the whole level and they are
- * the whole risk: a prop authored without its deck offset hangs in the air, a
- * light pool lands on the yard instead of the terrace, and both are invisible in
- * the source and obvious in a PNG.
+ * The park's risks are not the roofline's. It has one raised deck and nothing
+ * clever about it; what it has instead is three people standing round one
+ * cooler, and every claim this level makes is about *who can see what*. That is
+ * not visible in the geometry and it is not visible in a screenshot either —
+ * so the set piece gets asserted rather than photographed, and the photographs
+ * are for the two things that are only ever wrong in a frame: whether the lawn
+ * survives dusk, and whether a kid sitting on a pond kerb reads as a kid
+ * sitting on a pond kerb.
  */
 {
   const url2 = URL + (URL.includes('?') ? '&' : '?') + 'level=2';
@@ -432,17 +435,6 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
 
   console.log(`\nloading ${url2}`);
   await p2.goto(url2, { waitUntil: 'domcontentloaded', timeout: 30000 });
-  /**
-   * 30s, not 20 — and it says which kind of failure it was.
-   *
-   * The real boot is ~1.5s on this hardware, so 20 was already twelve times the
-   * measured time and the intermittent failure was never the game being slow: it
-   * is the second page contending for one software-WebGL context. Raising the
-   * ceiling lowers the false-failure rate and treats a symptom, so the useful
-   * half of this change is the diagnosis underneath it — a game that *threw*
-   * leaves "Could not start:" in #loading and now reports that, instead of being
-   * indistinguishable from a slow machine.
-   */
   const booted2 = Date.now();
   await p2.waitForFunction(
     () => document.getElementById('loading')?.classList.contains('hidden')
@@ -471,35 +463,29 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
     await new Promise((r) => setTimeout(r, 900));
     await shoot2(name);
   };
+  const frames2 = () => p2.evaluate(() => new Promise((r) =>
+    requestAnimationFrame(() => requestAnimationFrame(r))));
 
   await shoot2('20-l2-spawn');
-  // One shot per deck, bottom to top. If a deck is empty in the frame, it is
-  // because nothing was built on it — which is exactly what these are for.
-  await look2('21-l2-forecourt', -11, 0, 13.5);
-  await look2('22-l2-loading-end', 17, 0, 8);
-  await look2('23-l2-cradle', 14, 4.0, 2.4);
-  await look2('24-l2-terrace', -6, 5.4, -2);
-  await look2('25-l2-kid', -5, 5.4, 0.6);
-  await look2('26-l2-lectern', -15.5, 5.4, -1.5);
-  await look2('27-l2-roof', -12, 9.2, -8);
-  await look2('28-l2-nest', -16, 12.4, -9);
+  await look2('21-l2-pond', -4, 0, 9.5);
+  await look2('22-l2-kid', -6.5, 0, 10);
+  await look2('23-l2-picnic', -19.5, 0, 7.0);
+  await look2('24-l2-bandstand', -17, 0, -1.0);
+  await look2('25-l2-shelter', 2, 0, 15.0);
+  await look2('26-l2-cart', 20, 0, 2.5);
+  await look2('27-l2-pavilion', 6, 0, -3.0);
+  await look2('28-l2-nest', 6, 4.75, -8);
 
-  /**
-   * The plunge pool, which is the plaza fountain five metres in the air — and
-   * therefore the same lobster-pot risk arrived at from a new direction. The
-   * scramble test read `c.bottom <= 0.01`, which is true of a rim standing on
-   * paving and false of one standing on a roof, so a crow in this pool could not
-   * climb out of it at any heading at all.
-   */
-  const pool = !has2 ? null : await p2.evaluate(async () => {
+  // The pond is the plaza fountain with the ornament taken out, so it is the
+  // same lobster-pot risk and gets the same three exits from an empty bar.
+  const pond = !has2 ? null : await p2.evaluate(async () => {
     const g = window.__game;
     const f = g.world.fountain;
     const frame = () => new Promise((r) => requestAnimationFrame(r));
     g.crow.pos.set(f.x, f.floor, f.z);
     g.crow.vel.set(0, 0, 0);
     await frame(); await frame();
-    const out = { deck: g.world.waterDeck, rim: f.rim, wet: g.crow.inWater };
-
+    const out = { wet: g.crow.inWater, rim: f.rim };
     for (const [nm, drive] of [
       ['hold', () => ({ move: { x: 0, y: 0 }, flap: true })],
       ['tap', (i) => ({ move: { x: 0, y: 0 }, flap: (i % 12) < 5 })],
@@ -517,113 +503,144 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
       }
       out[nm] = escaped;
     }
-
-    // The trap unique to a pool that is *not* on the ground: the column of air
-    // beneath it must not count as being in it. Only meaningful while some block
-    // has a raised one — this one's fountain went back to the forecourt — but
-    // the guard stays, because the bug it watches for is in the crow, not in the
-    // level.
-    if (g.world.waterDeck > 1) {
-      g.crow.pos.set(f.x, 0, f.z);
-      g.crow.vel.set(0, 0, 0);
-      g.crow.inWater = false;
-      g.crow.update(1 / 60, { move: { x: 0, y: 0 }, flap: false }, g.world, g.audio);
-      out.wetFromBelow = g.crow.inWater;
-    }
-
-    g.crow.pos.set(-1, 0, 9.5);
+    g.crow.pos.set(-8, 0, 9.5);
     g.crow.vel.set(0, 0, 0);
     return out;
   });
-  if (pool) console.log('  water:', JSON.stringify(pool));
-  if (pool && !pool.wet) errors.push('L2: crow on the pool floor is not in the water');
-  if (pool) {
-    const failed = ['hold', 'tap', 'walk'].filter((k) => !pool[k]);
-    if (failed.length) errors.push(`L2: cannot get out of the plunge pool by: ${failed.join(', ')}`);
+  if (pond) console.log('  pond:', JSON.stringify(pond));
+  if (pond && !pond.wet) errors.push('L2: crow on the pond floor is not in the water');
+  if (pond) {
+    const failed = ['hold', 'tap', 'walk'].filter((k) => !pond[k]);
+    if (failed.length) errors.push(`L2: cannot get out of the pond by: ${failed.join(', ')}`);
   }
-  if (pool && pool.wetFromBelow) errors.push('L2: a crow in the yard is swimming in the roof pool');
 
   /**
-   * The set piece, and the rule it teaches by failing. Chips in the yard feed
-   * the yard; chips on the terrace, away from the stand, empty the parapet.
+   * The set piece, asserted rather than admired.
+   *
+   * The level's whole claim is that the five on the cooler is worth a fifth of
+   * the goal and cannot be taken unobserved. "Unobserved" is a property of
+   * three cones and a patrol, so it is measured: how many non-oblivious people
+   * are inside guarding distance of that coin, at the moment the crow lifts it.
+   * If a later edit walks somebody away, this is what notices.
+   */
+  const cooler = !has2 ? null : await p2.evaluate(async () => {
+    const g = window.__game;
+    const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const five = g.pickups.find((p) => p.onCooler);
+    if (!five) return { error: 'nothing on the cooler' };
+    g.crow.pos.set(five.pos.x, 0.55, five.pos.z);
+    g.crow.vel.set(0, 0, 0);
+    await frame();
+    const a = g._bestAction();
+    g._doAction(a);
+    const task = g.tasks.find((t) => t.id === 'picnic');
+    const out = {
+      label: five.label,
+      value: five.value,
+      verb: a ? a.verb : null,
+      carrying: g.crow.carried ? g.crow.carried.label : null,
+      ticks: !!(task && task.when(g)),
+      owner: five.owner,
+      // Everyone who could care, and is close enough to do something about it.
+      watchers: g.humans.filter((h) => !h.kid && !h.oblivious
+        && Math.hypot(h.pos.x - five.pos.x, h.pos.z - five.pos.z) < 5).length,
+    };
+    g.crow.carried = null;
+    five.state = 'world'; five.taken = false;
+    g.crow.pos.set(-8, 0, 9.5);
+    return out;
+  });
+  if (cooler) console.log('  cooler:', JSON.stringify(cooler));
+  if (cooler && cooler.verb !== 'TAKE') errors.push(`L2: the five on the cooler is not takeable (${cooler.verb})`);
+  if (cooler && !cooler.ticks) errors.push('L2: lifting the cooler five did not satisfy the picnic task');
+  if (cooler && cooler.value !== 5) errors.push(`L2: the cooler five is worth ${cooler.value}`);
+  if (cooler && cooler.watchers < 2) {
+    errors.push(`L2: the cooler is guarded by ${cooler.watchers} — the set piece has gone soft`);
+  }
+
+  /**
+   * The pinned note, which is the same verb as level 1's saltshaker on a
+   * blanket with people round it. Before the shove there must be no way to take
+   * it and the game must say why; after it, it is just money.
+   */
+  const pinned = !has2 ? null : await p2.evaluate(async () => {
+    const g = window.__game;
+    const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const five = g.pickups.find((p) => p.pinned);
+    g.saltMoved = false;
+    g.world.pin.visible = true;
+    g.crow.pos.set(five.pos.x, 0, five.pos.z);
+    g.crow.vel.set(0, 0, 0);
+    await frame(); await frame();
+    const before = g._bestAction();
+    g._doAction({ kind: 'salt' });
+    await frame();
+    const after = g._bestAction();
+    const out = {
+      pin: g.world.pin.userData.label,
+      beforeVerb: before ? before.verb : null,
+      toast: document.getElementById('toast').textContent,
+      afterVerb: after ? after.verb : null,
+      afterNoun: after ? after.noun : null,
+      pinHidden: g.world.pin.visible === false,
+    };
+    g.crow.pos.set(-8, 0, 9.5);
+    return out;
+  });
+  if (pinned) console.log('  pinned:', JSON.stringify(pinned));
+  if (pinned && pinned.beforeVerb !== 'SHOVE') {
+    errors.push(`L2: the paperback does not offer SHOVE (${pinned.beforeVerb})`);
+  }
+  if (pinned && !pinned.pinHidden) errors.push('L2: the paperback survived being shoved');
+  if (pinned && pinned.afterVerb !== 'TAKE') {
+    errors.push(`L2: the note under the paperback is still stuck (${pinned.afterVerb})`);
+  }
+
+  /**
+   * The bait. One deck, so there is no wrong-floor lesson to teach here — the
+   * only rule is distance, and it has to hold in both directions.
    */
   const bait = !has2 ? null : await p2.evaluate(async () => {
     const g = window.__game;
-    const frame = () => new Promise((r) => requestAnimationFrame(r));
+    const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     const toast = () => document.getElementById('toast').textContent;
-    const chips = g.pickups.find((p) => p.kind === 'chips');
-    const out = { label: chips.label };
-
+    const food = g.pickups.find((p) => p.kind === 'pretzel');
+    const out = { label: food.label };
     const dropAt = async (x, y, z) => {
-      chips.state = 'world'; chips.taken = false;
+      food.state = 'world'; food.taken = false;
       g.crow.pos.set(x, y, z);
       g.crow.vel.set(0, 0, 0);
-      // Two frames before the drop, not none. A dropped pickup is placed at the
-      // beak, and the beak is read off the rig's world matrix — which only
-      // catches up with `crow.pos` on the next simulation step. Dropping in the
-      // same tick as the teleport tests the position the crow used to be in,
-      // which is how this check first reported that the terrace was the yard.
+      // Two frames before the drop, never none: a dropped pickup lands at the
+      // beak, and the beak comes off the rig's world matrix, which only catches
+      // up with crow.pos on the next step.
       await frame(); await frame();
-      chips.setCarried(g.crow.grip);
-      g.crow.carried = chips;
+      food.setCarried(g.crow.grip);
+      g.crow.carried = food;
       g.foodUntil = 0;
       g._doAction({ kind: 'drop' });
       await frame();
       return toast();
     };
-
-    out.inTheYard = await dropAt(4, 0, 10);
-    out.movedYard = !!(g.foodUntil && g.foodUntil > g.elapsed);
-    out.tooNear = await dropAt(-13, 5.4, -3.5);
-    out.onTheTerrace = await dropAt(6, 5.4, -3);
-    out.movedTerrace = !!(g.foodUntil && g.foodUntil > g.elapsed);
+    out.tooClose = await dropAt(g.world.cart.x + 2, 0, g.world.cart.z + 3);
+    out.movedNear = !!(g.foodUntil && g.foodUntil > g.elapsed);
+    out.legal = await dropAt(g.world.cart.x - 9, 0, g.world.cart.z + 9);
+    out.moved = !!(g.foodUntil && g.foodUntil > g.elapsed);
     out.guardDistracted = g.baitGuard.state === 'distracted';
-    out.taskTicked = g.tasks.find((t) => t.id === 'gulls').done;
-
+    out.taskTicked = g.tasks.find((t) => t.id === 'cart').done;
     g.crow.carried = null;
-    g.crow.pos.set(-1, 0, 9.5);
+    g.crow.pos.set(-8, 0, 9.5);
     return out;
   });
   if (bait) console.log('  bait:', JSON.stringify(bait));
-  if (bait && bait.movedYard) errors.push('L2: chips dropped in the yard moved the terrace');
-  if (bait && !/down here/i.test(bait.inTheYard)) errors.push(`L2: no deck hint in the yard: "${bait.inTheYard}"`);
-  if (bait && !/stand/i.test(bait.tooNear)) errors.push(`L2: no too-close hint by the stand: "${bait.tooNear}"`);
-  if (bait && !bait.movedTerrace) errors.push('L2: a legal chip drop did nothing');
-  if (bait && !bait.guardDistracted) errors.push('L2: the maître d’ did not leave his stand');
-  if (bait && !bait.taskTicked) errors.push('L2: the gull task did not tick');
+  if (bait && bait.movedNear) errors.push('L2: a pretzel dropped at the cart still moved the vendor');
+  if (bait && !/close to the cart/i.test(bait.tooClose)) {
+    errors.push(`L2: no too-close hint by the cart: "${bait.tooClose}"`);
+  }
+  if (bait && !bait.moved) errors.push('L2: a legal pretzel drop did nothing');
+  if (bait && !bait.guardDistracted) errors.push('L2: the vendor did not leave his cart');
+  if (bait && !bait.taskTicked) errors.push('L2: the cart task did not tick');
 
-  // The gulls: land beside one and everybody looks. Fly over it and nobody does.
-  const gulls = !has2 ? null : await p2.evaluate(() => {
-    const g = window.__game;
-    // Stop the loop and clear the food first. The bait check above left thirteen
-    // seconds of chips on the terrace, and a gull that is mobbing does not
-    // shriek — it has better things to do. The first version of this check
-    // measured that and reported it as a broken gull.
-    g.running = false;
-    g.foodUntil = 0;
-    const gull = g.gulls[0];
-    gull.mobbing = null;
-    const out = { count: g.gulls.length, deck: gull.floorY };
-    const fire = () => {
-      let heard = 0;
-      const real = g.onGullAlarm.bind(g);
-      g.onGullAlarm = (x) => { heard++; real(x); };
-      gull.alarmCooldown = 0;
-      gull.update(1 / 60, null, g.crow, g.world, g);
-      g.onGullAlarm = real;
-      return heard;
-    };
-    g.crow.pos.set(gull.pos.x + 0.9, gull.floorY, gull.pos.z);
-    out.landedBeside = fire();
-    g.crow.pos.set(gull.pos.x + 0.9, gull.floorY + 4, gull.pos.z);
-    out.flewOver = fire();
-    g.crow.pos.set(-1, 0, 9.5);
-    g.running = true;
-    return out;
-  });
-  if (gulls) console.log('  gulls:', JSON.stringify(gulls));
-
-  // The kid pays this block's ladder, not the block's-next-door one.
+  // The kid pays this block's ladder, and the reward goes straight in the beak.
   const trade2 = !has2 ? null : await p2.evaluate(() => {
     const g = window.__game;
     const shiny = g.pickups.find((p) => p.kind === 'shiny' && !p.taken);
@@ -645,17 +662,36 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
     errors.push(`L2 first trade paid ${trade2.value}, expected ${trade2.expected}`);
   }
   if (trade2 && !trade2.parentedToBeak) errors.push('L2 trade reward was not auto-equipped');
-  if (gulls && !gulls.count) errors.push('L2: no gulls on the roof');
-  if (gulls && !gulls.landedBeside) errors.push('L2: a gull ignored a crow landing beside it');
-  if (gulls && gulls.flewOver) errors.push('L2: a gull objected to a crow flying over it');
+
+  // The nest, which is the one thing on this block that is off the ground.
+  const nest2 = !has2 ? null : await p2.evaluate(async () => {
+    const g = window.__game;
+    const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const coin = g.pickups.find((p) => p.value > 0 && p.state === 'world' && !p.pinned);
+    g._doAction({ kind: 'take', pickup: coin });
+    const n = g.world.nest;
+    g.crow.pos.set(n.x, n.y, n.z);
+    g.crow.vel.set(0, 0, 0);
+    await frame();
+    const a = g._bestAction();
+    const out = { nestY: n.y, verb: a ? a.verb : null };
+    g._doAction({ kind: 'bank' });
+    out.banked = coin.state === 'banked';
+    g.total = 0; g.banked = 0; g.crow.carried = null;
+    g.crow.pos.set(-8, 0, 9.5);
+    return out;
+  });
+  if (nest2) console.log('  nest:', JSON.stringify(nest2));
+  if (nest2 && nest2.verb !== 'STASH') errors.push(`L2: standing on the vent cap does not offer STASH (${nest2.verb})`);
+  if (nest2 && !nest2.banked) errors.push('L2: banking on the pavilion did nothing');
+  await frames2();
 
   /**
-   * Dusk, measured. Same floors as level 1, sampled from the two places on this
-   * block that can actually go dark: the yard, which is the bottom of a light
-   * well, and the terrace, which is where the money is.
-   *
-   * `t` here is progress through the run, not time of day — the level starts at
-   * 0.42 and its lamps catch at 0.52 of the session.
+   * Dusk, measured. A lawn is darker than paving whatever you do with it, and
+   * this is the block that finds out whether "canopyLit as the ground" was
+   * enough. Sampled where it can actually go dark: under the picnic's trees at
+   * the west end, and at the cart, which is deliberately the dimmest thing in
+   * the park.
    */
   if (has2) {
     const FLOOR = { p50: RULES.duskMedianFloor, p05: RULES.duskShadowFloor };
@@ -703,8 +739,8 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
     };
 
     let late = null;
-    for (const [where, pos] of [['forecourt', [-11, 0, 12]], ['terrace', [-6, 5.4, -2]]]) {
-      for (const [through, settle] of [[0.30, 500], [0.62, 9000], [0.98, 700]]) {
+    for (const [where, pos] of [['picnic', [-19, 0, 7]], ['cart', [19, 0, 3]]]) {
+      for (const [through, settle] of [[0.35, 500], [0.70, 9000], [0.98, 700]]) {
         const m = await measure2(through, settle, pos);
         const key = `l2-dusk-${where}-${String(Math.round(through * 100))}`;
         writeFileSync(`${OUT}/${key}.png`, await p2.screenshot({ type: 'png' }));
@@ -723,7 +759,7 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
   // The ending, with the level's own copy and an awkward amount.
   const end2 = !has2 ? null : await p2.evaluate(() => {
     const g = window.__game;
-    g.total = 31.35; g.elapsed = 268; g.finished = false; g.running = true;
+    g.total = 26.40; g.elapsed = 233; g.finished = false; g.running = true;
     g._finish(true);
     return {
       title: document.getElementById('ending-title').textContent.replace(/\s+/g, ' ').trim(),
@@ -732,11 +768,336 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
     };
   });
   if (end2) console.log('  L2 ending:', JSON.stringify(end2));
-  if (end2 && end2.goal !== 30) errors.push(`L2 goal is ${end2.goal}, expected 30`);
-  if (end2 && !/thirty-one dollars thirty-five cents/i.test(end2.title)) {
+  if (end2 && end2.goal !== 25) errors.push(`L2 goal is ${end2.goal}, expected 25`);
+  if (end2 && !/twenty-six dollars forty cents/i.test(end2.title)) {
     errors.push(`L2 ending headline wrong: "${end2.title}"`);
   }
   if (end2) { await new Promise((r) => setTimeout(r, 1400)); await shoot2('29-l2-ending'); }
+}
+
+// ── level 3: the roofline ────────────────────────────────────────────────────
+/**
+ * Every block gets its own pass, because almost nothing that goes wrong on one
+ * would show up on another. Here the four decks are the whole level and they
+ * are the whole risk: a prop authored without its deck offset hangs in the air,
+ * a light pool lands on the yard instead of the terrace, and both are invisible
+ * in the source and obvious in a PNG.
+ */
+{
+  const url3 = URL + (URL.includes('?') ? '&' : '?') + 'level=3';
+  const p3 = await browser.newPage();
+  await p3.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
+  p3.on('console', (m) => { if (m.type() === 'error') errors.push(`L3 console: ${m.text()}`); });
+  p3.on('pageerror', (e) => errors.push(`L3 uncaught: ${e.message}`));
+  p3.on('requestfailed', (r) => errors.push(`L3 404/failed: ${r.url()}`));
+
+  console.log(`\nloading ${url3}`);
+  await p3.goto(url3, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  /**
+   * 30s, not 20 — and it says which kind of failure it was.
+   *
+   * The real boot is ~1.5s on this hardware, so 20 was already twelve times the
+   * measured time and the intermittent failure was never the game being slow: it
+   * is the second page contending for one software-WebGL context. Raising the
+   * ceiling lowers the false-failure rate and treats a symptom, so the useful
+   * half of this change is the diagnosis underneath it — a game that *threw*
+   * leaves "Could not start:" in #loading and now reports that, instead of being
+   * indistinguishable from a slow machine.
+   */
+  const booted3 = Date.now();
+  await p3.waitForFunction(
+    () => document.getElementById('loading')?.classList.contains('hidden')
+       || (document.getElementById('loading')?.textContent || '').startsWith('Could not start'),
+    { timeout: 30000 },
+  ).catch(() => errors.push('L3: still booting after 30s — no error thrown, just slow'));
+  const boot3Msg = await p3.$eval('#loading', (el) => (el.classList.contains('hidden') ? null : el.textContent))
+    .catch(() => null);
+  if (boot3Msg) errors.push(`L3 did not start: ${boot3Msg}`);
+  console.log(`  L3 booted in ${Date.now() - booted3} ms`);
+
+  const has3 = await p3.evaluate(() => !!window.__game);
+  await p3.click('#start');
+  await new Promise((r) => setTimeout(r, 1200));
+
+  const shoot3 = async (name) => {
+    writeFileSync(`${OUT}/${name}.png`, await p3.screenshot({ type: 'png' }));
+    console.log(`  wrote ${OUT}/${name}.png`);
+  };
+  const look3 = async (name, x, y, z) => {
+    if (!has3) return;
+    await p3.evaluate(([px, py, pz]) => {
+      window.__game.crow.pos.set(px, py, pz);
+      window.__game.crow.vel.set(0, 0, 0);
+    }, [x, y, z]);
+    await new Promise((r) => setTimeout(r, 900));
+    await shoot3(name);
+  };
+
+  await shoot3('30-l3-spawn');
+  // One shot per deck, bottom to top. If a deck is empty in the frame, it is
+  // because nothing was built on it — which is exactly what these are for.
+  await look3('31-l3-forecourt', -11, 0, 13.5);
+  await look3('32-l3-loading-end', 17, 0, 8);
+  await look3('33-l3-cradle', 14, 4.0, 2.4);
+  await look3('34-l3-terrace', -6, 5.4, -2);
+  await look3('35-l3-kid', -5, 5.4, 0.6);
+  await look3('36-l3-lectern', -15.5, 5.4, -1.5);
+  await look3('37-l3-roof', -12, 9.2, -8);
+  await look3('38-l3-nest', -16, 12.4, -9);
+
+  /**
+   * The plunge pool, which is the plaza fountain five metres in the air — and
+   * therefore the same lobster-pot risk arrived at from a new direction. The
+   * scramble test read `c.bottom <= 0.01`, which is true of a rim standing on
+   * paving and false of one standing on a roof, so a crow in this pool could not
+   * climb out of it at any heading at all.
+   */
+  const pool = !has3 ? null : await p3.evaluate(async () => {
+    const g = window.__game;
+    const f = g.world.fountain;
+    const frame = () => new Promise((r) => requestAnimationFrame(r));
+    g.crow.pos.set(f.x, f.floor, f.z);
+    g.crow.vel.set(0, 0, 0);
+    await frame(); await frame();
+    const out = { deck: g.world.waterDeck, rim: f.rim, wet: g.crow.inWater };
+
+    for (const [nm, drive] of [
+      ['hold', () => ({ move: { x: 0, y: 0 }, flap: true })],
+      ['tap', (i) => ({ move: { x: 0, y: 0 }, flap: (i % 12) < 5 })],
+      ['walk', () => ({ move: { x: 1, y: 0 }, flap: false })],
+    ]) {
+      g.crow.pos.set(f.x, f.floor, f.z);
+      g.crow.vel.set(0, 0, 0);
+      g.crow.stamina = 0;
+      g.crow.inWater = true;
+      let escaped = false;
+      for (let i = 0; i < 600 && !escaped; i++) {
+        g.crow.update(1 / 60, drive(i), g.world, g.audio);
+        const r = Math.hypot(g.crow.pos.x - f.x, g.crow.pos.z - f.z);
+        escaped = (!g.crow.inWater && g.crow.pos.y > f.rim) || r > f.r + 0.5;
+      }
+      out[nm] = escaped;
+    }
+
+    // The trap unique to a pool that is *not* on the ground: the column of air
+    // beneath it must not count as being in it. Only meaningful while some block
+    // has a raised one — this one's fountain went back to the forecourt — but
+    // the guard stays, because the bug it watches for is in the crow, not in the
+    // level.
+    if (g.world.waterDeck > 1) {
+      g.crow.pos.set(f.x, 0, f.z);
+      g.crow.vel.set(0, 0, 0);
+      g.crow.inWater = false;
+      g.crow.update(1 / 60, { move: { x: 0, y: 0 }, flap: false }, g.world, g.audio);
+      out.wetFromBelow = g.crow.inWater;
+    }
+
+    g.crow.pos.set(-1, 0, 9.5);
+    g.crow.vel.set(0, 0, 0);
+    return out;
+  });
+  if (pool) console.log('  water:', JSON.stringify(pool));
+  if (pool && !pool.wet) errors.push('L3: crow on the pool floor is not in the water');
+  if (pool) {
+    const failed = ['hold', 'tap', 'walk'].filter((k) => !pool[k]);
+    if (failed.length) errors.push(`L3: cannot get out of the plunge pool by: ${failed.join(', ')}`);
+  }
+  if (pool && pool.wetFromBelow) errors.push('L3: a crow in the yard is swimming in the roof pool');
+
+  /**
+   * The set piece, and the rule it teaches by failing. Chips in the yard feed
+   * the yard; chips on the terrace, away from the stand, empty the parapet.
+   */
+  const bait = !has3 ? null : await p3.evaluate(async () => {
+    const g = window.__game;
+    const frame = () => new Promise((r) => requestAnimationFrame(r));
+    const toast = () => document.getElementById('toast').textContent;
+    const chips = g.pickups.find((p) => p.kind === 'chips');
+    const out = { label: chips.label };
+
+    const dropAt = async (x, y, z) => {
+      chips.state = 'world'; chips.taken = false;
+      g.crow.pos.set(x, y, z);
+      g.crow.vel.set(0, 0, 0);
+      // Two frames before the drop, not none. A dropped pickup is placed at the
+      // beak, and the beak is read off the rig's world matrix — which only
+      // catches up with `crow.pos` on the next simulation step. Dropping in the
+      // same tick as the teleport tests the position the crow used to be in,
+      // which is how this check first reported that the terrace was the yard.
+      await frame(); await frame();
+      chips.setCarried(g.crow.grip);
+      g.crow.carried = chips;
+      g.foodUntil = 0;
+      g._doAction({ kind: 'drop' });
+      await frame();
+      return toast();
+    };
+
+    out.inTheYard = await dropAt(4, 0, 10);
+    out.movedYard = !!(g.foodUntil && g.foodUntil > g.elapsed);
+    out.tooNear = await dropAt(-13, 5.4, -3.5);
+    out.onTheTerrace = await dropAt(6, 5.4, -3);
+    out.movedTerrace = !!(g.foodUntil && g.foodUntil > g.elapsed);
+    out.guardDistracted = g.baitGuard.state === 'distracted';
+    out.taskTicked = g.tasks.find((t) => t.id === 'gulls').done;
+
+    g.crow.carried = null;
+    g.crow.pos.set(-1, 0, 9.5);
+    return out;
+  });
+  if (bait) console.log('  bait:', JSON.stringify(bait));
+  if (bait && bait.movedYard) errors.push('L3: chips dropped in the yard moved the terrace');
+  if (bait && !/down here/i.test(bait.inTheYard)) errors.push(`L3: no deck hint in the yard: "${bait.inTheYard}"`);
+  if (bait && !/stand/i.test(bait.tooNear)) errors.push(`L3: no too-close hint by the stand: "${bait.tooNear}"`);
+  if (bait && !bait.movedTerrace) errors.push('L3: a legal chip drop did nothing');
+  if (bait && !bait.guardDistracted) errors.push('L3: the maître d’ did not leave his stand');
+  if (bait && !bait.taskTicked) errors.push('L3: the gull task did not tick');
+
+  // The gulls: land beside one and everybody looks. Fly over it and nobody does.
+  const gulls = !has3 ? null : await p3.evaluate(() => {
+    const g = window.__game;
+    // Stop the loop and clear the food first. The bait check above left thirteen
+    // seconds of chips on the terrace, and a gull that is mobbing does not
+    // shriek — it has better things to do. The first version of this check
+    // measured that and reported it as a broken gull.
+    g.running = false;
+    g.foodUntil = 0;
+    const gull = g.gulls[0];
+    gull.mobbing = null;
+    const out = { count: g.gulls.length, deck: gull.floorY };
+    const fire = () => {
+      let heard = 0;
+      const real = g.onGullAlarm.bind(g);
+      g.onGullAlarm = (x) => { heard++; real(x); };
+      gull.alarmCooldown = 0;
+      gull.update(1 / 60, null, g.crow, g.world, g);
+      g.onGullAlarm = real;
+      return heard;
+    };
+    g.crow.pos.set(gull.pos.x + 0.9, gull.floorY, gull.pos.z);
+    out.landedBeside = fire();
+    g.crow.pos.set(gull.pos.x + 0.9, gull.floorY + 4, gull.pos.z);
+    out.flewOver = fire();
+    g.crow.pos.set(-1, 0, 9.5);
+    g.running = true;
+    return out;
+  });
+  if (gulls) console.log('  gulls:', JSON.stringify(gulls));
+
+  // The kid pays this block's ladder, not the block's-next-door one.
+  const trade3 = !has3 ? null : await p3.evaluate(() => {
+    const g = window.__game;
+    const shiny = g.pickups.find((p) => p.kind === 'shiny' && !p.taken);
+    if (!shiny) return { error: 'no shiny available' };
+    shiny.setCarried(g.crow.grip);
+    g.crow.carried = shiny;
+    g._doAction({ kind: 'trade' });
+    const reward = g.crow.carried;
+    const out = {
+      value: reward ? reward.value : 0,
+      expected: g.level.tradeValues[0],
+      parentedToBeak: !!reward && reward.root.parent === g.crow.grip,
+    };
+    g.crow.carried = null; g.tradeStep = 0;
+    return out;
+  });
+  if (trade3) console.log('  L3 trade:', JSON.stringify(trade3));
+  if (trade3 && trade3.value !== trade3.expected) {
+    errors.push(`L3 first trade paid ${trade3.value}, expected ${trade3.expected}`);
+  }
+  if (trade3 && !trade3.parentedToBeak) errors.push('L3 trade reward was not auto-equipped');
+  if (gulls && !gulls.count) errors.push('L3: no gulls on the roof');
+  if (gulls && !gulls.landedBeside) errors.push('L3: a gull ignored a crow landing beside it');
+  if (gulls && gulls.flewOver) errors.push('L3: a gull objected to a crow flying over it');
+
+  /**
+   * Dusk, measured. Same floors as level 1, sampled from the two places on this
+   * block that can actually go dark: the yard, which is the bottom of a light
+   * well, and the terrace, which is where the money is.
+   *
+   * `t` here is progress through the run, not time of day — the level starts at
+   * 0.42 and its lamps catch at 0.52 of the session.
+   */
+  if (has3) {
+    const FLOOR = { p50: RULES.duskMedianFloor, p05: RULES.duskShadowFloor };
+    await p3.evaluate(() => {
+      document.getElementById('hud').style.display = 'none';
+      const b = document.getElementById('testmode');
+      if (b) b.style.display = 'none';
+    });
+
+    const measure3 = async (through, settle, at) => {
+      await p3.evaluate(([tt, pos]) => {
+        const g = window.__game;
+        g.running = false;
+        g.finished = false;
+        g.elapsed = tt * g.sessionSeconds;
+        g.crow.pos.set(pos[0], pos[1], pos[2]);
+        g.crow.vel.set(0, 0, 0);
+      }, [through, at]);
+      await new Promise((r) => setTimeout(r, settle));
+      const b64 = await p3.screenshot({ type: 'png', encoding: 'base64' });
+      return p3.evaluate((u) => new Promise((res) => {
+        const img = new Image();
+        img.onload = () => {
+          const cv = document.createElement('canvas');
+          cv.width = img.width; cv.height = img.height;
+          const cx = cv.getContext('2d');
+          cx.drawImage(img, 0, 0);
+          const y0 = Math.floor(img.height * 0.42);
+          const d = cx.getImageData(0, y0, img.width, img.height - y0).data;
+          const L = [];
+          let r = 0, g = 0, b = 0, n = 0;
+          for (let i = 0; i < d.length; i += 16) {
+            L.push(0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]);
+            r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
+          }
+          L.sort((x, y) => x - y);
+          res({
+            p05: Math.round(L[Math.floor(L.length * 0.05)]),
+            p50: Math.round(L[Math.floor(L.length * 0.5)]),
+            rgb: [Math.round(r / n), Math.round(g / n), Math.round(b / n)],
+          });
+        };
+        img.src = u;
+      }), `data:image/png;base64,${b64}`);
+    };
+
+    let late = null;
+    for (const [where, pos] of [['forecourt', [-11, 0, 12]], ['terrace', [-6, 5.4, -2]]]) {
+      for (const [through, settle] of [[0.30, 500], [0.62, 9000], [0.98, 700]]) {
+        const m = await measure3(through, settle, pos);
+        const key = `l3-dusk-${where}-${String(Math.round(through * 100))}`;
+        writeFileSync(`${OUT}/${key}.png`, await p3.screenshot({ type: 'png' }));
+        console.log(`  ${key}: p05 ${m.p05}, p50 ${m.p50}, avg rgb ${m.rgb.join(',')}`);
+        if (m.p50 < FLOOR.p50) errors.push(`${key}: median ${m.p50} below the ${FLOOR.p50} floor`);
+        if (m.p05 < FLOOR.p05) errors.push(`${key}: 5th pct ${m.p05} below the ${FLOOR.p05} floor`);
+        if (through > 0.9) late = m;
+      }
+    }
+    if (late && late.rgb[2] <= late.rgb[0]) {
+      errors.push(`L3 dusk reads warm, not violet: avg rgb ${late.rgb.join(',')}`);
+    }
+    await p3.evaluate(() => { document.getElementById('hud').style.display = ''; });
+  }
+
+  // The ending, with the level's own copy and an awkward amount.
+  const end3 = !has3 ? null : await p3.evaluate(() => {
+    const g = window.__game;
+    g.total = 31.35; g.elapsed = 268; g.finished = false; g.running = true;
+    g._finish(true);
+    return {
+      title: document.getElementById('ending-title').textContent.replace(/\s+/g, ' ').trim(),
+      body: document.getElementById('ending-body').textContent.slice(0, 60),
+      goal: g.goal,
+    };
+  });
+  if (end3) console.log('  L3 ending:', JSON.stringify(end3));
+  if (end3 && end3.goal !== 30) errors.push(`L3 goal is ${end3.goal}, expected 30`);
+  if (end3 && !/thirty-one dollars thirty-five cents/i.test(end3.title)) {
+    errors.push(`L3 ending headline wrong: "${end3.title}"`);
+  }
+  if (end3) { await new Promise((r) => setTimeout(r, 1400)); await shoot3('39-l3-ending'); }
 }
 
 // ── mobile pass ──────────────────────────────────────────────────────────────
