@@ -335,6 +335,12 @@
 
   /* ---- the block chip ---- */
   .m-chips { display: flex; gap: 12px; justify-content: center; margin-top: 24px; }
+  /* the same chips, wrapping — what the screen does as blocks are added */
+  .m-grid {
+    display: grid; grid-template-columns: repeat(4, 168px);
+    gap: 12px; justify-content: center; margin-top: 26px;
+  }
+  .m-grid .m-chip { width: auto; }
   .m-chip {
     width: 150px; text-align: left; padding: 10px 12px 11px;
     background: rgba(31,77,61,.92);
@@ -493,16 +499,16 @@
 
 <header class="band">
   <div class="band-inner">
-    <div class="eyebrow">Interface Brief &nbsp;·&nbsp; Progress &amp; the Menu &nbsp;·&nbsp; Proposed — nothing built yet</div>
+    <div class="eyebrow">Interface Brief &nbsp;·&nbsp; Progress &amp; the Menu &nbsp;·&nbsp; Revised against review — nothing built yet</div>
     <h1 class="title">The<br>Menu<span class="thin">And a game that remembers you</span></h1>
     <p class="deck">Three blocks, a ladder that runs $20 → $25 → $30, and a game that forgets
       all of it the moment the tab closes. This is the proposal for the save file, the level
       select, and the pause screen that has to exist for either of them to be reachable.</p>
     <dl class="facts">
-      <div><dt>Status</dt><dd>Proposal, for review</dd></div>
+      <div><dt>Status</dt><dd>Revised, round 1</dd></div>
       <div><dt>New files</dt><dd>1 — <span class="mono">core/save.js</span></dd></div>
-      <div><dt>New screens</dt><dd>0 or 1, see §2</dd></div>
-      <div><dt>Open decisions</dt><dd>Two</dd></div>
+      <div><dt>New screens</dt><dd>2 — Levels, and pause</dd></div>
+      <div><dt>Open decisions</dt><dd>None</dd></div>
       <div><dt>Blocks affected</dt><dd>All three, equally</dd></div>
     </dl>
   </div>
@@ -519,8 +525,12 @@
       <span class="mono">.start.ghost</span> button rules — so what you are looking at is close
       to what the code would produce, not an impression of it. It is not, however, running.</p>
 
-      <p>Two decisions in here change what gets written. They are called out in
-      <a href="#doors">§2</a> and <a href="#chip">§3</a>, and everything else follows from them.</p>
+      <p><strong>Revised once against review.</strong> Both open decisions are closed and the
+      sections that depended on them have been redrawn rather than annotated: the level list is
+      its own screen (<a href="#doors">§2</a>), the best run is recorded but shown nowhere
+      (<a href="#chip">§3</a>), and the pause overlay lost its chip row as a consequence
+      (<a href="#pause">§4</a>). The rejected argument is kept at the end of §2, because it is
+      the thing this design has to keep answering as blocks are added.</p>
 
       <div class="note">
         <span class="lbl">The problem, stated once</span>
@@ -599,11 +609,20 @@
     </div>
 
     <div class="col">
-      <h3>Option 1 — the title card becomes the menu</h3>
-      <p>On a machine with no save, exhibit A is exactly what you get: one button, no list, no
-      evidence that levels are a thing. The moment there is progress to show, the same card grows
-      a row of chips under the strapline and <strong>Begin</strong> starts whichever one is
-      selected. No new screen, no navigation, and the front door stays the front door.</p>
+      <p>The direction taken is <strong>a separate Levels screen</strong>, on the grounds that more
+      blocks are coming and a list built for three is a list that has to be rebuilt at six. The
+      original recommendation was the opposite and is kept at the end of this section, because the
+      argument against it is the thing to check this design against.</p>
+
+      <h3>The title card, returning</h3>
+      <p>The card keeps its job. It gains one outlined button and the primary button gains a
+      name — <strong>Continue</strong> resumes the ladder where you left it, so the common case
+      is still one click from the front door, and <strong>Levels</strong> is the door to
+      everything else.</p>
+      <p>That is deliberately the same two-button grammar as the ending screen: one filled, one
+      outlined, the filled one being whatever the game thinks you want next. A returning player
+      never has to visit the level list to keep playing, which was the strongest objection to
+      giving the list its own screen.</p>
     </div>
 
     <div class="exhibit">
@@ -613,34 +632,36 @@
             <h1 class="m-title">Small<span>Change</span></h1>
             <p class="m-sub">You were a person this morning. Someone turned you into a crow. Your
               goal is to collect a bunch of money to break the curse before the sun goes down.</p>
-            <div class="m-chips">
-              <div class="m-chip">
-                <span class="n">01</span><span class="nm">The block</span>
-                <span class="g">$20</span><span class="st">▣ Cleared</span>
-              </div>
-              <div class="m-chip sel">
-                <span class="n">02</span><span class="nm">The park</span>
-                <span class="g">$25</span><span class="st">▣ Cleared</span>
-              </div>
-              <div class="m-chip lock">
-                <span class="n">03</span><span class="nm">The hotel</span>
-                <span class="g">$30</span><span class="st lk">Locked</span>
-              </div>
+            <div class="m-keys">
+              <span><b>WASD</b> Move</span><span><b>Space</b> Fly (hold)</span>
+              <span><b>J</b> Beak</span><span><b>K</b> Caw</span>
             </div>
-            <div class="m-actions"><div class="m-btn">Begin</div></div>
+            <div class="m-actions">
+              <div class="m-btn">Continue — the park</div>
+              <div class="m-btn ghost">Levels</div>
+            </div>
             <p class="m-fine">Money only counts once it is in the nest · One thing in the beak at a time</p>
           </div>
         </div>
       </div>
-      <p class="exhibit-cap"><b>B</b> · Option 1 — the returning title card. Same card, one new row. The chips select; Begin is still the only thing that starts anything.</p>
+      <p class="exhibit-cap"><b>B</b> · The returning title card. First-ever visit is still exhibit A exactly — one brass <em>Begin</em>, no second button, no evidence a level list exists.</p>
     </div>
 
     <div class="col">
-      <h3>Option 2 — a separate Levels screen</h3>
-      <p>The title keeps its current job and gains a quiet link. The list is its own card, reached
-      from the title, from pause, and from the ending. It has more room, so it can carry more per
-      block — but it makes the title card a hallway, and it puts a click between a returning
-      player and the game.</p>
+      <div class="note">
+        <span class="lbl">What Continue continues</span>
+        The furthest block you have opened, not the last one you played. Those differ only when
+        you have gone back to replay something, and in that case the ladder is the more useful
+        default — a player who wants the older block is one click away on the Levels screen, and a
+        player mid-ladder should never be sent backwards by a button whose whole promise is
+        forward. The name of the block is <em>in</em> the button so the promise is never
+        ambiguous.
+      </div>
+
+      <h3>The Levels screen</h3>
+      <p>Its own card, reached from the title, from pause and from the ending. Selecting a chip
+      arms the primary button rather than launching immediately, which is what makes the same
+      screen safe to open mid-run — see <a href="#forfeit">§7</a>.</p>
     </div>
 
     <div class="exhibit">
@@ -649,7 +670,7 @@
           <div class="stack">
             <div class="m-eyebrow">Small Change</div>
             <h1 class="m-h">Levels</h1>
-            <div class="m-chips" style="margin-top:30px">
+            <div class="m-chips" style="margin-top:28px">
               <div class="m-chip" style="width:186px">
                 <span class="n">01</span><span class="nm">The block</span>
                 <span class="g">$20</span><span class="st">▣ Cleared</span>
@@ -667,22 +688,56 @@
               <div class="m-btn">Play the park</div>
               <div class="m-btn ghost">Back</div>
             </div>
-            <p class="m-fine">Clear a block to open the next one · <a href="#">Forget my progress</a></p>
+            <p class="m-fine">Clear a level to open the next one · <a href="#">Forget my progress</a></p>
           </div>
         </div>
       </div>
-      <p class="exhibit-cap"><b>C</b> · Option 2 — the level list as its own card.</p>
+      <p class="exhibit-cap"><b>C</b> · The Levels screen. The primary button names the armed chip, so it says what it will do before you press it.</p>
+    </div>
+
+    <div class="col">
+      <h3>What it looks like at seven</h3>
+      <p>This is the reason the screen exists, so it is worth drawing rather than asserting. The
+      chip is fixed-width and the row wraps; nothing about the layout changes as blocks are added
+      until the grid is deep enough to scroll, which on this card is somewhere past a dozen. The
+      names below are placeholders for slots that do not exist — only the geometry is real.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate">
+        <div class="mock flat" data-shot="c2-levels-scale" style="height:470px">
+          <div class="stack">
+            <div class="m-eyebrow">Small Change</div>
+            <h1 class="m-h">Levels</h1>
+            <div class="m-grid">
+              <div class="m-chip"><span class="n">01</span><span class="nm">The block</span><span class="g">$20</span><span class="st">▣ Cleared</span></div>
+              <div class="m-chip"><span class="n">02</span><span class="nm">The park</span><span class="g">$25</span><span class="st">▣ Cleared</span></div>
+              <div class="m-chip"><span class="n">03</span><span class="nm">The hotel</span><span class="g">$30</span><span class="st">▣ Cleared</span></div>
+              <div class="m-chip sel"><span class="n">04</span><span class="nm">The market</span><span class="g">$35</span><span class="st">▣ Cleared</span></div>
+              <div class="m-chip lock"><span class="n">05</span><span class="nm">The pier</span><span class="g">$40</span><span class="st lk">Locked</span></div>
+              <div class="m-chip lock"><span class="n">06</span><span class="nm">The yard</span><span class="g">$45</span><span class="st lk">Locked</span></div>
+              <div class="m-chip lock"><span class="n">07</span><span class="nm">The station</span><span class="g">$50</span><span class="st lk">Locked</span></div>
+            </div>
+            <div class="m-actions">
+              <div class="m-btn">Play the market</div>
+              <div class="m-btn ghost">Back</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="exhibit-cap"><b>C2</b> · Layout only, at seven slots. Placeholder names — these blocks do not exist and nothing here proposes them.</p>
     </div>
 
     <div class="col">
       <div class="note pick">
-        <span class="lbl">Recommendation — Option 1</span>
-        The list is three rows long and will be four for a long time. A whole screen for three
-        chips is a screen built for a game that does not exist yet, and it costs a returning
-        player a click every single session to reach a game they have already opened. Option 1
-        also keeps <strong>one</strong> place where blocks are named and priced, which is the
-        thing that decays first when there are two. If the roster ever gets long enough to need
-        scrolling, Option 2 is the migration, and the chip component moves across unchanged.
+        <span class="lbl">The argument that was made the other way</span>
+        The original recommendation was to grow the title card into the menu, on the grounds that
+        a whole screen for three chips is a screen built for a game that does not exist yet, and
+        that two places naming and pricing the blocks is the thing that decays first. The first
+        half is answered by more blocks arriving. <strong>The second half is not answered by
+        anything, and is now a rule instead:</strong> chips read <span class="mono">shortName</span>
+        and <span class="mono">goal</span> off the level descriptor, and no screen may hold its own
+        copy of either. The title card's <em>Continue</em> button reads the same two fields.
       </div>
     </div>
   </section>
@@ -704,23 +759,26 @@
       — $20 / $25 / $30, one deck / two / four — is the reason to keep playing, and a menu that
       hides what is next hides the reason.</p>
 
-      <h3>The open question: does it keep a best?</h3>
-      <p>The minimum save is a set of cleared ids. The larger one also keeps your best run per
-      block — most banked, and the clock reading when you hit the goal.</p>
+      <h3>The best is recorded, and not shown</h3>
+      <p>Settled, and split: the save keeps your best run per block from day one — most banked,
+      and the clock reading when you hit the goal — and <strong>no chip displays it in this
+      iteration</strong>. Writing it costs two fields and means the history exists whenever a
+      screen wants it. Displaying it is the part that changes the game rather than the menu, so it
+      waits for a screen designed to carry it.</p>
     </div>
 
     <div class="exhibit">
       <div class="plate">
         <div class="mock flat" data-shot="d-chip-states" style="height:400px">
           <div class="stack">
-            <div class="m-chiplbl" style="margin-top:0">Cleared only — the minimum save</div>
+            <div class="m-chiplbl" style="margin-top:0">Shipping — cleared, selected, locked</div>
             <div class="m-chips">
               <div class="m-chip"><span class="n">01</span><span class="nm">The block</span><span class="g">$20</span><span class="st">▣ Cleared</span></div>
               <div class="m-chip sel"><span class="n">02</span><span class="nm">The park</span><span class="g">$25</span><span class="st">▣ Cleared</span></div>
               <div class="m-chip lock"><span class="n">03</span><span class="nm">The hotel</span><span class="g">$30</span><span class="st lk">Locked</span></div>
             </div>
-            <div class="m-chiplbl">Cleared plus a best — the larger save</div>
-            <div class="m-chips">
+            <div class="m-chiplbl">Recorded from day one, displayed by nothing yet</div>
+            <div class="m-chips" style="opacity:.42">
               <div class="m-chip"><span class="n">01</span><span class="nm">The block</span><span class="g">$20</span><span class="st rec">$32.40 · 4:12</span></div>
               <div class="m-chip sel"><span class="n">02</span><span class="nm">The park</span><span class="g">$25</span><span class="st rec">$27.10 · 6:38</span></div>
               <div class="m-chip lock"><span class="n">03</span><span class="nm">The hotel</span><span class="g">$30</span><span class="st lk">Locked</span></div>
@@ -733,13 +791,13 @@
 
     <div class="col">
       <div class="note pick">
-        <span class="lbl">Recommendation — cleared only, for now</span>
-        Not because the bests look bad. Because <strong>a best time on a chip is a design change
-        to the blocks, not to the menu</strong>. The sun dial currently means "you are running out
-        of day"; put a clock on the results and it also means "you are being timed", and every
-        block gets replayed by a player optimising against a number rather than robbing a café.
-        That may well be a good direction — it is just a bigger conversation than persistence, and
-        the save blob is versioned so adding <span class="mono">best</span> later costs nothing.
+        <span class="lbl">Why the split, rather than all or nothing</span>
+        <strong>A best time on a chip is a design change to the blocks, not to the menu.</strong>
+        The sun dial currently means "you are running out of day"; put a clock on the results and
+        it also means "you are being timed", and every block gets replayed by a player optimising
+        against a number rather than robbing a café. Recording it commits to none of that and
+        cannot be done retroactively — a best that starts being written the day it is first
+        displayed shows every returning player an empty history of runs they actually played.
       </div>
 
       <h3>Copy</h3>
@@ -816,12 +874,7 @@
             <div class="m-actions">
               <div class="m-btn">Resume</div>
               <div class="m-btn ghost">Start over</div>
-            </div>
-            <div class="m-chiplbl" style="margin-top:22px">Go somewhere else</div>
-            <div class="m-chips" style="margin-top:9px">
-              <div class="m-chip" style="width:136px"><span class="n">01</span><span class="nm">The block</span><span class="g">$20</span><span class="st">▣ Cleared</span></div>
-              <div class="m-chip sel" style="width:136px"><span class="n">02</span><span class="nm">The park</span><span class="g">$25</span><span class="st rec">Playing</span></div>
-              <div class="m-chip lock" style="width:136px"><span class="n">03</span><span class="nm">The hotel</span><span class="g">$30</span><span class="st lk">Locked</span></div>
+              <div class="m-btn ghost">Levels</div>
             </div>
             <p class="m-fine">Esc to resume · M mutes · <a href="#">Quit to title</a></p>
           </div>
@@ -834,11 +887,28 @@
       <p>The eyebrow carries the block's name and what is in the nest, so the screen answers
       "where am I and how am I doing" without you having to read the HUD through a scrim.
       <strong>Resume</strong> is the loud thing. <strong>Start over</strong> restarts the current
-      block. The chip row is the same component from §3, one size down, with the block you are on
-      marked <span class="mono">Playing</span> rather than selected.</p>
+      block. <strong>Levels</strong> opens the screen from <a href="#doors">§2</a>.</p>
       <p><span class="mono">Esc</span> opens and closes it, and the controls legend gains a row —
       which is also the argument for why touch needs its own affordance, since that legend is
       <span class="mono">display:none</span> under <span class="mono">body.touch</span>.</p>
+
+      <div class="note">
+        <span class="lbl">What choosing the separate screen cost here</span>
+        An earlier draft of this overlay carried the chip row directly, so switching blocks was
+        one click from a paused game. With the list on its own card that becomes two, and the
+        pause screen has a third button on it. That is the honest price of a screen that scales
+        past three blocks, and it buys something back: the pause overlay is now short enough to
+        sit comfortably on a phone in landscape, which the chip row was already straining.
+      </div>
+
+      <div class="note">
+        <span class="lbl">Mute is not new</span>
+        <span class="mono">M</span> already toggles mute — it is bound in
+        <span class="mono">main.js</span> and already listed in the controls legend. The fine
+        print here reminds you of a shortcut that has shipped for months rather than proposing a
+        feature; nothing about audio is being added, and removing it would be taking something
+        away.
+      </div>
     </div>
   </section>
 
@@ -953,42 +1023,56 @@
       session <em>is</em> the unit. Leaving one abandons it.</p>
       <p>But it should not abandon it silently when there is something to lose. The rule:
       <strong>if the nest is empty, switching blocks just switches</strong> — no friction, nothing
-      was at stake. If you have banked money, the chip row is replaced in place by one line and
-      two buttons. Replaced <em>in place</em>, not stacked on top: a confirmation dialogue over a
-      pause overlay over a game is three layers, and this is a game about a bird.</p>
+      was at stake. If you have banked money, the confirm takes over the Levels screen's action
+      row, in place, rather than opening a dialogue on top of it.</p>
+      <p>This is where the separate screen earns back some of what it cost in
+      <a href="#pause">§4</a>. Because a chip <em>arms</em> the primary button rather than
+      launching on click, the dangerous action already has a deliberate second press in front of
+      it — the confirm replaces that button's row instead of interrupting a click that was
+      already halfway done.</p>
+
+      <h3>The copy</h3>
+      <p>Short, and it does not explain the rules of the game back at you. An earlier draft ran
+      to two sentences and spent one of them on <em>nothing about it is kept</em>, which is both
+      obvious from the situation and slightly scolding. What the player needs is the number they
+      are about to lose.</p>
+      <div class="note">
+        <span class="lbl">The line</span>
+        <strong>Are you sure? You already collected $12.60.</strong>
+      </div>
     </div>
 
     <div class="exhibit">
       <div class="plate">
-        <div class="mock" data-shot="h-forfeit" style="height:460px">
-          <div class="m-scene">
-            <div class="m-sky"></div>
-            <div class="m-bldg" style="left:-10px;width:158px;height:164px;background:#b4643c"><i style="left:20px;top:24px;width:32px;height:40px"></i><i style="left:72px;top:24px;width:32px;height:40px"></i></div>
-            <div class="m-bldg" style="left:148px;width:96px;height:104px;background:#d07e52"></div>
-            <div class="m-bldg" style="left:640px;width:150px;height:150px;background:#b4643c"><i style="left:22px;top:26px;width:30px;height:38px"></i><i style="left:72px;top:26px;width:30px;height:38px"></i></div>
-            <div class="m-bldg" style="left:790px;width:130px;height:104px;background:#d07e52"></div>
-            <div class="m-ground"></div>
-            <div class="m-shadow" style="left:146px;top:62%;width:190px;height:80px"></div>
-            <div class="m-lamp" style="left:566px;top:40%;height:118px"></div>
-            <div class="m-crow" style="left:250px;top:78%"></div>
-            <div class="m-kerb"></div>
-          </div>
-          <div class="m-scrim">
-            <div class="m-eyebrow">The park · $12.60 in the nest</div>
-            <h1 class="m-h">Paused</h1>
-            <div class="m-forfeit">
-              <p>You have <b>$12.60</b> in the nest and four minutes of day left. Going to the
-                block ends this run — nothing about it is kept.</p>
-              <div class="row">
-                <div class="m-btn ghost sm">Go to the block</div>
-                <div class="m-btn sm">Stay here</div>
+        <div class="mock flat" data-shot="h-forfeit">
+          <div class="stack">
+            <div class="m-eyebrow">Small Change</div>
+            <h1 class="m-h">Levels</h1>
+            <div class="m-chips" style="margin-top:28px">
+              <div class="m-chip sel" style="width:186px">
+                <span class="n">01</span><span class="nm">The block</span>
+                <span class="g">$20</span><span class="st">▣ Cleared</span>
+              </div>
+              <div class="m-chip" style="width:186px">
+                <span class="n">02</span><span class="nm">The park</span>
+                <span class="g">$25</span><span class="st rec">Playing · $12.60</span>
+              </div>
+              <div class="m-chip lock" style="width:186px">
+                <span class="n">03</span><span class="nm">The hotel</span>
+                <span class="g">$30</span><span class="st lk">Locked</span>
               </div>
             </div>
-            <p class="m-fine">Esc to resume</p>
+            <div class="m-forfeit">
+              <p><b>Are you sure?</b> You already collected $12.60.</p>
+              <div class="row">
+                <div class="m-btn ghost sm">Go to the block</div>
+                <div class="m-btn sm">Stay in the park</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <p class="exhibit-cap"><b>H</b> · The forfeit, in place of the chip row. Note which button is brass: staying is the recommended action, so leaving is the outlined one.</p>
+      <p class="exhibit-cap"><b>H</b> · The forfeit, taking over the Levels screen's action row. Note which button is brass: staying is the recommended action, so leaving is the outlined one. The block you are in is marked <em>Playing</em> and carries what is in its nest.</p>
     </div>
   </section>
 
@@ -1059,10 +1143,11 @@
         <h4>In</h4>
         <ul>
           <li><span class="mono">core/save.js</span> — versioned, wrapped, unit tested</li>
-          <li>Chips on the title card, once there is progress</li>
+          <li>Cleared ids <em>and</em> a best per block, both written from day one</li>
+          <li>A <em>Levels</em> screen, reached from title, pause and ending</li>
+          <li><em>Continue</em> on the returning title card</li>
           <li>Pause: <kbd>Esc</kbd>, a touch control, a scrim over the live scene</li>
-          <li>Level switching from pause, with the forfeit line</li>
-          <li>A <em>Levels</em> route out of the ending screen</li>
+          <li>The forfeit confirm, on the Levels screen</li>
           <li><em>Forget my progress</em></li>
           <li>Harness coverage — see §10</li>
         </ul>
@@ -1070,9 +1155,10 @@
       <div>
         <h4>Out</h4>
         <ul>
+          <li>Displaying the best anywhere. It is recorded and unread.</li>
           <li>Mid-run save and resume. A block is one sitting.</li>
           <li>A stats or records screen</li>
-          <li>A settings screen — mute is a key and a line in the legend</li>
+          <li>A settings screen — mute is a key, already bound, already in the legend</li>
           <li>Achievements, medals, stars</li>
           <li>A fourth block. This is the thing that makes a fourth block worth having, not the fourth block.</li>
         </ul>
@@ -1098,6 +1184,10 @@
             <tr><td class="num">smoke</td><td>Garbage, truncation and a wrong <span class="mono">v</span> all read as "no progress"</td><td>A save file must never crash the title card</td></tr>
             <tr><td class="num">smoke</td><td>A save naming level 9 loads clean on a three-level build</td><td>A save can outlive the build that wrote it</td></tr>
             <tr><td class="num">smoke</td><td>Every level with a <span class="mono">next</span> is reachable by clearing its predecessor</td><td>An unreachable block is a block nobody plays</td></tr>
+            <tr><td class="num">smoke</td><td><em>Continue</em> resolves to the furthest opened block, not the last played</td><td>A button promising forward must not send you back</td></tr>
+            <tr><td class="num">smoke</td><td>A win writes a best; a worse later run does not overwrite it</td><td>&ldquo;Best&rdquo; is the claim being stored, and nothing displays it yet to catch the error</td></tr>
+            <tr><td class="num">smoke</td><td>No screen holds its own copy of a block's name or goal</td><td>Two sources for one fact is the thing that decays first</td></tr>
+            <tr><td class="num">shoot</td><td>Choosing the block you are already in resumes it rather than rebuilding it</td><td>A forfeit prompt for the level you are standing in is nonsense</td></tr>
             <tr><td class="num">shoot</td><td>The eight level swaps are driven <em>through the menu</em>, and the GPU still gets its memory back</td><td>Test the real path, not a parallel one</td></tr>
             <tr><td class="num">shoot</td><td>After a menu swap, the task list is the new block's five rows — not nine</td><td><span class="mono">hud.setTasks</span> keys off id and only appends</td></tr>
             <tr><td class="num">shoot</td><td>After a menu swap, the camera is at the new spawn on frame one</td><td><span class="mono">stage._smoothed</span> survives a swap and sails across the map</td></tr>
@@ -1125,10 +1215,11 @@
       </div>
       <div class="mile">
         <div class="m-id">M2</div>
-        <div class="m-body"><strong>Chips on the title card</strong>
-          <span>The chip component, the three states, the empty state that looks exactly like
-          today. Clearing a block writes to the save. At the end of this the feature is real, if
-          only reachable from the front door.</span></div>
+        <div class="m-body"><strong>The Levels screen, and Continue</strong>
+          <span>The chip component and its three states, the screen itself, and the returning
+          title card's two buttons. Clearing a block writes to the save. The empty state is
+          exactly today's card, one brass <em>Begin</em> and no second button. At the end of this
+          the feature is real, if only reachable from the front door.</span></div>
       </div>
       <div class="mile">
         <div class="m-id">M3</div>
@@ -1139,9 +1230,10 @@
       </div>
       <div class="mile">
         <div class="m-id">M4</div>
-        <div class="m-body"><strong>Switching from pause, and the way out of the ending</strong>
-          <span>The chip row inside the scrim, the forfeit line, the <em>Levels</em> fine print on
-          the ending. This is the milestone that turns three screens into one loop.</span></div>
+        <div class="m-body"><strong>Wiring the Levels screen into a running game</strong>
+          <span>The <em>Levels</em> button on the pause overlay, the forfeit confirm, the
+          <em>Levels</em> fine print on the ending. This is the milestone that turns four screens
+          into one loop, and the one where the level-swap traps in §10 get exercised.</span></div>
       </div>
       <div class="mile">
         <div class="m-id">M5</div>
@@ -1154,17 +1246,54 @@
   </section>
 
   <section id="open">
-    <h2><span class="sec">§12</span> What I need from you</h2>
+    <h2><span class="sec">§12</span> What review settled</h2>
     <div class="col">
       <ol>
-        <li><strong>§2 — one door or two.</strong> I recommend the title card growing into the
-        menu (exhibit B).</li>
-        <li><strong>§3 — cleared only, or cleared plus a best.</strong> I recommend cleared only,
-        because a best time changes what the blocks are about and that deserves its own
-        conversation.</li>
+        <li><strong>§2 — a separate Levels screen</strong>, against the original recommendation,
+        on the grounds that more blocks are coming and a list built for three has to be rebuilt at
+        six. The returning title card and the seven-slot layout in exhibit C2 were drawn in
+        response and are the thing to look at.</li>
+        <li><strong>§3 — the best is recorded and displayed nowhere.</strong> A split rather than
+        a yes or no: writing it is free and cannot be done retroactively, showing it changes what
+        a block is about.</li>
+        <li><strong>§5 — the TEST MODE badge pushes the pause control down</strong>, never the
+        reverse. Confirmed.</li>
+        <li><strong>§6 — the ending gets its <em>Levels</em> route.</strong> Confirmed.</li>
+        <li><strong>§7 — the forfeit copy is one line</strong>, not three: <em>Are you sure? You
+        already collected $12.60.</em></li>
       </ol>
-      <p>Everything else in here I would just build. If any of it looks wrong, it is cheaper to
-      say so against a mockup than against a merge.</p>
+
+      <h3>One thing raised that turned out not to be a change</h3>
+      <p>Mute read as a new feature in the pause fine print. It is not — <span class="mono">M</span>
+      has been bound in <span class="mono">main.js</span> for months and is already listed in the
+      controls legend. Nothing about audio is proposed here; the overlay only names a shortcut
+      that already exists. Worth a second look only if the fine print should be quieter.</p>
+
+      <h3>Still open: the game already has a word for this, and it is not "level"</h3>
+      <p>The Levels screen introduces <strong>level</strong> to player-facing copy. That was
+      raised here as a hypothetical and checked, and it is not hypothetical —
+      <strong>block</strong> is already on screen in four places, one of which every single player
+      reads before they read anything else:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Where</th><th>String</th><th>Seen by</th></tr></thead>
+          <tbody>
+            <tr><td class="num">index.html</td><td>Building the block&hellip;</td><td>Everyone, first, on every load</td></tr>
+            <tr><td class="num">levels.js</td><td><span class="mono">shortName: 'the block'</span> &rarr; the ending's onward button</td><td>Everyone who clears the park</td></tr>
+            <tr><td class="num">levels.js</td><td>&hellip;you know exactly how far it is. Not in blocks. In wingbeats.</td><td>The winning ending of level 1</td></tr>
+            <tr><td class="num">levels.js</td><td>The sun is off the block now&hellip;</td><td>The losing ending of level 1</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>So this is a real collision rather than a style preference, and the last of those is the
+      one that settles it: <em>Not in blocks. In wingbeats.</em> is the closing line of the whole
+      first level and the word is load-bearing — it is a unit of city, which is the entire joke.
+      That line cannot become "levels" and should not.</p>
+      <p>Which points at the resolution: <strong>a block is the place, a level is the slot.</strong>
+      Fiction says block, furniture says level. The screen is called <em>Levels</em>, the chips
+      are numbered <span class="mono">01–03</span>, and the prose never stops saying block. That
+      is coherent as long as it is decided on purpose — it is being flagged rather than fixed
+      because it is one line in a brief now and a search-and-replace later.</p>
     </div>
   </section>
 
