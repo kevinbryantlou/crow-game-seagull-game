@@ -134,6 +134,189 @@ const cutoff = (title) => {
 const FAST = cutoff('Corvid Prodigy');            // 150s — a speedrun
 const SOLID = (() => { let e = FAST; while (e < 3600 && clean(e) === 'Accomplished Thief') e += 5; return e; })();
 
+/**
+ * Saved progress.
+ *
+ * Every case here is a way a save file can be wrong rather than a way it can be
+ * right, because the right case is one line and the wrong ones are the whole
+ * reason the module exists. See docs/menu-brief.html §8.
+ */
+console.log('\nsaved progress');
+const { Progress, memoryStorage, SAVE_KEY, SAVE_VERSION } =
+  await import('../src/core/save.js');
+
+/** A ladder to test the unlock rules against, so they are not only ever tested on three blocks. */
+const LADDER = [
+  { id: 1, next: 2 }, { id: 2, next: 3 }, { id: 3, next: 4 }, { id: 4, next: null },
+];
+const KNOWN = LADDER.map((l) => l.id);
+const withRaw = (raw) => {
+  const s = memoryStorage();
+  if (raw !== undefined) s.setItem(SAVE_KEY, raw);
+  return new Progress(s, KNOWN);
+};
+
+{
+  const s = memoryStorage();
+  const p = new Progress(s, KNOWN);
+  p.recordRun(1, { won: true, total: 32.4, secs: 252 });
+  p.recordRun(2, { won: true, total: 27.1, secs: 398 });
+  const reloaded = new Progress(s, KNOWN);
+  check('a cleared set round-trips through save and load',
+    reloaded.cleared.join(',') === '1,2', `(got "${reloaded.cleared.join(',')}")`);
+  check('a best round-trips with it',
+    reloaded.bestFor(1)?.total === 32.4 && reloaded.bestFor(1)?.secs === 252,
+    `(got ${JSON.stringify(reloaded.bestFor(1))})`);
+  check('the blob carries no floats',
+    !/\.\d/.test(s.getItem(SAVE_KEY)), `(${s.getItem(SAVE_KEY)})`);
+}
+
+// A run that banks less is not a better run, whatever the clock says. Money is
+// the goal of this game; time only breaks a tie.
+{
+  const p = withRaw();
+  p.recordRun(1, { won: true, total: 32.40, secs: 252 });
+  p.recordRun(1, { won: true, total: 21.00, secs: 90 });
+  check('a worse run does not overwrite a best', p.bestFor(1).total === 32.40,
+    `(got ${p.bestFor(1).total})`);
+  p.recordRun(1, { won: true, total: 32.40, secs: 200 });
+  check('the same money in less time does', p.bestFor(1).secs === 200,
+    `(got ${p.bestFor(1).secs})`);
+  p.recordRun(3, { won: false, total: 99, secs: 10 });
+  check('losing clears nothing and records nothing',
+    !p.isCleared(3) && p.bestFor(3) === null);
+}
+
+// Every one of these must land on "no progress" rather than on a throw. A save
+// file that crashes the title card is worse than no save file.
+for (const [label, raw] of [
+  ['garbage', 'not json at all'],
+  ['a truncated blob', '{"v":1,"cleared":[1,2'],
+  ['a JSON array', '[1,2,3]'],
+  ['a JSON string', '"cleared"'],
+  ['null', 'null'],
+  ['a wrong version', JSON.stringify({ v: SAVE_VERSION + 1, cleared: [1, 2, 3] })],
+  ['a missing version', JSON.stringify({ cleared: [1, 2, 3] })],
+  ['cleared as an object', JSON.stringify({ v: SAVE_VERSION, cleared: { 1: true } })],
+]) {
+  let threw = null;
+  let p = null;
+  try { p = withRaw(raw); } catch (e) { threw = e; }
+  check(`${label} reads as no progress`,
+    !threw && p && p.cleared.length === 0, threw ? `(threw ${threw.message})` : '');
+}
+
+// One malformed field must not condemn the rest of the blob — a garbage `best`
+// costs you a best, not a ladder.
+{
+  const p = withRaw(JSON.stringify({ v: SAVE_VERSION, cleared: [1, 2], best: [1, 2] }));
+  check('a malformed best does not discard the cleared list',
+    p.cleared.join(',') === '1,2' && p.bestFor(1) === null,
+    `(got "${p.cleared.join(',')}")`);
+}
+
+{
+  const p = withRaw(JSON.stringify({
+    v: SAVE_VERSION,
+    cleared: [1, 9, 2, 2, -3, 'x', null],
+    best: { 9: { cents: 100, secs: 5 }, 1: { cents: 'x', secs: 5 } },
+  }));
+  check('ids this build does not know are dropped',
+    p.cleared.join(',') === '1,2', `(got "${p.cleared.join(',')}")`);
+  check('a best for an unknown id is dropped', p.bestFor(9) === null);
+  check('a malformed best is dropped, without taking the cleared list with it',
+    p.bestFor(1) === null && p.isCleared(1));
+}
+
+// Safari private mode throws on access; a full quota throws on write; a
+// WKWebView can do either. None of it may reach the player.
+{
+  const hostile = {
+    getItem() { throw new Error('SecurityError'); },
+    setItem() { throw new Error('QuotaExceededError'); },
+    removeItem() { throw new Error('SecurityError'); },
+  };
+  let threw = null;
+  let p = null;
+  let clearedInMemory = false;
+  try {
+    p = new Progress(hostile, KNOWN);
+    p.recordRun(1, { won: true, total: 20, secs: 100 });
+    clearedInMemory = p.isCleared(1);
+    p.forget();
+  } catch (e) { threw = e; }
+  check('a storage that throws on every call never raises',
+    !threw, threw ? `(threw ${threw.message})` : '');
+  check('and the session still works in memory', clearedInMemory);
+  check('and a failed write is reported as failed, not thrown',
+    p && p.save() === false);
+  check('forgetting still empties it when the disk refuses',
+    p && p.cleared.length === 0);
+}
+
+check('memory storage declares itself volatile', memoryStorage().volatile === true);
+
+// The ladder rules, on an invented four-rung ladder.
+{
+  const none = withRaw();
+  check('the first block is open to a new player',
+    none.unlockedIds(LADDER).join(',') === '1', `(got "${none.unlockedIds(LADDER)}")`);
+  check('a new player continues at the first block', none.continueId(LADDER) === 1);
+  check('a new player is a new player', none.isNewPlayer);
+
+  const p = withRaw();
+  p.recordRun(1, { won: true, total: 20, secs: 100 });
+  check('clearing a block opens exactly the one it names',
+    p.unlockedIds(LADDER).sort().join(',') === '1,2', `(got "${p.unlockedIds(LADDER)}")`);
+  check('and nothing further along', !p.isUnlocked(3, LADDER));
+
+  p.recordRun(2, { won: true, total: 25, secs: 100 });
+  p.recordRun(3, { won: true, total: 30, secs: 100 });
+  check('Continue resolves to the furthest opened block', p.continueId(LADDER) === 4,
+    `(got ${p.continueId(LADDER)})`);
+  // The distinction the button's promise rests on: replaying an old block must
+  // not drag Continue backwards with it.
+  p.recordRun(1, { won: true, total: 33, secs: 90 });
+  check('replaying an earlier block does not move Continue back',
+    p.continueId(LADDER) === 4, `(got ${p.continueId(LADDER)})`);
+}
+
+// A save from a longer ladder, loaded by a build that has fewer blocks in it.
+{
+  const s = memoryStorage();
+  s.setItem(SAVE_KEY, JSON.stringify({ v: SAVE_VERSION, cleared: [1, 2, 3, 4, 5, 6] }));
+  const short = new Progress(s, [1, 2, 3]);
+  check('a save from a longer ladder loads clean on a shorter build',
+    short.cleared.join(',') === '1,2,3', `(got "${short.cleared.join(',')}")`);
+  check('and cannot unlock a block that does not exist',
+    short.unlockedIds(LADDER.slice(0, 3)).every((id) => id <= 3));
+}
+
+// Against the real registry, so the shipped ladder is walkable end to end.
+{
+  const ids = LEVELS.map((l) => l.id);
+  const p = new Progress(memoryStorage(), ids);
+  let open = p.unlockedIds(LEVELS);
+  const reached = new Set(open);
+  for (let i = 0; i < LEVELS.length + 2 && open.length; i++) {
+    for (const id of open) p.recordRun(id, { won: true, total: 999, secs: 10 });
+    open = p.unlockedIds(LEVELS).filter((id) => !reached.has(id));
+    for (const id of open) reached.add(id);
+  }
+  check('every shipped block is reachable by clearing its predecessor',
+    reached.size === LEVELS.length, `(reached ${[...reached].join(',')} of ${ids.join(',')})`);
+  check('the last block ends the ladder',
+    LEVELS[LEVELS.length - 1].next == null);
+}
+
+// Two places naming or pricing a block is the thing that decays first, so the
+// menu is not allowed a second copy of either.
+{
+  const missing = LEVELS.filter((l) => !l.shortName || typeof l.goal !== 'number');
+  check('every block carries the name and goal a chip reads',
+    missing.length === 0, `(${missing.map((l) => l.id).join(',')})`);
+}
+
 function auditLights(level, world) {
   console.log(`\nlights at dusk [L${level.id}]`);
   const say = (t) => `${t} [L${level.id}]`;

@@ -49,9 +49,12 @@ the game had never been looked at. Both harnesses exist to close that gap.
 - **`scripts/shoot.mjs`** drives real WebGL in headless Chrome, writes PNGs to
   `shots/`, and fails on any console error or failed request. It runs every
   block: `01`–`13` are the block, `20`–`29` and `l2-dusk-*` are the park,
-  `30`–`39` and `l3-dusk-*` are the roofline, and `14` is the ending screen's
-  next-level button. It also swaps levels eight times and asserts the GPU gets
-  its memory back. Read the PNGs. It can
+  `30`–`39` and `l3-dusk-*` are the roofline, `14` is the ending screen's
+  next-level button, and `15`–`20` are the menu — title card new and returning,
+  pause, the Levels screen, the forfeit, and the touch pause control. It also
+  swaps levels eight times **through the menu** and asserts the GPU gets its
+  memory back; that path used to call `loadLevel` directly, which tested
+  teardown and nothing else. Read the PNGs. It can
   place the crow anywhere via `window.__game` (dev builds only) for spot checks,
   and asserts behaviour like trade auto-equip.
 
@@ -62,9 +65,10 @@ Almost every test in `smoke.mjs` exists because something real broke.
 
 ```
 src/
-  main.js              game class, interaction rules, fixed-step loop
+  main.js              game class, interaction rules, fixed-step loop, the screens
   core/input.js        one abstract input state; keyboard and touch both write to it
   core/audio.js        Web Audio synthesis — no audio files
+  core/save.js         saved progress (pure, unit tested) — cleared ids, best runs, the ladder
   render/palette.js    every colour in the game, single source of truth
   render/shapes.js     primitive kit + three-tone face tinting
   render/stage.js      renderer, fixed camera, sunset light rig, occlusion fade
@@ -91,7 +95,7 @@ docs/                  design brief + style guide — the spec, written to be ch
 ```
 
 Pure logic goes in its own module so `smoke.mjs` can test it without a DOM.
-That's why `words.js` and `rank.js` are separate from `hud.js`.
+That's why `words.js`, `rank.js` and `save.js` are separate from the DOM code.
 
 ## Traps that have already bitten
 
@@ -385,6 +389,41 @@ That's why `words.js` and `rank.js` are separate from `hud.js`.
   `stage.js` so the audit can run the real step in the real order rather than a
   reimplementation that would only ever agree with itself.
 
+- **Two full-screen cards at the same `z-index` are decided by document order,
+  and the loser eats every click silently.** `#pause` sits at 45 and the other
+  `.screen`s at 40, so opening the Levels list from a paused game left the scrim
+  on top of it — the screenshot looked completely correct and nothing was
+  clickable. `#ending` is *after* `#levels` in the document at equal z-index, so
+  it does the same thing from the other direction. **`paused` is state; the
+  pause card and the Levels card are two views of it, and only one is up.**
+- **Every page in one `shoot` run shares a `localStorage`.** The sections that
+  win a block to photograph its ending now also *clear* that block, so a later
+  section opening a bare URL boots wherever the previous one finished — the
+  navigation test opened the roofline and asserted the block's ending copy. Any
+  section that needs a known block must pin it with `?level=N`, and any section
+  that needs a known *save* must clear storage in `evaluateOnNewDocument`.
+- **A disabled control makes the obvious test pass while exercising nothing.**
+  "Click the locked chip, then press Play" passed — because the click on a
+  disabled button is a no-op, so the armed id stayed on the current block and
+  Play correctly resumed it. It asserted a locked chip could not be *played*
+  while never having armed one. Assert at the level of the thing you mean: a
+  locked chip cannot be armed.
+- **`localStorage` throws on *access*, not just on write.** Safari private mode
+  throws when you touch it, a full quota throws on `setItem`, and a WKWebView —
+  the shell this ships in — can do either. A truthiness check passes and the
+  first write of the session throws, so `defaultStorage()` probes with a real
+  round-trip write and falls back to an in-memory store. The game must be fully
+  playable with no storage at all, and that is asserted rather than hoped.
+- **A test that sleeps exactly as long as the thing it measures will flake.**
+  The mobile task-list collapse is a 12s countdown decremented from rAF deltas,
+  and rAF throttles when a page is not foreground; a flat `setTimeout(12000)`
+  lost about one run in three with nothing wrong. Wait for the condition.
+- **Copy that names a number is markup until something writes it.** The title
+  card promised "twenty dollars" whatever block was loaded. That was invisible
+  while the card only ever fronted level 1, and wrong the moment `Continue`
+  could open the hotel on it — the same bug the money counter's goal had, in the
+  same file, found the same way. Both are written from `level.goal` now.
+
 ## Level-design rules (asserted, not aspirational)
 
 In `RULES` in `world/rules.js`, enforced by `smoke.mjs` via `audit-level.mjs`,
@@ -485,11 +524,33 @@ is not polish. `audio.unlock()` needs a user gesture, and a reloaded page has
 not had one, so a reload comes back with the game silent until the player next
 presses something.
 
-`?level=N` still works and is still how a session starts; `loadLevel` keeps the
-address bar in step so a refresh returns you to the block you are on. **There is
-still no menu** — no way to reach an arbitrary block, no record of what you have
-finished, no route backwards. That needs saved state, which nothing in the game
-has yet.
+**There is a menu, and the game remembers you.** `core/save.js` holds one
+versioned blob under `smallchange.progress`: the ids you have cleared, and your
+best run on each (most banked, time as the tie-break). The best is **recorded
+from day one and displayed by nothing** — writing it is free and cannot be done
+retroactively, while showing it turns the sun dial from "you are running out of
+day" into "you are being timed", which is a change to the blocks and not to the
+menu. `docs/menu-brief.html` is the spec, and it records the argument.
+
+The shape: a **Levels** screen of its own (chosen over growing the title card,
+because more blocks are coming and a list built for three gets rebuilt at six),
+reached from the title, from pause and from the ending. The returning title card
+carries `Continue — <block>` in brass beside an outlined `Levels`; a first-ever
+visit is exactly the card that shipped before any of this, one brass `Begin`.
+**Pause** is `Esc`/`P` and a 44px control at top-centre on touch, drawn as a
+scrim over a scene that is still running its light rig. Selecting a chip *arms*
+the primary button rather than launching, which is what makes the screen safe to
+open mid-run — and leaving a block with money in the nest asks once.
+
+Two rules hold it together. **No screen holds its own copy of a block's name or
+price**: chips and buttons read `shortName` and `goal` off the descriptor, which
+is the objection to a second screen turned into an invariant. And **a locked
+chip gates, the URL does not** — `?level=N` still bypasses everything, because
+it is how `shoot.mjs` drives the game and how a block gets spot-checked without
+playing two others first.
+
+What is still missing: no route backwards through a *finished* run, no
+difficulty options, and nothing displays the best.
 
 `world/kit.js` holds anything a fourth block would otherwise copy-paste: tables,
 benches, lamps, bins, planters, trees, the skyline, the nest, and the water body.

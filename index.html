@@ -320,6 +320,24 @@
     margin-top: 26px; font-family: var(--mono); font-size: 9.5px;
     letter-spacing: .16em; text-transform: uppercase; color: #6f8c80;
   }
+  /* A button that reads as fine print. It is a real button because it does a
+     real thing — a span with a click handler is unreachable by keyboard. */
+  .linky {
+    background: none; border: 0; padding: 0; cursor: pointer; pointer-events: auto;
+    font: inherit; letter-spacing: inherit; text-transform: inherit;
+    color: inherit; text-decoration: underline; text-underline-offset: 2px;
+  }
+  .linky:hover { color: var(--paper); }
+  .linky:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
+
+  #title-actions { display: flex; gap: 14px; align-items: stretch; justify-content: center; }
+  #title-actions .start { margin-top: 34px; }
+
+  .eyebrow-sm {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .3em;
+    text-transform: uppercase; color: #9fb5ab; margin: 0;
+  }
+  .screen-h { font-size: clamp(34px, 7vw, 52px); margin: 6px 0 0; }
 
   /* ── the ending's two ways out ──────────────────────────────────────────
      One brass button and one outlined one. The brass is whichever action the
@@ -404,6 +422,106 @@
     max-width: 30rem; color: #d8e4de; margin: 18px 0 0;
   }
 
+  /* ── level chips ────────────────────────────────────────────────────────
+     One component, three homes: the Levels screen, and nothing else yet. It
+     reads `shortName` and `goal` off the level descriptor — no screen holds its
+     own copy of either, which is the rule that replaced the argument for
+     keeping the list on the title card. See docs/menu-brief.html §2.
+
+     A selected chip is outlined, never filled. The card's compositional rule is
+     exactly one loud thing on it and that thing is the button; a brass chip
+     beside a brass button is two. */
+  #levels-list {
+    display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+    margin: 26px 0 0; padding: 0; list-style: none; max-width: 44rem;
+  }
+  .chip {
+    width: 168px; text-align: left; padding: 10px 12px 11px;
+    background: rgba(31,77,61,.92); color: var(--paper);
+    border: 2px solid transparent; border-bottom: 3px solid var(--brass-d);
+    display: flex; flex-direction: column; gap: 1px;
+    font-family: var(--display); cursor: pointer; pointer-events: auto;
+    transition: transform .1s ease, border-color .12s ease;
+  }
+  .chip:hover:not(.locked) { transform: translateY(-2px); }
+  .chip:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
+  .chip .n {
+    font-family: var(--mono); font-size: 9px; letter-spacing: .2em; color: #9fb5ab;
+  }
+  .chip .nm {
+    font-size: 19px; line-height: 1.05; text-transform: uppercase;
+    letter-spacing: .02em; font-weight: 700; margin-top: 2px;
+  }
+  .chip .g {
+    font-family: var(--mono); font-size: 13px; font-weight: 700;
+    color: var(--brass); margin-top: 3px;
+  }
+  .chip .st {
+    font-family: var(--mono); font-size: 8.5px; letter-spacing: .16em;
+    text-transform: uppercase; color: #7e9a8d; margin-top: 7px;
+    border-top: 1px solid rgba(159,181,171,.22); padding-top: 6px;
+  }
+  .chip[aria-pressed="true"] { border-color: var(--brass); border-bottom-color: var(--brass); }
+  /* Locked blocks stay on screen. The ladder — $20 / $25 / $30, one deck / two /
+     four — is the reason to keep playing, and a menu that hides what is next
+     hides the reason. */
+  .chip.locked {
+    opacity: .40; cursor: default; border-bottom-color: rgba(159,181,171,.35);
+  }
+  .chip.locked .g { color: #9fb5ab; }
+
+  /* The forfeit. Takes over the action row in place rather than opening a
+     dialogue on top of it — see §7. */
+  #forfeit {
+    border: 2px solid rgba(217,95,76,.65); background: rgba(15,13,20,.72);
+    padding: 16px 20px 18px; margin-top: 24px; max-width: 30rem;
+  }
+  #forfeit[hidden] { display: none; }
+  #forfeit p {
+    font-family: Charter, Georgia, serif; font-size: 15px; color: #e8ddd6; margin: 0;
+  }
+  #forfeit p b { color: var(--red); font-weight: 700; }
+  #forfeit .row { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
+  #forfeit .start { margin-top: 0; font-size: 15px; padding: 10px 26px; }
+
+  #levels-actions { display: flex; gap: 14px; align-items: stretch; justify-content: center; }
+  #levels-actions .start { margin-top: 30px; }
+  #levels-actions[hidden] { display: none; }
+
+  /* ── pause ──────────────────────────────────────────────────────────────
+     A scrim, not a card. The title and ending screens are opaque because there
+     is nothing behind them worth seeing; the render half of the frame loop runs
+     outside the `running` guard, so behind this the sun is still crawling and
+     the lamps are still warming. That is the whole message of a pause screen.  */
+  #pause { background: rgba(15,13,20,.78); z-index: 45; }
+  #pause .eyebrow {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .3em;
+    text-transform: uppercase; color: #9fb5ab;
+  }
+  #pause .title-h { font-size: clamp(32px, 6vw, 46px); margin-top: 6px; }
+  #pause-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  #pause-actions .start { margin-top: 24px; }
+
+  /* No Esc on a phone, and the controls legend that would teach it is
+     display:none under body.touch. Top-centre is the only free chrome: money is
+     top-left, tasks top-right, the dial and buttons own the bottom-right, and
+     the stick appears wherever the left thumb lands. */
+  #btn-pause {
+    position: absolute; top: calc(var(--safe-t) + 14px); left: 50%;
+    transform: translateX(-50%);
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(233,229,218,.16); border: 2px solid rgba(233,229,218,.42);
+    display: none; align-items: center; justify-content: center; gap: 4px;
+    pointer-events: auto;
+  }
+  body.touch #btn-pause { display: flex; }
+  #btn-pause i { display: block; width: 4px; height: 15px; background: var(--paper); opacity: .9; }
+  #btn-pause.down { background: rgba(233,229,218,.34); }
+  /* The TEST MODE badge owns this spot when it is up, and it must stay the more
+     visible of the two — those tripwires exist so a cheat cannot ship by
+     accident. The badge wins; the pause control moves. */
+  body.test #btn-pause { top: calc(var(--safe-t) + 58px); }
+
   #loading {
     position: fixed; inset: 0; z-index: 50; background: #16332a;
     display: flex; align-items: center; justify-content: center;
@@ -426,6 +544,18 @@
     #money { min-width: 124px; padding: 6px 11px 5px; }
     #money .amt { font-size: 22px; }
     #sun { width: 84px; height: 46px; }
+  }
+
+  /* The top strip on a phone is money · pause · tasks, and on a 390px screen
+     those three do not fit at their desktop widths — the task chip reached
+     3px into the 44px pause target, measured rather than guessed. The task
+     list yields, because it is the only one of the three that is a *list* and
+     can afford the characters; the pause control cannot go below 44px and the
+     money counter is the thing the whole game is about. */
+  @media (max-width: 430px) {
+    #tasks { max-width: 148px; }
+    #tasks li { font-size: 11px; }
+    #tasks-toggle { font-size: 8px; letter-spacing: .08em; gap: 8px; }
   }
 </style>
 </head>
@@ -476,6 +606,7 @@
       <div><dt>Space</dt><dd>Fly — hold to climb</dd></div>
       <div><dt>J</dt><dd>Beak — take, drop, stash</dd></div>
       <div><dt>K</dt><dd>Caw</dd></div>
+      <div><dt>Esc</dt><dd>Pause</dd></div>
       <div><dt>M</dt><dd>Mute</dd></div>
     </dl>
   </div>
@@ -488,14 +619,20 @@
     <div class="btn" id="btn-beak">Beak</div>
     <div class="btn" id="btn-caw">Caw</div>
   </div>
+  <button id="btn-pause" aria-label="Pause"><i></i><i></i></button>
 </div>
 
 <div class="screen" id="title">
   <h1 class="title-h">Small<span>Change</span></h1>
+  <!-- The amount is written by `_paintTitle`, not by this file. It used to say
+       "twenty dollars" whatever block was loaded, which was invisible while the
+       title card only ever fronted level 1 — the moment Continue could open the
+       hotel, the card offered $30 and promised twenty dollars. Exactly the bug
+       the money counter's goal already had. -->
   <p class="title-sub">
     You were a person this morning. Someone turned you into a crow. Your goal is to
-    collect a bunch of money (<b>twenty dollars</b>) to break the curse before the
-    sun goes down.
+    collect a bunch of money (<b id="title-goal">twenty dollars</b>) to break the curse
+    before the sun goes down.
   </p>
   <div class="keys">
     <span><b>WASD</b> Move</span>
@@ -503,8 +640,49 @@
     <span><b>J</b> Beak</span>
     <span><b>K</b> Caw</span>
   </div>
-  <button class="start" id="start">Begin</button>
+  <!-- On a first-ever visit this is one brass button and nothing else — no
+       second button, no evidence a level list exists. `#to-levels` is revealed
+       only once there is progress to reach. -->
+  <div id="title-actions">
+    <button class="start" id="start">Begin</button>
+    <button class="start ghost" id="to-levels" hidden>Levels</button>
+  </div>
   <p class="fine">Money only counts once it is in the nest · One thing in the beak at a time</p>
+</div>
+
+<div class="screen hidden" id="levels">
+  <p class="eyebrow-sm">Small Change</p>
+  <h1 class="title-h screen-h">Levels</h1>
+  <ul id="levels-list"></ul>
+
+  <!-- Selecting a chip arms this button rather than launching, which is what
+       makes the screen safe to open mid-run: the dangerous action already has a
+       deliberate second press in front of it. -->
+  <div id="levels-actions">
+    <button class="start" id="levels-play">Play</button>
+    <button class="start ghost" id="levels-back">Back</button>
+  </div>
+
+  <div id="forfeit" hidden>
+    <p id="forfeit-copy"></p>
+    <div class="row">
+      <button class="start ghost" id="forfeit-go">Leave</button>
+      <button class="start" id="forfeit-stay">Stay</button>
+    </div>
+  </div>
+
+  <p class="fine">Clear a level to open the next one · <button class="linky" id="forget">Forget my progress</button></p>
+</div>
+
+<div class="screen hidden" id="pause">
+  <p class="eyebrow" id="pause-where"></p>
+  <h1 class="title-h">Paused</h1>
+  <div id="pause-actions">
+    <button class="start" id="resume">Resume</button>
+    <button class="start ghost" id="restart">Start over</button>
+    <button class="start ghost" id="pause-levels">Levels</button>
+  </div>
+  <p class="fine">Esc to resume · M mutes · <button class="linky" id="quit">Quit to title</button></p>
 </div>
 
 <div class="screen hidden" id="ending">
@@ -515,6 +693,10 @@
     <button class="start" id="onward" hidden></button>
     <button class="start" id="again">Again!</button>
   </div>
+  <!-- The third way out. Not a third `.start`: the card's rule is one filled
+       button and one outlined one, and a third would flatten the hierarchy the
+       ending was carefully given. -->
+  <p class="fine"><button class="linky" id="ending-levels">Levels</button></p>
 </div>
 
 <div id="loading">Building the block…</div>

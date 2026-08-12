@@ -1121,7 +1121,19 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
   nav.on('pageerror', (e) => errors.push(`nav uncaught: ${e.message}`));
 
   console.log('\nlevel navigation');
-  await nav.goto(URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  /**
+   * Pinned to level 1, and it has to be.
+   *
+   * A bare URL used to mean "level 1" and now means "wherever you left off" —
+   * and every page in this run shares one `localStorage`, so the sections above
+   * that win a block to photograph its ending also clear it. This test would
+   * otherwise boot into whatever the *previous* test finished, which is how it
+   * first failed: it opened the roofline and asserted the block's ending copy.
+   */
+  await nav.evaluateOnNewDocument(() => {
+    try { localStorage.clear(); } catch { /* private mode, nothing to clear */ }
+  });
+  await nav.goto(`${URL}?level=1`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await nav.waitForFunction(
     () => document.getElementById('loading')?.classList.contains('hidden'),
     { timeout: 30000 },
@@ -1250,14 +1262,39 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
      * so that one is pinned.
      */
     const SLACK = 120;
-    await nav.evaluate(() => window.__game.loadLevel(3, true));
-    await new Promise((r) => setTimeout(r, 900));
+
+    /**
+     * Swap the way a player does: pause, open the level list, click a chip,
+     * press the button.
+     *
+     * This used to call `loadLevel` directly, which tested teardown and nothing
+     * else. The menu is now the only route a player has to a level swap, and it
+     * does more than `loadLevel` on the way through — it paints chips, hides two
+     * other screens and resolves an armed id — so the leak check is worth
+     * pointing at the real path rather than at a parallel one that can drift
+     * from it.
+     */
+    const swapViaMenu = async (id) => {
+      await nav.evaluate(() => {
+        const g = window.__game;
+        // Everything unlocked: this is a memory test, not a ladder test, and a
+        // locked chip is correctly unclickable.
+        g.progress.cleared = [1, 2, 3];
+        g.total = 0;                       // no nest money, so no forfeit prompt
+        if (!g.paused && g.running) g.pause();
+        g.showLevels();
+      });
+      await nav.click(`#levels-list .chip[data-level="${id}"]`);
+      await nav.click('#levels-play');
+      await new Promise((r) => setTimeout(r, 350));
+    };
+
+    await swapViaMenu(3);
+    await new Promise((r) => setTimeout(r, 550));
     const base = await state();
     for (let i = 0; i < 4; i++) {
-      await nav.evaluate(() => window.__game.loadLevel(1, true));
-      await new Promise((r) => setTimeout(r, 350));
-      await nav.evaluate(() => window.__game.loadLevel(3, true));
-      await new Promise((r) => setTimeout(r, 350));
+      await swapViaMenu(1);
+      await swapViaMenu(3);
     }
     const leaked = await state();
     console.log(`  after 8 swaps: ${leaked.geometries} geometries (was ${base.geometries}), `
@@ -1303,7 +1340,12 @@ const mobCdp = await mob.createCDPSession();
 await mobCdp.send('Emulation.setEmulatedMedia', {
   features: [{ name: 'pointer', value: 'coarse' }, { name: 'any-pointer', value: 'coarse' }],
 });
-await mob.goto(URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+// Pinned to level 1 for the same reason the nav page is: every page in this run
+// shares one localStorage, the sections above win blocks to photograph their
+// endings, and a bare URL now resolves to whatever they left cleared. 12- and
+// 13- are documented as *the block's* mobile layout, and the HUD-overlap check
+// measures the block's task list specifically.
+await mob.goto(`${URL}?level=1`, { waitUntil: 'domcontentloaded', timeout: 30000 });
 await mob.waitForFunction(
   () => document.getElementById('loading')?.classList.contains('hidden'),
   { timeout: 20000 },
@@ -1345,13 +1387,450 @@ if (overlap.collides.length) {
   errors.push(`mobile: ${overlap.collides.join(', ')} overlapping the touch buttons`);
 }
 
-// The task list should fold down to a count once it has introduced itself.
-await new Promise((r) => setTimeout(r, 12000));
-const folded = await mob.evaluate(() =>
-  document.getElementById('tasks').classList.contains('collapsed'));
+/**
+ * The task list should fold down to a count once it has introduced itself.
+ *
+ * Waited for rather than slept through. The countdown is 12s of *simulated*
+ * time, decremented from rAF deltas, and a page that is not foreground gets its
+ * rAF throttled — so a flat 12000ms sleep raced the thing it was measuring and
+ * failed about one run in three, with nothing wrong.
+ */
+const folded = await mob.waitForFunction(
+  () => document.getElementById('tasks').classList.contains('collapsed'),
+  { timeout: 25000, polling: 250 },
+).then(() => true).catch(() => false);
 if (!folded) errors.push('mobile: task list never collapsed');
 writeFileSync(`${OUT}/13-mobile-collapsed.png`, await mob.screenshot({ type: 'png' }));
 console.log(`  wrote ${OUT}/13-mobile-collapsed.png (tasks collapsed: ${folded})`);
+
+// ── the menu, pause, and saved progress ──────────────────────────────────────
+/**
+ * Everything in docs/menu-brief.html that only exists in a browser.
+ *
+ * The save layer itself is tested headless in `smoke.mjs`, where a hostile
+ * storage and a corrupt blob are cheap to construct. What is left here is the
+ * part that needs a real DOM and a real clock: that pausing actually stops the
+ * day, that resuming does not then spend it, that the screens do not cover each
+ * other, and that a locked chip is genuinely inert.
+ */
+{
+  console.log('\nmenu, pause and progress');
+  const menu = await browser.newPage();
+  menu.on('pageerror', (e) => errors.push(`menu page error: ${e.message}`));
+  menu.on('console', (m) => { if (m.type() === 'error') errors.push(`menu console: ${m.text()}`); });
+  await menu.setViewport({ width: 1100, height: 690, deviceScaleFactor: 1 });
+
+  const bootMenu = async (suffix = '') => {
+    await menu.goto(`${URL}${suffix}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await menu.waitForFunction(
+      () => document.getElementById('loading')?.classList.contains('hidden'), { timeout: 20000 });
+  };
+  /**
+   * Visible *on screen*, not merely un-hidden.
+   *
+   * The first version checked only the element's own `hidden` attribute and
+   * class, which reported the forfeit panel as showing while the entire Levels
+   * card behind it was `display: none` — so a test asserting the panel was up
+   * passed, and the next line failed trying to click something nobody could
+   * see.
+   *
+   * `offsetParent` is the obvious way to test that and is wrong here: it is
+   * null for *every* `position: fixed` element, and every screen in this game
+   * is fixed — so it reported the title, pause, levels and ending cards as
+   * hidden while they were on screen. `checkVisibility()` walks ancestors
+   * properly; `getClientRects()` is the fallback for anything older.
+   */
+  const shown = (id) => menu.evaluate((i) => {
+    const el = document.getElementById(i);
+    if (!el || el.hidden || el.classList.contains('hidden')) return false;
+    return el.checkVisibility
+      ? el.checkVisibility()
+      : el.getClientRects().length > 0;
+  }, id);
+  const label = (id) => menu.evaluate((i) => document.getElementById(i)?.textContent?.trim(), id);
+  const bad = (msg) => errors.push(`menu: ${msg}`);
+
+  await bootMenu();
+  const hasMenuHandle = await menu.evaluate(() => !!window.__game);
+  await menu.evaluate(() => { try { localStorage.clear(); } catch { /* private mode */ } });
+  await bootMenu();
+
+  // A first-ever visit is exactly the card that shipped before any of this.
+  if ((await label('start')) !== 'Begin') bad(`new player's button reads "${await label('start')}"`);
+  if (await shown('to-levels')) bad('new player is offered a level list');
+  writeFileSync(`${OUT}/15-title-new.png`, await menu.screenshot({ type: 'png' }));
+
+  await menu.click('#start');
+  await new Promise((r) => setTimeout(r, 800));
+
+  if (hasMenuHandle) {
+    /**
+     * The one thing a pause must not get wrong.
+     *
+     * `elapsed` drives the light rig, the sun dial and the out-of-time ending,
+     * so a pause that lets it run means pausing at 6:40 of an eight-minute day
+     * and coming back to a lost run. Both are read: the number, and the dial
+     * that is drawn from it.
+     */
+    await menu.keyboard.press('Escape');
+    await new Promise((r) => setTimeout(r, 200));
+    if (!await shown('pause')) bad('Esc did not pause');
+    const t0 = await menu.evaluate(() => ({
+      elapsed: window.__game.elapsed,
+      dial: document.getElementById('sun-dot')?.getAttribute('cx'),
+      running: window.__game.running,
+    }));
+    await new Promise((r) => setTimeout(r, 1600));
+    const t1 = await menu.evaluate(() => ({
+      elapsed: window.__game.elapsed,
+      dial: document.getElementById('sun-dot')?.getAttribute('cx'),
+    }));
+    if (t0.running !== false) bad('paused but still running');
+    if (Math.abs(t1.elapsed - t0.elapsed) > 1e-6) {
+      bad(`the day advanced while paused: ${t0.elapsed} → ${t1.elapsed}`);
+    }
+    if (t1.dial !== t0.dial) bad(`the sun dial moved while paused: ${t0.dial} → ${t1.dial}`);
+    writeFileSync(`${OUT}/16-pause.png`, await menu.screenshot({ type: 'png' }));
+
+    /**
+     * And the other half of it: resuming must discard the pause rather than owe
+     * it. Without resetting `_acc` the accumulator comes back holding the whole
+     * gap and spends it on catch-up ticks — six of them, given the `steps < 6`
+     * clamp, which is six frames of simulation the player did not ask for.
+     */
+    const before = await menu.evaluate(() => ({ ...window.__game.crow.pos }));
+    await menu.keyboard.press('Escape');
+    await new Promise((r) => setTimeout(r, 80));
+    const after = await menu.evaluate(() => ({ ...window.__game.crow.pos }));
+    const jump = Math.hypot(after.x - before.x, after.y - before.y, after.z - before.z);
+    if (jump > 0.6) bad(`resume spent the pause on catch-up: crow moved ${jump.toFixed(2)}m`);
+
+    // The level list, opened from a paused game.
+    await menu.keyboard.press('Escape');
+    await new Promise((r) => setTimeout(r, 150));
+    await menu.click('#pause-levels');
+    await new Promise((r) => setTimeout(r, 200));
+    if (!await shown('levels')) bad('Levels did not open from pause');
+    // Both neighbours must be put away, not layered: #pause is z-index 45 and
+    // #ending is later in the document at the same z-index as #levels, so
+    // either one left visible silently eats every click on the list.
+    if (await shown('pause')) bad('the pause scrim is still covering the level list');
+    if (await shown('ending')) bad('the ending card is still covering the level list');
+
+    const chips = await menu.evaluate(() => [...document.querySelectorAll('#levels-list .chip')]
+      .map((c) => ({
+        id: Number(c.dataset.level),
+        locked: c.classList.contains('locked'),
+        disabled: c.disabled,
+        armed: c.getAttribute('aria-pressed') === 'true',
+      })));
+    if (chips.length !== 3) bad(`${chips.length} chips for 3 levels`);
+    if (!chips[0]?.armed) bad('the block being played is not the armed chip');
+    if (!chips[1]?.locked || !chips[1]?.disabled) bad('an uncleared block is not locked');
+    if (!/back to/i.test(await label('levels-play'))) {
+      bad(`the armed-current button reads "${await label('levels-play')}"`);
+    }
+    writeFileSync(`${OUT}/17-levels.png`, await menu.screenshot({ type: 'png' }));
+
+    /**
+     * A locked chip is inert — it cannot even be *armed*, which is the level
+     * the check belongs at.
+     *
+     * Pressing Play afterwards was the obvious way to write this and it tested
+     * nothing: the click on a disabled button is a no-op, so the armed id stays
+     * on the current block and Play correctly resumes it. The test passed while
+     * asserting something it had not exercised, and closed the screen it needed
+     * for the next step.
+     */
+    await menu.evaluate(() => document.querySelector('#levels-list .chip[data-level="3"]').click());
+    await new Promise((r) => setTimeout(r, 120));
+    const armed = await menu.evaluate(() => window.__game._armed);
+    if (armed === 3) bad('a locked chip can be armed');
+
+    // Choosing the block you are standing in resumes it rather than rebuilding
+    // it — a forfeit prompt for the level you are in is nonsense, and a silent
+    // restart throws away a run nobody was trying to end.
+    await menu.evaluate(() => { window.__game.total = 4.25; });
+    await menu.click('#levels-list .chip[data-level="1"]');
+    await menu.click('#levels-play');
+    await new Promise((r) => setTimeout(r, 300));
+    const resumed = await menu.evaluate(() => ({
+      running: window.__game.running, total: window.__game.total,
+    }));
+    if (!resumed.running) bad('picking the current block did not resume it');
+    if (resumed.total !== 4.25) bad(`picking the current block reset the nest to ${resumed.total}`);
+
+    // The forfeit: money in the nest is something to lose, so it asks.
+    await menu.evaluate(() => {
+      const g = window.__game;
+      g.progress.cleared = [1, 2, 3];
+      g.progress.save();          // to disk, so the reboot below sees a returning player
+      g.pause();
+      g.showLevels();
+    });
+    await menu.click('#levels-list .chip[data-level="2"]');
+    await menu.click('#levels-play');
+    await new Promise((r) => setTimeout(r, 200));
+    if (!await shown('forfeit')) bad('leaving a block with money in the nest did not ask');
+    if (await shown('levels-actions')) bad('the forfeit did not take over the action row');
+    if (!/4\.25/.test(await label('forfeit-copy'))) {
+      bad(`the forfeit does not name the amount: "${await label('forfeit-copy')}"`);
+    }
+    writeFileSync(`${OUT}/18-forfeit.png`, await menu.screenshot({ type: 'png' }));
+
+    await menu.click('#forfeit-go');
+    await new Promise((r) => setTimeout(r, 900));
+
+    /**
+     * After a swap driven by the menu, three things that have each gone wrong
+     * before: the task list appends rather than replaces, the camera is still
+     * parked over the old block, and the nest carries money across.
+     */
+    const landed = await menu.evaluate(() => {
+      const g = window.__game;
+      const cam = g.stage.camera.position;
+      const crow = g.crow.pos;
+      return {
+        id: g.level.id,
+        rows: document.querySelectorAll('#task-list li').length,
+        expected: g.tasks.length,
+        total: g.total,
+        camDist: Math.hypot(cam.x - crow.x, cam.z - crow.z),
+      };
+    });
+    if (landed.id !== 2) bad(`the forfeit went to level ${landed.id}, not 2`);
+    if (landed.rows !== landed.expected) {
+      bad(`task list shows ${landed.rows} rows for a ${landed.expected}-task block`);
+    }
+    if (landed.total !== 0) bad(`money survived a level swap: ${landed.total}`);
+    // The camera lags by ~0.2s but must start *at* the new spawn, not sail
+    // across the map from the old one.
+    if (landed.camDist > 40) bad(`camera did not snap to the new spawn (${landed.camDist.toFixed(1)}m away)`);
+
+    /**
+     * Quit to title abandons the run.
+     *
+     * Clearing the flags and showing the card is not enough — `total`,
+     * `elapsed` and the crow all survive a screen change, so quitting four
+     * minutes in and pressing Begin resumed the same run with the same money
+     * and the same half-spent day. A mid-run save, arrived at by accident, and
+     * explicitly out of scope.
+     */
+    await menu.evaluate(() => {
+      const g = window.__game;
+      g.total = 9.5; g.elapsed = 200;
+      g.pause();
+    });
+    await menu.click('#quit');
+    await new Promise((r) => setTimeout(r, 900));
+    await menu.click('#start');
+    await new Promise((r) => setTimeout(r, 700));
+    const afterQuit = await menu.evaluate(() => ({
+      total: window.__game.total,
+      elapsed: Math.round(window.__game.elapsed),
+      running: window.__game.running,
+    }));
+    if (afterQuit.total !== 0) bad(`quitting kept $${afterQuit.total} in the nest`);
+    if (afterQuit.elapsed > 5) bad(`quitting kept ${afterQuit.elapsed}s of the day spent`);
+    if (!afterQuit.running) bad('starting after a quit did not start');
+
+    /**
+     * A pending forfeit must not survive the chip list being rebuilt.
+     * `#forget` re-enters `showLevels` without leaving first, which left the
+     * panel up over a hidden action row, still armed at a now-locked block.
+     */
+    // Deliberately *not* the block being played — arming the current one
+    // resumes it, which is correct behaviour and tests nothing here.
+    const elsewhere = await menu.evaluate(() => {
+      const g = window.__game;
+      g.progress.cleared = [1, 2, 3]; g.progress.save();
+      g.total = 3.5;
+      g.pause(); g.showLevels();
+      return g.level.id === 1 ? 2 : 1;
+    });
+    await menu.click(`#levels-list .chip[data-level="${elsewhere}"]`);
+    await menu.click('#levels-play');
+    await new Promise((r) => setTimeout(r, 200));
+    if (!await shown('forfeit')) bad('the forfeit did not appear for the re-entry check');
+    await menu.click('#forget');
+    await new Promise((r) => setTimeout(r, 300));
+    if (await shown('forfeit')) bad('forgetting left a forfeit prompt up');
+    if (!await shown('levels-actions')) bad('forgetting left the action row hidden');
+
+    /** HUD countdowns must not drain behind the scrim. */
+    await menu.evaluate(() => {
+      const g = window.__game;
+      g.hideLevels(); g.resume();
+      g.hud._tasksT = 3; g.hud._controlsT = 3;
+    });
+    await menu.evaluate(() => window.__game.pause());
+    await new Promise((r) => setTimeout(r, 1400));
+    const frozen = await menu.evaluate(() => ({
+      tasksT: window.__game.hud._tasksT,
+      controlsT: window.__game.hud._controlsT,
+    }));
+    if (frozen.tasksT < 2.9) bad(`the task-list countdown ran while paused (${frozen.tasksT})`);
+    if (frozen.controlsT < 2.9) bad(`the legend countdown ran while paused (${frozen.controlsT})`);
+    await menu.evaluate(() => window.__game.resume());
+
+    // The re-entry check above pressed "Forget my progress", which is the point
+    // of it — but it also wiped the save the returning-player checks below read
+    // back off disk. Put it back, since those two are testing different things.
+    await menu.evaluate(() => {
+      const g = window.__game;
+      g.progress.cleared = [1, 2];
+      g.progress.save();
+    });
+  }
+
+  // A returning player, from disk.
+  await bootMenu();
+  if (!/continue/i.test(await label('start') ?? '')) {
+    bad(`returning player's button reads "${await label('start')}"`);
+  }
+  if (!await shown('to-levels')) bad('returning player has no way to the level list');
+  writeFileSync(`${OUT}/19-title-returning.png`, await menu.screenshot({ type: 'png' }));
+
+  // The ending's third way out.
+  if (hasMenuHandle) {
+    await menu.click('#start');
+    await new Promise((r) => setTimeout(r, 700));
+    await menu.evaluate(() => {
+      const g = window.__game;
+      g.total = 26.5; g.elapsed = 240; g.finished = false; g.running = true;
+      g._finish(true);
+    });
+    await new Promise((r) => setTimeout(r, 400));
+    await menu.click('#ending-levels');
+    await new Promise((r) => setTimeout(r, 250));
+    if (!await shown('levels')) bad('the ending has no route to the level list');
+    if (await shown('ending')) bad('the ending card is covering the level list');
+
+    // And that a win actually wrote something.
+    const saved = await menu.evaluate(() => {
+      try { return localStorage.getItem('smallchange.progress'); } catch { return null; }
+    });
+    if (saved && !/"cleared"\s*:\s*\[[^\]]/.test(saved)) bad(`a win wrote no cleared block: ${saved}`);
+  }
+
+  // Forget, and the empty state it restores.
+  await menu.click('#forget');
+  await new Promise((r) => setTimeout(r, 250));
+  const relocked = await menu.evaluate(() =>
+    [...document.querySelectorAll('#levels-list .chip')].map((c) => c.classList.contains('locked')));
+  if (relocked[0] !== false || relocked[1] !== true) {
+    bad(`forget left the ladder as ${JSON.stringify(relocked)}`);
+  }
+  /**
+   * The armed chip and the button beside it must never disagree.
+   *
+   * Forgetting can re-lock the block that is *loaded* — `?level=3` bypasses the
+   * lock on purpose, so the two can legitimately diverge — and the armed chip
+   * would otherwise sit greyed out under a button offering to play it.
+   */
+  const consistent = await menu.evaluate(() => {
+    const armed = document.querySelector('#levels-list .chip[aria-pressed="true"]');
+    return {
+      armedIsLocked: armed ? armed.classList.contains('locked') : null,
+      button: document.getElementById('levels-play').textContent.trim(),
+    };
+  });
+  if (consistent.armedIsLocked) {
+    bad(`a locked chip is armed after forgetting, under "${consistent.button}"`);
+  }
+
+  // The URL still bypasses the lock, with no progress at all.
+  await bootMenu('?level=3');
+  const forced = await menu.evaluate(() => window.__game?.level?.id);
+  if (hasMenuHandle && forced !== 3) bad(`?level=3 booted level ${forced}`);
+
+  /**
+   * The title card's strapline names the goal of the block it is fronting.
+   *
+   * It was markup — "twenty dollars", whatever was loaded — and stayed correct
+   * for as long as the card only ever fronted level 1. `Continue` can now open
+   * the hotel on it, at which point the card offered $30 and promised twenty.
+   * The money counter's goal had exactly this bug once already, which is why
+   * this checks both of them against the level rather than against each other.
+   */
+  const promised = await menu.evaluate(() => ({
+    goal: window.__game?.goal,
+    strapline: document.getElementById('title-goal')?.textContent,
+    counter: document.getElementById('goal')?.textContent,
+  }));
+  if (hasMenuHandle && !/thirty dollars/.test(promised.strapline ?? '')) {
+    bad(`the title card promises "${promised.strapline}" on a $${promised.goal} block`);
+  }
+  if (hasMenuHandle && promised.counter !== '$30.00' && !/30/.test(promised.counter ?? '')) {
+    bad(`the money counter reads "${promised.counter}" on a $${promised.goal} block`);
+  }
+
+  console.log(`  wrote ${OUT}/15..19 — title (new/returning), pause, levels, forfeit`);
+  await menu.close();
+}
+
+// The touch build's pause control, and its one interaction with the TEST MODE
+// badge: both want top-centre, and the badge must stay the more visible of the
+// two — it is one of three tripwires stopping a cheat from shipping.
+{
+  const tp = await browser.newPage();
+  tp.on('pageerror', (e) => errors.push(`touch-pause uncaught: ${e.message}`));
+  await tp.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+  // Same CDP dance as the mobile layout page above: puppeteer's
+  // emulateMediaFeatures whitelist has no 'pointer', and without a coarse
+  // pointer the page never sets body.touch — so #btn-pause stays display:none
+  // and this whole section would measure a hidden element.
+  const tpCdp = await tp.createCDPSession();
+  await tpCdp.send('Emulation.setEmulatedMedia', {
+    features: [{ name: 'pointer', value: 'coarse' }, { name: 'any-pointer', value: 'coarse' }],
+  });
+  await tp.goto(`${URL}?level=1`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await tp.waitForFunction(
+    () => document.getElementById('loading')?.classList.contains('hidden'), { timeout: 20000 });
+  await tp.click('#start');
+  await new Promise((r) => setTimeout(r, 800));
+
+  const geom = await tp.evaluate(() => {
+    const btn = document.getElementById('btn-pause');
+    const style = getComputedStyle(btn);
+    const r = btn.getBoundingClientRect();
+    const boxOf = (id) => {
+      const el = document.getElementById(id);
+      const b = el?.getBoundingClientRect();
+      return b && b.width && b.height ? b : null;
+    };
+    const hits = (a, b) => a && b
+      && a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+    document.body.classList.add('test');
+    const withBadge = document.getElementById('btn-pause').getBoundingClientRect().top;
+    document.body.classList.remove('test');
+    return {
+      shown: style.display !== 'none',
+      size: Math.round(Math.min(r.width, r.height)),
+      overlaps: ['money', 'tasks', 'buttons', 'stick'].filter((id) => hits(r, boxOf(id))),
+      top: r.top,
+      topWithBadge: withBadge,
+    };
+  });
+  if (!geom.shown) errors.push('touch: no pause control');
+  // 44px is the smallest thing a thumb reliably hits.
+  if (geom.size < 44) errors.push(`touch: pause control is ${geom.size}px`);
+  if (geom.overlaps.length) {
+    errors.push(`touch: pause control overlaps ${geom.overlaps.join(', ')}`);
+  }
+  if (!(geom.topWithBadge > geom.top)) {
+    errors.push('touch: the TEST MODE badge does not push the pause control down');
+  }
+
+  await tp.click('#btn-pause');
+  await new Promise((r) => setTimeout(r, 250));
+  const paused = await tp.evaluate(() =>
+    !document.getElementById('pause').classList.contains('hidden'));
+  if (!paused) errors.push('touch: the pause control does not pause');
+  writeFileSync(`${OUT}/40-touch-pause.png`, await tp.screenshot({ type: 'png' }));
+  console.log(`  wrote ${OUT}/40-touch-pause.png (control ${geom.size}px, clear of the HUD)`);
+  await tp.close();
+}
 
 await browser.close();
 

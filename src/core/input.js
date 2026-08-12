@@ -73,7 +73,11 @@ export class Input {
       this._markTouch();
       for (const t of e.changedTouches) {
         // Buttons handle their own events; the stick claims the left half.
-        if (t.target.closest('.btn')) continue;
+        // `#btn-pause` is an id rather than a `.btn` because it is chrome
+        // rather than a game control — and it sits at the top *centre*, so its
+        // left half falls inside the stick's claim. Without it here, tapping
+        // that half both pauses and plants the joystick under the scrim.
+        if (t.target.closest('.btn, #btn-pause')) continue;
         if (this._stick.active) continue;
         if (t.clientX > innerWidth * 0.5) continue;
         this._stick.active = true;

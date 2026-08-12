@@ -499,13 +499,13 @@
 
 <header class="band">
   <div class="band-inner">
-    <div class="eyebrow">Interface Brief &nbsp;·&nbsp; Progress &amp; the Menu &nbsp;·&nbsp; Revised against review — nothing built yet</div>
+    <div class="eyebrow">Interface Brief &nbsp;·&nbsp; Progress &amp; the Menu &nbsp;·&nbsp; Built and verified</div>
     <h1 class="title">The<br>Menu<span class="thin">And a game that remembers you</span></h1>
     <p class="deck">Three blocks, a ladder that runs $20 → $25 → $30, and a game that forgets
       all of it the moment the tab closes. This is the proposal for the save file, the level
       select, and the pause screen that has to exist for either of them to be reachable.</p>
     <dl class="facts">
-      <div><dt>Status</dt><dd>Revised, round 1</dd></div>
+      <div><dt>Status</dt><dd>Built — not yet playtested</dd></div>
       <div><dt>New files</dt><dd>1 — <span class="mono">core/save.js</span></dd></div>
       <div><dt>New screens</dt><dd>2 — Levels, and pause</dd></div>
       <div><dt>Open decisions</dt><dd>None</dd></div>
@@ -524,6 +524,17 @@
       typefaces, the real <span class="mono">.start</span> and
       <span class="mono">.start.ghost</span> button rules — so what you are looking at is close
       to what the code would produce, not an impression of it. It is not, however, running.</p>
+
+      <div class="note">
+        <span class="lbl">Built · not yet playtested</span>
+        All five milestones in <a href="#plan">§11</a> have landed and every assertion in
+        <a href="#verify">§10</a> is in one of the two harnesses — 35 of them in
+        <span class="mono">smoke</span> for the save layer and the rest in
+        <span class="mono">shoot</span>, which now photographs the menu into
+        <span class="mono">shots/15–20</span>. Four things went wrong on the way that this
+        document did not predict; they are recorded at the end of <a href="#verify">§10</a>
+        rather than quietly fixed, because three of them are the kind that pass a screenshot.
+      </div>
 
       <p><strong>Revised once against review.</strong> Both open decisions are closed and the
       sections that depended on them have been redrawn rather than annotated: the level list is
@@ -1199,6 +1210,39 @@
         </table>
       </div>
       <p class="exhibit-cap"><b>J</b> · The check list. Five of these are re-tests of traps the level-swap path has already sprung once.</p>
+    </div>
+
+    <div class="col">
+      <h3>What the build found that this document did not predict</h3>
+      <p>Four, and three of them would have passed a screenshot — which is the argument for
+      driving the interface rather than photographing it.</p>
+      <ol>
+        <li><strong>Two full-screen cards at the same z-index are decided by document order,
+        and the loser eats every click in silence.</strong> <span class="mono">#pause</span> is
+        at 45 and the other screens at 40, so opening the level list from a paused game left the
+        scrim on top of it; <span class="mono">#ending</span> is later in the document than
+        <span class="mono">#levels</span> at equal z-index and does the same from the other side.
+        The frame looked perfect and nothing was clickable. Pause is state now, and only one card
+        is ever up.</li>
+        <li><strong>Every page in one <span class="mono">shoot</span> run shares a
+        <span class="mono">localStorage</span>.</strong> The sections that win a block to
+        photograph its ending now also clear that block, so the navigation test opened a bare URL,
+        got the roofline, and asserted the block's ending copy. Anything needing a known block
+        pins it with <span class="mono">?level=N</span>.</li>
+        <li><strong>The title card's strapline was markup.</strong> It promised "twenty dollars"
+        whatever was loaded — invisible while the card only ever fronted level 1, wrong the moment
+        <em>Continue</em> could open the hotel on it. The money counter's goal had this exact bug
+        once already, in the same file.</li>
+        <li><strong>A disabled control makes the obvious test pass while exercising nothing.</strong>
+        "Click the locked chip, then press Play" passed because the click is a no-op, so the armed
+        id stayed on the current block and Play correctly resumed it. It asserted a locked chip
+        could not be played while never having armed one.</li>
+      </ol>
+      <p>One thing this document was wrong about and the build corrected: <strong>top-centre is
+      not free on a phone.</strong> §5 reasoned that money is top-left and tasks top-right, so the
+      middle is spare. On a 390&nbsp;px screen the task chip reached 3&nbsp;px into a 44&nbsp;px
+      pause target — measured, not guessed. The task list yields below 430&nbsp;px, because it is
+      the only one of the three that is a list and can afford the characters.</p>
     </div>
   </section>
 

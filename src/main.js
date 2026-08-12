@@ -11,7 +11,9 @@ import { Input } from './core/input.js';
 import { Audio } from './core/audio.js';
 import { Hud, setEndingTitle, replayEndingAnimation } from './ui/hud.js';
 import { formatRankLine } from './ui/rank.js';
-import { getLevel } from './world/levels.js';
+import { moneyInWords } from './ui/words.js';
+import { getLevel, LEVELS } from './world/levels.js';
+import { Progress } from './core/save.js';
 import { isSharedMaterial } from './render/shapes.js';
 import { RULES } from './world/rules.js';
 import { Crow } from './entities/crow.js';
@@ -34,7 +36,7 @@ const REACH = 1.15;
  * How a player gets from one block to the next is no longer a URL question — it
  * is the ending screen. See `_finish` and `loadLevel`.
  */
-const START_LEVEL = Number(new URLSearchParams(location.search).get('level')) || 1;
+const START_LEVEL = Number(new URLSearchParams(location.search).get('level')) || null;
 
 /**
  * Strip a block down to nothing, freeing what it owns and nothing else.
@@ -120,8 +122,16 @@ class Game {
     this.stage = new Stage(document.getElementById('c'));
     this.input = new Input();
     this.audio = new Audio();
+    /**
+     * What survives the tab closing. Constructed before anything reads it, and
+     * never allowed to fail — a device that refuses to persist gets an
+     * in-memory store and a game that works for exactly one session.
+     */
+    this.progress = new Progress(undefined, LEVELS.map((l) => l.id));
+    /** Which chip the Levels screen has armed. Null while that screen is shut. */
+    this._armed = null;
 
-    const first = getLevel(levelId);
+    const first = getLevel(levelId ?? this.progress.continueId(LEVELS));
     this.hud = new Hud(first.goal, TEST_SESSION_SECONDS ?? first.sessionSeconds);
 
     this._screen = { x: 0, y: 0, visible: false };
@@ -144,11 +154,24 @@ class Game {
       const badge = document.getElementById('testmode');
       badge.textContent = `Test mode · ${cheats.join(' · ')}`;
       badge.hidden = false;
+      // The badge and the touch pause control both want top-centre. The badge
+      // must stay the more visible of the two — it is one of three tripwires
+      // stopping a cheat from shipping — so the control moves down, never it.
+      document.body.classList.add('test');
       console.warn(`[Small Change] TEST CHEAT ACTIVE: ${cheats.join('; ')}`);
     }
 
     this._bindUi();
-    this.loadLevel(levelId);
+    /**
+     * Where a session starts.
+     *
+     * An explicit `?level=N` wins — it is how `shoot.mjs` drives the game, how
+     * a block gets spot-checked without playing two others first, and what a
+     * shared link means. Otherwise the ladder decides, so closing the tab on
+     * the park and coming back opens the park.
+     */
+    this.loadLevel(levelId ?? this.progress.continueId(LEVELS));
+    this._paintTitle();
     requestAnimationFrame(this._frame);
   }
 
@@ -241,6 +264,7 @@ class Game {
     this.elapsed = 0;
     this.running = false;
     this.finished = false;
+    this.paused = false;
     this.tradeStep = 0;
     this.saltMoved = false;
     this.caught = 0;
@@ -329,6 +353,9 @@ class Game {
     this.audio.unlock();
     document.getElementById('title').classList.add('hidden');
     document.getElementById('ending').classList.add('hidden');
+    document.getElementById('pause').classList.add('hidden');
+    this.hideLevels();
+    this.paused = false;
     this.running = true;
     this._last = performance.now();
     this._acc = 0;
@@ -347,7 +374,280 @@ class Game {
     // On touch the list is a real share of a small screen, so it introduces
     // itself and then folds down to a count. On desktop it stays open.
     if (this.input.hasTouch) this.hud.enableTaskAutoCollapse(12);
-    this._after(900, () => { if (this.running) this.hud.toast('Collect money', 2.2); });
+    // Pausing inside the first 900ms used to eat this outright: the timer fired
+    // with `running` false, the toast was skipped, and nothing rescheduled it.
+    // Held instead, and delivered on resume.
+    this._pendingToast = null;
+    this._after(900, () => {
+      if (this.running) this.hud.toast('Collect money', 2.2);
+      else if (this.paused) this._pendingToast = 'Collect money';
+    });
+  }
+
+  // ── pause ─────────────────────────────────────────────────────────────────
+
+  /**
+   * Stop the simulation without stopping the picture.
+   *
+   * `elapsed` only advances inside `_tickSim` and `_tickSim` only runs under the
+   * `running` guard, so clearing it stops the day clock along with the physics —
+   * which is the one thing a pause must not get wrong. Pausing at 6:40 into an
+   * eight-minute day and coming back to find the sun down would be worse than
+   * having no pause at all.
+   *
+   * The render half of `_frame` sits *outside* that guard, so the block behind
+   * the scrim keeps its camera, its light ramp and its night lights. That is
+   * deliberate and it is free.
+   */
+  pause() {
+    if (!this.running || this.paused) return;
+    this.paused = true;
+    this.running = false;
+    const where = document.getElementById('pause-where');
+    where.textContent = `${sentenceCase(this.level.shortName)} · $${this.total.toFixed(2)} in the nest`;
+    document.getElementById('pause').classList.remove('hidden');
+  }
+
+  /**
+   * Resume, discarding the pause rather than owing it.
+   *
+   * `_last` and `_acc` are reset exactly as `begin()` resets them. Without it
+   * the fixed-step accumulator comes back holding the entire length of the
+   * pause and spends it on catch-up ticks — the `steps < 6` clamp bounds the
+   * damage to six frames of simulation the player did not ask for, which is
+   * still six too many. `input.flush()` is here for the same reason it is in
+   * `begin`: the key that dismissed the overlay is still down.
+   */
+  resume() {
+    if (!this.paused) return;
+    this.paused = false;
+    document.getElementById('pause').classList.add('hidden');
+    this.hideLevels();
+    this.running = true;
+    this._last = performance.now();
+    this._acc = 0;
+    this.input.flush();
+    if (this._pendingToast) {
+      this.hud.toast(this._pendingToast, 2.2);
+      this._pendingToast = null;
+    }
+  }
+
+  togglePause() {
+    if (this.paused) this.resume();
+    else if (this.running) this.pause();
+  }
+
+  // ── the Levels screen ─────────────────────────────────────────────────────
+
+  /**
+   * Build the chip list from the registry.
+   *
+   * Names and prices are read off the level descriptor every time rather than
+   * cached anywhere, which is the rule that replaced the argument for keeping
+   * the list on the title card: two places naming and pricing a block is the
+   * thing that decays first. See docs/menu-brief.html §2.
+   */
+  showLevels() {
+    /**
+     * `paused` is state; the pause card and the Levels card are two views of
+     * it, and only one is up at a time.
+     *
+     * Leaving the pause card visible underneath was the first thing that broke
+     * here, and it broke silently: `#pause` sits at z-index 45 and `.screen` at
+     * 40, so the scrim covered the level list and ate every click on it. The
+     * screen looked completely correct in a screenshot.
+     */
+    document.getElementById('pause').classList.add('hidden');
+    // And the ending, for the same reason from the other direction: `#ending`
+    // is *after* `#levels` in the document at the same z-index, so it paints on
+    // top. Both neighbours have to be put away rather than layered.
+    document.getElementById('ending').classList.add('hidden');
+    document.getElementById('title').classList.add('hidden');
+    /**
+     * Any pending forfeit dies with the old chip list.
+     *
+     * Only `hideLevels` used to undo it, and `#forget` re-enters this method
+     * *without* leaving first — so forgetting your progress while a forfeit was
+     * up left the panel open, the Play/Back row hidden, and `_forfeitTo`
+     * pointing at a block that had just been re-locked.
+     */
+    this._cancelForfeit();
+    const open = new Set(this.progress.unlockedIds(LEVELS));
+    const list = document.getElementById('levels-list');
+    list.replaceChildren();
+
+    /**
+     * Arm the block being played if there is one, otherwise the block that is
+     * loaded — so the screen agrees with the title card behind it.
+     *
+     * The clamp is not decoration. `?level=3` deliberately bypasses the lock,
+     * so the loaded block can be one the save says is shut; press *Forget my
+     * progress* on that page and the armed chip is greyed out while the button
+     * beside it offers to play it. Falling back to Continue keeps the armed
+     * chip and the button honest with each other in every combination.
+     */
+    const playing = this.running || this.paused ? this.level.id : null;
+    const loaded = open.has(this.level.id) ? this.level.id : this.progress.continueId(LEVELS);
+    this._armed = playing ?? loaded;
+
+    for (const level of LEVELS) {
+      const unlocked = open.has(level.id);
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = `chip${unlocked ? '' : ' locked'}`;
+      chip.dataset.level = String(level.id);
+      chip.disabled = !unlocked;
+
+      let status;
+      if (!unlocked) status = 'Locked';
+      else if (level.id === playing) status = `Playing · $${this.total.toFixed(2)}`;
+      else if (this.progress.isCleared(level.id)) status = '▣ Cleared';
+      else status = 'Not yet cleared';
+
+      chip.innerHTML =
+        `<span class="n">${String(level.id).padStart(2, '0')}</span>`
+        + `<span class="nm"></span>`
+        + `<span class="g">$${level.goal.toFixed(0)}</span>`
+        + `<span class="st"></span>`;
+      // textContent, not innerHTML: level copy is authored data and this is the
+      // one place it lands in the DOM as a name rather than as prose.
+      chip.querySelector('.nm').textContent = sentenceCase(level.shortName);
+      chip.querySelector('.st').textContent = status;
+
+      chip.addEventListener('click', () => this._armLevel(level.id));
+      list.appendChild(chip);
+    }
+
+    this._paintArmed();
+    document.getElementById('levels').classList.remove('hidden');
+  }
+
+  hideLevels() {
+    document.getElementById('levels').classList.add('hidden');
+    this._cancelForfeit();
+  }
+
+  /**
+   * Close the Levels screen and go back where it was opened from.
+   *
+   * Three callers — the Back button, Esc, and the browser's idea of "away" —
+   * and they must all agree, because the screen is reachable from three places
+   * that each want a different thing behind it.
+   */
+  _leaveLevels() {
+    this.hideLevels();
+    if (this.paused) document.getElementById('pause').classList.remove('hidden');
+    else if (this.finished) document.getElementById('ending').classList.remove('hidden');
+    else this.showTitle();
+  }
+
+  _armLevel(id) {
+    this._armed = id;
+    this._cancelForfeit();
+    this._paintArmed();
+  }
+
+  /** Reflect the armed chip onto the chips and onto the button that acts on it. */
+  _paintArmed() {
+    for (const chip of document.querySelectorAll('#levels-list .chip')) {
+      chip.setAttribute('aria-pressed', String(Number(chip.dataset.level) === this._armed));
+    }
+    const level = getLevel(this._armed);
+    const play = document.getElementById('levels-play');
+    const inThisBlock = (this.running || this.paused) && level.id === this.level.id;
+    play.textContent = inThisBlock
+      ? `Back to ${level.shortName}`
+      : `Play ${level.shortName}`;
+  }
+
+  /**
+   * Act on the armed chip.
+   *
+   * Three outcomes, and the middle one is the reason this is not just a call to
+   * `loadLevel`: picking the block you are already standing in must resume it,
+   * not rebuild it. A forfeit prompt for the level you are in is nonsense, and
+   * silently restarting it would throw away a run the player was not trying to
+   * end.
+   */
+  _playArmed() {
+    const id = this._armed;
+    const midRun = this.running || this.paused;
+
+    if (midRun && id === this.level.id) { this.resume(); return; }
+    // Something in the nest is something to lose. An empty nest is not, so
+    // switching is silent — friction only where there is a stake.
+    if (midRun && this.total > 0) { this._askForfeit(id); return; }
+
+    this.hideLevels();
+    this.paused = false;
+    document.getElementById('pause').classList.add('hidden');
+    this.loadLevel(id, true);
+  }
+
+  _askForfeit(id) {
+    this._forfeitTo = id;
+    const target = getLevel(id);
+    const copy = document.getElementById('forfeit-copy');
+    copy.innerHTML = `<b>Are you sure?</b> You already collected $${this.total.toFixed(2)}.`;
+    document.getElementById('forfeit-go').textContent = `Go to ${target.shortName}`;
+    document.getElementById('forfeit-stay').textContent = `Stay in ${this.level.shortName}`;
+    document.getElementById('forfeit').hidden = false;
+    document.getElementById('levels-actions').hidden = true;
+  }
+
+  _cancelForfeit() {
+    this._forfeitTo = null;
+    document.getElementById('forfeit').hidden = true;
+    document.getElementById('levels-actions').hidden = false;
+  }
+
+  /** The title card, dressed for whoever is looking at it — and for whichever block. */
+  _paintTitle() {
+    const start = document.getElementById('start');
+    const toLevels = document.getElementById('to-levels');
+
+    // The strapline names the goal of the block the card is fronting. Spelled
+    // out rather than numeric, because it is prose — the same words the ending
+    // headline uses, from the same module.
+    const { dollars, cents } = moneyInWords(this.goal);
+    document.getElementById('title-goal').textContent =
+      [dollars, cents].filter(Boolean).join(', ');
+
+    if (this.progress.isNewPlayer) {
+      // Exactly today's card: one brass button, no second one, no evidence a
+      // level list exists.
+      start.textContent = 'Begin';
+      toLevels.hidden = true;
+      return;
+    }
+    start.textContent = `Continue — ${this.level.shortName}`;
+    toLevels.hidden = false;
+  }
+
+  /**
+   * Back to the front door, abandoning whatever was running.
+   *
+   * The block is **rebuilt**, and that is the whole of this method's job.
+   * Clearing the flags and showing the card looks like it is enough and is not:
+   * `total`, `elapsed`, the task list and the crow all survive, so quitting
+   * four minutes into a run and pressing Begin resumed it — same money, same
+   * half-spent day, sun where you left it. That is a mid-run save, which the
+   * brief lists as explicitly out of scope, arrived at by accident.
+   *
+   * `autoStart: false` so it builds behind the title card rather than dropping
+   * the player straight back in.
+   */
+  showTitle() {
+    const id = this.level.id;
+    this.paused = false;
+    this.finished = false;
+    document.getElementById('pause').classList.add('hidden');
+    document.getElementById('ending').classList.add('hidden');
+    this.hideLevels();
+    this.loadLevel(id, false);
+    this._paintTitle();
+    document.getElementById('title').classList.remove('hidden');
   }
 
   /**
@@ -356,7 +656,55 @@ class Game {
    * twice.
    */
   _bindUi() {
+    // Begin on a first visit, Continue afterwards — but always the block that
+    // is *loaded*, never a second opinion about which one that should be. The
+    // boot path already resolved that question once, and a URL that asked for a
+    // specific block must not be overruled by the button on the card.
     document.getElementById('start').addEventListener('click', () => this.begin());
+
+    document.getElementById('to-levels').addEventListener('click', () => this.showLevels());
+    document.getElementById('ending-levels').addEventListener('click', () => this.showLevels());
+    document.getElementById('pause-levels').addEventListener('click', () => this.showLevels());
+    document.getElementById('levels-play').addEventListener('click', () => this._playArmed());
+    document.getElementById('levels-back').addEventListener('click', () => this._leaveLevels());
+
+    document.getElementById('forfeit-go').addEventListener('click', () => {
+      const id = this._forfeitTo;
+      this._cancelForfeit();
+      this.hideLevels();
+      this.paused = false;
+      document.getElementById('pause').classList.add('hidden');
+      this.loadLevel(id, true);
+    });
+    document.getElementById('forfeit-stay').addEventListener('click', () => {
+      this._cancelForfeit();
+      this._armed = this.level.id;
+      this._paintArmed();
+    });
+
+    document.getElementById('forget').addEventListener('click', () => {
+      this.progress.forget();
+      this._paintTitle();
+      this.showLevels();
+    });
+
+    document.getElementById('resume').addEventListener('click', () => this.resume());
+    document.getElementById('restart').addEventListener('click', () => {
+      this.paused = false;
+      document.getElementById('pause').classList.add('hidden');
+      this.loadLevel(this.level.id, true);
+    });
+    document.getElementById('quit').addEventListener('click', () => this.showTitle());
+
+    const pauseBtn = document.getElementById('btn-pause');
+    pauseBtn.addEventListener('click', () => this.togglePause());
+    // Matches the other touch controls, which paint their own press state
+    // because a phone has no hover to fall back on.
+    pauseBtn.addEventListener('pointerdown', () => pauseBtn.classList.add('down'));
+    for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) {
+      pauseBtn.addEventListener(ev, () => pauseBtn.classList.remove('down'));
+    }
+
 
     // Both ending buttons rebuild a block and drop straight into it. "Again!"
     // used to reload the page, which is why it landed you back on the title
@@ -369,13 +717,25 @@ class Game {
       });
 
     addEventListener('keydown', (e) => {
+      // Esc is the only key bound while paused, and it is bound in both
+      // directions. It closes the Levels screen first when that is what is on
+      // top, so a player who opened it mid-run gets back to the game in two
+      // presses rather than being trapped behind it.
+      if (e.code === 'Escape' || e.code === 'KeyP') {
+        if (!document.getElementById('levels').classList.contains('hidden')) this._leaveLevels();
+        else this.togglePause();
+        e.preventDefault();
+        return;
+      }
+
       // Enter takes whatever the loudest button on screen is: Begin before the
       // first run, and afterwards the block the ending is offering — falling
       // back to a replay on the last block and on a loss, which is exactly the
-      // button that is brass in each case.
+      // button that is brass in each case. Paused, that button is Resume.
       if (e.code === 'Enter' && !this.running) {
-        if (this.finished) this.loadLevel(this._nextId ?? this.level.id, true);
-        else this.begin();
+        if (this.paused) this.resume();
+        else if (this.finished) this.loadLevel(this._nextId ?? this.level.id, true);
+        else if (document.getElementById('levels').classList.contains('hidden')) this.begin();
       }
       if (e.code === 'KeyM') this.audio.setMuted(!this.audio.muted);
     });
@@ -644,7 +1004,26 @@ class Game {
     if (this.finished) return;
     this.finished = true;
     this.running = false;
+    this.paused = false;
+    document.getElementById('pause').classList.add('hidden');
     this.audio.transform();
+
+    /**
+     * The one write of the whole feature.
+     *
+     * Only a win opens the next door — losing is a complete and legitimate way
+     * to end a session, it just does not clear the block. The best run is
+     * written here too and read by nothing yet, because recording it is free
+     * and cannot be done retroactively: a best that starts being written the
+     * day it is first displayed shows every returning player an empty history
+     * of runs they actually played. See docs/menu-brief.html §3.
+     */
+    this.progress.recordRun(this.level.id, {
+      won,
+      total: this.total,
+      secs: this.elapsed,
+    });
+    this._paintTitle();
 
     this._setEndingActions(won);
 
@@ -814,7 +1193,17 @@ class Game {
     const w = this.world.root.userData.fountainWater;
     if (w) w.material.opacity = 0.80 + Math.sin(this.elapsed * 1.4) * 0.05;
 
-    this.hud.update(dt);
+    /**
+     * The picture keeps moving while paused; the HUD's countdowns do not.
+     *
+     * `Hud.update` drains the toast, the controls legend and the task list from
+     * real `dt`, all of which sit *behind* the scrim — so a ten-second pause
+     * collapsed the legend and a twelve-second one folded the task list away,
+     * both invisibly, and the player came back to a HUD that had rearranged
+     * itself for no reason they could see. Freezing dt is enough: nothing in
+     * there integrates, it only counts down.
+     */
+    this.hud.update(this.paused ? 0 : dt);
     this.hud.setTime(t, this.elapsed);
     this.hud.setCarry(this.crow.carried ? this.crow.carried.label : null);
     this.hud.setStamina(this.crow.stamina, !this.crow.grounded || this.crow.stamina < 0.98);
