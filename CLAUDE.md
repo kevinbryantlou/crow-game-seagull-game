@@ -248,6 +248,23 @@ That's why `words.js` and `rank.js` are separate from `hud.js`.
   in either block sits. When a character has to be identified at the distance
   this camera sits, change the shape, not the shade.
 
+- **Shadow acne reads exactly like z-fighting, and is not.** Irregular horizontal
+  smears along the whole 64m frontage of level 2, only at some sun angles, which
+  is why it survived a shipping pass — the block looked clean at noon and striped
+  at four o'clock. A long building casts a long shadow across a very large ground
+  plane, and inside that cast shadow the depth comparison fails in bands.
+  `normalBias` is the knob (it offsets along the surface normal, which is what a
+  raking light on a big flat receiver needs); it went 0.03 → 0.15, clean by 0.10,
+  the rest is margin. Before hunting for overlapping geometry, turn
+  `renderer.shadowMap.enabled` off and look again.
+- **British words are not neutral words.** The teaching toast said "the kid on the
+  parapet". The whole job of that line is to send an American player to a specific
+  place, and *parapet* sends them to a dictionary. Copy that names a location has
+  to name it in the plainest word available — "the roof edge".
+- **The edge kerb runs the whole length of the block**, so anything placed near
+  the near edge ends up half-sunk in it — a bin was. Tagged `edge-kerb` and
+  asserted against.
+
 ## Level-design rules (asserted, not aspirational)
 
 In `RULES` in `world/level.js`, enforced by `smoke.mjs`:
@@ -291,6 +308,13 @@ In `RULES` in `world/level.js`, enforced by `smoke.mjs`:
 - **There is somewhere legal to drop the bait.** The set piece has a deck
   requirement and a distance requirement; if they ever conflict, the block's
   marquee puzzle is quietly unsolvable.
+- **Unguarded money plus every trade still cannot reach the goal.** The kid's
+  ladder is per-level (`tradeValues`) because what a trade is worth depends on
+  what it costs to make one — level 2's kid sits on a roof edge between two
+  guards and pays half again. That knob has an obvious failure mode: pay enough
+  and the honest route beats the dishonest one. The bound is stated, not
+  eyeballed.
+- **Nothing is standing in the edge kerb.**
 
 ## Two levels
 

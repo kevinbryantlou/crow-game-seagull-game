@@ -254,9 +254,9 @@ class Game {
         this.crow.carried = null;
         p.taken = true;
         p.root.visible = false;
-        // A quarter was not worth finding a shiny and carrying it across the
-        // block. A dollar is, and the ladder still rewards repeat trades.
-        const values = [1.00, 1.50, 2.00, 3.00];
+        // What a trade is worth depends on what it costs to make one, which is
+        // a property of the block. See `tradeValues` in world/levels.js.
+        const values = this.level.tradeValues;
         const v = TEST_TRADE_PAYOUT ?? values[Math.min(this.tradeStep, values.length - 1)];
         this.tradeStep++;
         // She puts it straight in your beak. The crow's beak is necessarily

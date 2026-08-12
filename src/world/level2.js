@@ -119,7 +119,7 @@ export function buildLevel() {
     const kerb = box(170, 0.34, 1.2, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
     kerb.position.set(0, 0.17, 15.8);
     root.add(kerb);
-    solid(0, 15.8, 170, 1.2, 0.34);
+    solid(0, 15.8, 170, 1.2, 0.34, 0, { tag: 'edge-kerb' });
   }
 
   // ── backdrop ──────────────────────────────────────────────────────────────
@@ -178,11 +178,20 @@ export function buildLevel() {
       const slab = box(1.9, 0.14, 0.6, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
       slab.position.set(wx, DECK.balcony - 0.07, 1.85);
       g.add(slab);
+      // Railed on all three open sides. A rail across the front only reads as a
+      // bar somebody left there; a balcony is an enclosure, and the two 0.6m
+      // returns into the wall are what make it one.
       const rail = box(1.9, 0.06, 0.06, PAL.steelDark);
       rail.position.set(wx, DECK.balcony + 0.62, 2.13);
       g.add(rail);
       for (const rx of [-0.75, -0.25, 0.25, 0.75]) {
         g.add(at(cyl(0.03, 0.03, 0.64, 4, PAL.steelDark), wx + rx, DECK.balcony + 0.32, 2.13));
+      }
+      for (const sx of [-0.92, 0.92]) {
+        const side = box(0.06, 0.06, 0.58, PAL.steelDark);
+        side.position.set(wx + sx, DECK.balcony + 0.62, 1.85);
+        g.add(side);
+        g.add(at(cyl(0.03, 0.03, 0.64, 4, PAL.steelDark), wx + sx, DECK.balcony + 0.32, 1.62));
       }
       // Thin, with air underneath, so the crow flies below the whole frontage
       // and people walk under it.
@@ -557,7 +566,7 @@ export function buildLevel() {
   }
   addLamp(20, 13.5);
   addBin(11, 13.5, PAL.canopy);
-  addBin(12.6, 15, PAL.steel);
+  addBin(12.8, 14.2, PAL.steel);
   addBin(30.5, 9, PAL.canopy);
 
   const addCrates = (x, z, n = 3) => {
@@ -833,7 +842,7 @@ function humanPlacements() {
       oblivious: true, faces: [1, 0],
     },
     {
-      id: 'kid', name: 'the kid on the parapet', cloth: 2, skin: 2, hair: 2,
+      id: 'kid', name: 'the kid on the roof edge', cloth: 2, skin: 2, hair: 2,
       /**
        * Sitting on the parapet with her feet over the courtyard, at the end of
        * the terrace furthest from the restaurant, with her cup and a row of

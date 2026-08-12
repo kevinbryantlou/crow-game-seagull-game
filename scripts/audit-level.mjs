@@ -193,6 +193,30 @@ export function auditLevel({ level, world, check, deps }) {
     `(guarded $${guarded.toFixed(2)} vs slack $${(money - GOAL).toFixed(2)})`);
 
   /**
+   * Trading can soften the level. It must never replace it.
+   *
+   * The kid's ladder is per-level now, because what a trade is worth depends on
+   * what it costs to make one — level 2's kid sits on a roof edge between two
+   * guards and pays half again what the block's does. That is a knob with an
+   * obvious failure mode: pay enough and the honest route beats the dishonest
+   * one, and a game about robbing a hot dog vendor becomes a game about finding
+   * bottle caps.
+   *
+   * So the bound is stated rather than eyeballed: everything you can pick up
+   * without crossing anybody, plus every trade the kid will ever make, still has
+   * to fall short of the goal.
+   */
+  const shinies = pickups.filter((p) => p.kind === 'shiny').length;
+  const ladder = level.tradeValues;
+  const trades = Array.from({ length: shinies },
+    (_, i) => ladder[Math.min(i, ladder.length - 1)]).reduce((a, b) => a + b, 0);
+  check(say('unguarded money plus every trade still cannot reach the goal'),
+    free + trades < GOAL,
+    `($${free.toFixed(2)} free + $${trades.toFixed(2)} from ${shinies} trades vs $${GOAL})`);
+  console.log(`       ${shinies} shinies pay up to $${trades.toFixed(2)}`
+    + `  ·  free + trades $${(free + trades).toFixed(2)} of $${GOAL.toFixed(2)}`);
+
+  /**
    * Rule 9: no climb longer than a stamina bar.
    *
    * For every pickup and for the nest, find the highest thing you could have
@@ -435,6 +459,27 @@ export function auditLevel({ level, world, check, deps }) {
     }
     check(say(`nothing shoves the crow more than ${MAX_STEP}m in a frame`),
       jumps.length === 0, `(${overhangs.length} overhangs; ${jumps.join('; ')})`);
+  }
+
+  /**
+   * Nothing is standing in the block's edge kerb.
+   *
+   * A bin was, on level 2, half-sunk into the kerb along the near edge — which
+   * is invisible in the source (they are twenty metres apart in the file) and
+   * obvious in a screenshot. The kerb is the one collider on a block that runs
+   * its whole length, so anything careless near the front edge ends up inside
+   * it; that makes it worth a check rather than a habit.
+   */
+  {
+    const kerb = world.colliders.find((c) => c.tag === 'edge-kerb');
+    const inKerb = !kerb ? [] : world.colliders.filter((c) => c !== kerb
+      && c.shape !== 'ring' && c.top > 0.05 && c.bottom < kerb.top
+      && c.perch !== false                          // not the invisible bounds
+      && c.maxX - c.minX < 40 && c.maxZ - c.minZ < 40
+      && c.minX < kerb.maxX && c.maxX > kerb.minX
+      && c.minZ < kerb.maxZ && c.maxZ > kerb.minZ)
+      .map((c) => `(${((c.minX + c.maxX) / 2).toFixed(1)}, ${((c.minZ + c.maxZ) / 2).toFixed(1)})`);
+    check(say('nothing is standing in the edge kerb'), inKerb.length === 0, `(${inKerb.join('; ')})`);
   }
 
   // ── where people stand ────────────────────────────────────────────────────

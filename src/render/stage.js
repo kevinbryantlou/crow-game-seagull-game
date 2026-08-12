@@ -37,8 +37,24 @@ export class Stage {
     this.key.shadow.mapSize.set(2048, 2048);
     this.key.shadow.camera.near = 1;
     this.key.shadow.camera.far = 160;
-    this.key.shadow.bias = -0.0012;
-    this.key.shadow.normalBias = 0.03;
+    /**
+     * Shadow bias, and why it is not 0.03 any more.
+     *
+     * A 64-metre building casts a very long shadow across a very large ground
+     * plane, and inside that cast shadow the depth comparison was failing in
+     * bands — irregular horizontal smears along the whole frontage of level 2,
+     * which reads exactly like z-fighting and is not. It only appears at certain
+     * sun angles, which is why it survived a shipping pass: the block looked
+     * clean at noon and striped at four o'clock.
+     *
+     * `normalBias` is the one that matters here — it offsets the lookup along
+     * the surface normal, which is what fixes a large flat receiver the light
+     * is raking across. It came from 0.03 to 0.15; the acne is gone by 0.10 and
+     * the rest is margin. Shadows still touch the things casting them, which is
+     * the failure mode on the other side of this knob.
+     */
+    this.key.shadow.bias = -0.0006;
+    this.key.shadow.normalBias = 0.15;
     const sc = this.key.shadow.camera;
     sc.left = -34; sc.right = 34; sc.top = 34; sc.bottom = -34;
     this.scene.add(this.key);

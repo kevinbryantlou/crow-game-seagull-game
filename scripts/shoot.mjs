@@ -432,10 +432,13 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
 
   console.log(`\nloading ${url2}`);
   await p2.goto(url2, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  // 30s, not 20. The second page shares a browser with the first and builds a
+  // larger block; on a cold software-WebGL run it intermittently crossed 20 and
+  // failed a harness that had nothing wrong with it.
   await p2.waitForFunction(
     () => document.getElementById('loading')?.classList.contains('hidden'),
-    { timeout: 20000 },
-  ).catch(() => errors.push('L2: game never finished booting (20s)'));
+    { timeout: 30000 },
+  ).catch(() => errors.push('L2: game never finished booting (30s)'));
 
   const has2 = await p2.evaluate(() => !!window.__game);
   await p2.click('#start');
@@ -605,6 +608,29 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
     return out;
   });
   if (gulls) console.log('  gulls:', JSON.stringify(gulls));
+
+  // The kid pays this block's ladder, not the block's-next-door one.
+  const trade2 = !has2 ? null : await p2.evaluate(() => {
+    const g = window.__game;
+    const shiny = g.pickups.find((p) => p.kind === 'shiny' && !p.taken);
+    if (!shiny) return { error: 'no shiny available' };
+    shiny.setCarried(g.crow.grip);
+    g.crow.carried = shiny;
+    g._doAction({ kind: 'trade' });
+    const reward = g.crow.carried;
+    const out = {
+      value: reward ? reward.value : 0,
+      expected: g.level.tradeValues[0],
+      parentedToBeak: !!reward && reward.root.parent === g.crow.grip,
+    };
+    g.crow.carried = null; g.tradeStep = 0;
+    return out;
+  });
+  if (trade2) console.log('  L2 trade:', JSON.stringify(trade2));
+  if (trade2 && trade2.value !== trade2.expected) {
+    errors.push(`L2 first trade paid ${trade2.value}, expected ${trade2.expected}`);
+  }
+  if (trade2 && !trade2.parentedToBeak) errors.push('L2 trade reward was not auto-equipped');
   if (gulls && !gulls.count) errors.push('L2: no gulls on the roof');
   if (gulls && !gulls.landedBeside) errors.push('L2: a gull ignored a crow landing beside it');
   if (gulls && gulls.flewOver) errors.push('L2: a gull objected to a crow flying over it');

@@ -51,6 +51,14 @@ export const LEVELS = [
     },
 
     /**
+     * What the kid pays, in order. A quarter was not worth finding a shiny and
+     * carrying it across the block; a dollar is, and the ladder still rewards
+     * repeat trades. Per level, because what a trade is worth depends on what it
+     * costs to make one.
+     */
+    tradeValues: [1.00, 1.50, 2.00, 3.00],
+
+    /**
      * The distraction set piece. Drop the bait far enough from what it guards
      * and the birds mob it and the guard goes to deal with them.
      */
@@ -138,9 +146,26 @@ export const LEVELS = [
     ],
     bankTicks: { bill20: 'twenty' },
 
+    /**
+     * Half again what the block pays.
+     *
+     * The kid is sitting on the roof edge in the middle of a working restaurant
+     * terrace, between a maître d' and a busser, and every shiny has to be
+     * carried up to her past both of them. On the block she is alone in a corner
+     * of a plaza and a trade costs a walk. Same verb, much worse odds, so it
+     * pays more.
+     *
+     * Bounded by a rule rather than by taste: unguarded money plus the entire
+     * trade ladder still cannot reach the goal, so trading can never be a way to
+     * avoid stealing — only a way to soften it.
+     */
+    tradeValues: [1.50, 2.25, 3.00, 4.00],
+
     teach: {
       money: 'Take it to your nest',
-      shiny: 'The kid on the parapet will trade for that',
+      // "Parapet" is not a word an American player is going to act on, and the
+      // whole job of this line is to send someone to a specific place.
+      shiny: 'The kid on the roof edge will trade for that',
       bait: 'Chips. Gulls like chips.',
     },
 

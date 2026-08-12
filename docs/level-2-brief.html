@@ -501,6 +501,9 @@ Two rounds of it.
       up, somewhere to leave a coin, and — strung along sixty metres at 3.2&nbsp;m — the thing that
       tells a player standing on the ground that this block goes up. The fire escape said the same
       thing by being an eyesore.</p>
+      <p>Each is railed on all three open sides. A rail across the front only reads as a bar
+      somebody left there; a balcony is an enclosure, and the two short returns into the wall are
+      what make it one.</p>
 
       <h3>The terrace (5.4)</h3>
       <p>Four fifths of the money, two guards, the kid, six gulls and five tables. Its parapet is
@@ -516,7 +519,7 @@ Two rounds of it.
       Moved to the terrace she was legible in the source and invisible on screen: a slightly
       shorter adult between a maître d', a busser and two diners, and a playtester could not tell
       who to hand a bottle cap to.</p>
-      <p>She is now <strong>sitting on the parapet</strong> with her feet over the courtyard, at
+      <p>She is now <strong>sitting on the roof edge</strong> with her feet over the courtyard, at
       the end of the terrace furthest from the restaurant, with her cup and a row of trinkets
       beside her. Nobody else in either block sits down — it is the only posture in the game that
       is not a variation on standing — so the silhouette does the identifying before you are close
@@ -546,7 +549,7 @@ Two rounds of it.
           <tr><td>The chef</td><td class="num">0</td><td>The tin</td><td>Static in the service doorway. Narrow cone; he is not really looking.</td></tr>
           <tr><td>The porter</td><td class="num">0</td><td>The crate change</td><td>Oblivious. A moving obstacle rather than a threat.</td></tr>
           <tr><td>A guest</td><td class="num">0</td><td>—</td><td>Waiting for a car. Owns nothing, notices nothing, stands in the way.</td></tr>
-          <tr><td>The kid</td><td class="num">6.1</td><td>—</td><td>Sitting on the parapet with her trinkets. Trades shinies: $1.00 / $1.50 / $2.00 / $3.00.</td></tr>
+          <tr><td>The kid</td><td class="num">6.1</td><td>—</td><td>Sitting on the roof edge with her trinkets. Trades shinies: $1.50 / $2.25 / $3.00 / $4.00.</td></tr>
         </tbody>
       </table>
       <div class="exhibit-cap">Exhibit C — six people on two floors. Nobody uses stairs; everybody is solid.</div>
@@ -667,6 +670,18 @@ Two rounds of it.
           then has nothing free, the other side does, and the walker turns round — the old shuffle,
           arrived at from the opposite direction.</li>
       </ul>
+      <h3>The one that looked like z-fighting</h3>
+      <p>Irregular horizontal smears along the whole sixty-four-metre frontage, reported from a
+      playtest as textures clipping into one another. It is <strong>shadow acne</strong>: a long
+      building casts a long shadow across a very large ground plane, and inside that cast shadow
+      the depth comparison fails in bands. It only appears at some sun angles, which is why it
+      survived a shipping pass — the block looks clean at noon and striped at four o'clock.</p>
+      <p><span class="mono">normalBias</span> is the knob, because it offsets the shadow lookup
+      along the surface normal and that is exactly what a raking light on a big flat receiver
+      needs. 0.03&nbsp;→&nbsp;0.15; it is clean by 0.10 and the rest is margin. The diagnostic
+      worth remembering is the cheap one: before hunting for overlapping geometry, turn the shadow
+      map off and look again.</p>
+
       <h3>And one that only a small fountain has</h3>
       <p>A coin on the far side of a fountain has exactly one sightline to the camera, and on a
       3.2&nbsp;m basin with a 2.3&nbsp;m centrepiece in it that sightline goes straight through the
@@ -703,6 +718,10 @@ Two rounds of it.
             <td>The clipping report, made falsifiable. Aimed at every collider with air underneath it, from eight headings at three heights.</td></tr>
           <tr><td class="num">13</td><td>There is somewhere legal to drop the bait</td>
             <td>The set piece has a deck requirement and a distance requirement. If they ever conflict, the block's marquee puzzle is quietly unsolvable.</td></tr>
+          <tr><td class="num">14</td><td>Unguarded money plus every trade cannot reach the goal</td>
+            <td>The kid's ladder is per-level now. Trading may soften the block; it may never replace it.</td></tr>
+          <tr><td class="num">15</td><td>Nothing is standing in the edge kerb</td>
+            <td>The kerb runs the whole length of a block, so anything careless near the near edge ends up half-sunk in it. A bin was.</td></tr>
         </tbody>
       </table>
       <div class="exhibit-cap">Exhibit D — rules 1–8 are level 1's, unchanged, and now enforced on both.</div>
@@ -712,6 +731,19 @@ Two rounds of it.
       <p>Rule 11 earned its place immediately: it failed on <em>level 1</em>, on the ten hanging in
       the hot dog vendor's apron pocket. That one is deliberate, so it now says so in the level
       data — <span class="mono">hung: true</span> — and it is the only exemption on either block.</p>
+
+      <h3>What the kid pays, and why it is bounded</h3>
+      <p>The trade ladder used to be a constant in <span class="mono">main.js</span>. It is level
+      data now, because what a trade is worth depends on what it costs to make one: on the block
+      the kid sits alone in a corner of a plaza and a trade costs a walk; here she is on the roof
+      edge in the middle of a working restaurant terrace, and every shiny has to be carried up past
+      a maître d' and a busser. Same verb, much worse odds, so it pays half again —
+      <strong>$1.50 / $2.25 / $3.00 / $4.00</strong>.</p>
+      <p>That is a knob with an obvious failure mode: pay enough and the honest route beats the
+      dishonest one, and a game about robbing a hot dog vendor becomes a game about finding bottle
+      caps. So rule 14 bounds it rather than taste doing so — everything you can pick up without
+      crossing anybody, plus every trade the kid will ever make, still falls short of the goal.
+      Here that is $7.05 plus $14.75 against $30.</p>
     </div>
   </section>
 
