@@ -306,9 +306,9 @@
       <p>One city block. One crow. One nest on top of the war memorial. Money only counts
       when it is <strong>in the nest</strong>, and the crow can carry exactly one thing at a
       time in its beak.</p>
-      <p>There is a second block now — a hotel exterior, four decks tall — and everything in
-      this section is still true of it. It is the same loop with the geography doing the
-      pricing that denominations do here. See §12.</p>
+      <p>There are three blocks now — this one, a park, and a hotel exterior four decks tall —
+      and everything in this section is still true of all of them. It is the same loop with the
+      geography doing more and more of the pricing that denominations do here. See §12.</p>
     </div>
 
     <div class="exhibit">
@@ -634,7 +634,7 @@
       <span class="mono">scripts/audit-level.mjs</span> once per entry in the level registry —
       so a new block cannot ship having quietly broken one.</p>
       <p>There were eight when this section was written and there are seventeen now. The nine
-      that arrived later all came from the same place: building a second block and finding out
+      that arrived later all came from the same place: building further blocks and finding out
       which of the first block's assumptions were rules and which were coincidences. They live
       in <span class="mono">world/rules.js</span> rather than inside the level they constrain,
       because a rule that lives inside its own level is not a contract, it is a comment.</p>
@@ -960,21 +960,33 @@
   </section>
 
   <section id="second">
-    <h2><span class="sec">§12</span> The second block</h2>
+    <h2><span class="sec">§12</span> The other blocks</h2>
     <div class="col">
-      <p><strong>The Hotel (Outside)</strong> — a hotel from the forecourt to the water tank,
-      four decks tall, $30. Its own brief is
-      <span class="mono">docs/level-2-brief.html</span>; this section is only what the reader
-      of <em>this</em> document needs to know.</p>
+      <p>Two of them, and they are the same argument at two sizes. <strong>The Park</strong> —
+      level 2, two decks, $25, brief at <span class="mono">docs/park-brief.html</span>. <strong>The
+      Hotel (Outside)</strong> — level 3, four decks tall, $30, brief at
+      <span class="mono">docs/level-2-brief.html</span> (the filename predates the slot). This
+      section is only what the reader of <em>this</em> document needs to know.</p>
 
-      <p>The argument for it is that everything in §1&ndash;§5 stays true and one thing
-      changes. The block is flat, and the crow's wings, stamina bar, glide and list of perches
+      <p>The ladder is <strong>$20 / $25 / $30</strong> and <strong>one deck / two / four</strong>.
+      Both rows are deliberate, and the middle rung exists because the gap between the outer two
+      was measured and found too big — see "Still open" below.</p>
+
+      <p>The argument for building upward is that everything in §1&ndash;§5 stays true and one
+      thing changes. The block is flat, and the crow's wings, stamina bar, glide and list of perches
       are barely load-bearing — you can play a competent 2m07s run and never climb higher than
-      the memorial you bank on. So the second block spends the system the first one installed
+      the memorial you bank on. So the roofline spends the system the first one installed
       and never used: <em class="term">altitude</em>. The nest is twelve metres up, money
       density rises with the floor, and a penny in the forecourt costs more to bank than it is
       worth. No new verbs. One new entity, a gull, because a roof has no cover on it and the
       danger has to be authored as something.</p>
+
+      <p>The park spends a different budget. It has one roof and 1.0&nbsp;m of unbroken climb, so
+      altitude is introduced as a fact rather than as a problem; what it charges for instead is
+      <em class="term">being watched</em>. Its marquee is three people standing round one cooler
+      with $10.85 on and beside it, where this block always gave you a softer district next door.
+      Again no new verbs — one new noun, a soft pretzel, which turned the bait vocabulary from a
+      hardcoded pair into a set the audit reads.</p>
 
       <h3>What it cost this document to be true of both</h3>
       <p>Almost everything quietly assumed <span class="mono">y&nbsp;=&nbsp;0</span>: walker
@@ -988,12 +1000,18 @@
       on it is not.</p>
 
       <h3>Still open</h3>
-      <p><strong>How a player gets from one block to the other.</strong> Selection is
-      <span class="mono">?level=2</span> and <span class="mono">main.js</span> is the only
-      thing that reads it. That is a seam, not a join, and it is deliberately unresolved —
-      along with whether the roofline sits at slot two at all. A playtest read it as too big a
-      leap to follow the block directly, which is why its goal is $30 rather than the $40 it
-      was first built at.</p>
+      <p><strong>How a player gets from one block to the next.</strong> Selection is
+      <span class="mono">?level=N</span> and <span class="mono">main.js</span> is the only
+      thing that reads it. That is a seam, not a join, and it is deliberately unresolved.</p>
+
+      <p><strong>Whether the park is a big enough step.</strong> The roofline's slot was the
+      first open question here, and it got answered: a playtest read it as too big a leap to
+      follow the block directly, so its goal came down to $30 and the park was written to sit
+      between them. Whether that actually lands is now the open question, because the park has
+      been built and verified but <strong>not yet played by a person</strong>. A player might
+      reasonably finish it without ever having thought about altitude, which would leave the
+      roofline exactly as steep as it was. <span class="mono">docs/park-brief.html</span> §9
+      lists what to watch in the first playtest.</p>
     </div>
   </section>
 

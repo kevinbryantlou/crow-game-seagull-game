@@ -44,7 +44,7 @@ the game had never been looked at. Both harnesses exist to close that gap.
   minute through each. The per-block half lives in `scripts/audit-level.mjs` and
   is run once per entry in `LEVELS`, so a rule written for one block is enforced
   on all of them — which is the only reason rule 11 caught a real thing on level
-  1 the day it was written for level 2. Everything but the renderer is plain three.js maths, so it catches NaN,
+  1 the day it was written for the roofline. Everything but the renderer is plain three.js maths, so it catches NaN,
   falling through geometry, and — critically — *level-design defects* (see below).
 - **`scripts/shoot.mjs`** drives real WebGL in headless Chrome, writes PNGs to
   `shots/`, and fails on any console error or failed request. It runs every
@@ -67,7 +67,7 @@ src/
   render/shapes.js     primitive kit + three-tone face tinting
   render/stage.js      renderer, fixed camera, sunset light rig, occlusion fade
   render/nightlights.js  what comes on at dusk — emissive only, no scene lights
-  world/rules.js       RULES — the level-design contract, shared by both blocks
+  world/rules.js       RULES — the level-design contract, shared by every block
   world/kit.js         the shared prop kit: tables, lamps, bins, the nest, the pool
   world/level.js       LEVEL 1 — the block: plaza, café row, cart corner. Flat.
   world/park.js        LEVEL 2 — The Park: lawn, pond, pavilion roof. Two decks.
@@ -172,7 +172,7 @@ That's why `words.js` and `rank.js` are separate from `hud.js`.
   version, which is why `scripts/serve-static.mjs` exists — it serves
   `dir/index.html` in place like Vercel does.
 
-- **Everything quietly assumed `y = 0` until level 2.** Walkers, light pools and
+- **Everything quietly assumed `y = 0` until the roofline.** Walkers, light pools and
   the water body all measured from the world floor, which is the same statement
   as "measure from your own deck" right up until there is more than one deck.
   `blocksWalker`/`isFree`/`stepAround`/`resolveWalk` take a `floor`, `Human` and
@@ -204,7 +204,7 @@ That's why `words.js` and `rank.js` are separate from `hud.js`.
   "of $20.00" whatever the level asked for — the bar filled correctly and the
   number beside it lied. `Hud` writes it now.
 - **Big dark surfaces fail the navigability floor, and no amount of lamps fix
-  it.** Level 2's first dusk measurement was 5th-percentile 6 against a floor of
+  it.** The roofline's first dusk measurement was 5th-percentile 6 against a floor of
   24. The cause was four *materials*, not four missing lights: a 50m terracotta
   wall facing away from the sun, a yard one paving step too dark, a navy van, and
   six unlit teal windows that measured darker in daylight than the shadow they
@@ -279,7 +279,7 @@ That's why `words.js` and `rank.js` are separate from `hud.js`.
   (`needsUpdate = true`) or the shadows stay on and the test lies to you, which
   cost a round here.
 - **Shadow acne reads exactly like z-fighting, and is not.** Irregular horizontal
-  smears along the whole 64m frontage of level 2, only at some sun angles, which
+  smears along the whole 64m frontage of the roofline, only at some sun angles, which
   is why it survived a shipping pass — the block looked clean at noon and striped
   at four o'clock. A long building casts a long shadow across a very large ground
   plane, and inside that cast shadow the depth comparison fails in bands.
@@ -378,7 +378,7 @@ once per entry in `LEVELS`:
   marquee puzzle is quietly unsolvable.
 - **Unguarded money plus every trade still cannot reach the goal.** The kid's
   ladder is per-level (`tradeValues`) because what a trade is worth depends on
-  what it costs to make one — level 2's kid sits on a roof edge between two
+  what it costs to make one — the roofline's kid sits on a roof edge between two
   guards and pays half again. That knob has an obvious failure mode: pay enough
   and the honest route beats the dishonest one. The bound is stated, not
   eyeballed.
@@ -426,7 +426,7 @@ and it was left open deliberately.
 `world/kit.js` holds anything a fourth block would otherwise copy-paste: tables,
 benches, lamps, bins, planters, trees, the skyline, the nest, and the water body.
 A café table is kit; a war memorial with a nest on it is not. Level 1 was rebuilt
-on the kit and re-verified *before* level 2 was written, so the refactor and the
+on the kit and re-verified *before* the roofline was written, so the refactor and the
 new level never had to be debugged at the same time. Do that again.
 
 ## Art direction

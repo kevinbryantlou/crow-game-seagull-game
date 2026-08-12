@@ -89,7 +89,13 @@ src/
   render/palette.js    every colour in the game, single source of truth
   render/shapes.js     primitive kit + the three-tone face tinting
   render/stage.js      renderer, fixed camera, sunset light rig, occlusion fade
-  world/level.js       the authored block: geometry, colliders, placements
+  world/rules.js       RULES — the level-design contract, shared by every block
+  world/kit.js         the shared prop kit: tables, lamps, bins, the nest, the pool
+  world/levels.js      the registry: goal, tasks, teach copy, bait rules, endings
+  world/level.js       LEVEL 1 — the block. Flat, $20.
+  world/park.js        LEVEL 2 — the park. Two decks, $25.
+  world/level2.js      LEVEL 3 — the hotel exterior. Four decks, $30.
+  world/collide.js     the collider format, and going round things
   world/pickups.js     the money
   entities/crow.js     locomotion, flight, the procedural rig
   entities/human.js    the three-state brain, and pigeons
@@ -97,6 +103,8 @@ src/
 docs/
   design-brief.html    what the game is and why
   style-guide.html     the art direction, with concept plates
+  park-brief.html      level 2, the park
+  level-2-brief.html   level 3, the hotel exterior (filename predates the slot)
 scripts/smoke.mjs      headless build-and-simulate test
 ```
 
