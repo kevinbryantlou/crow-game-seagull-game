@@ -84,9 +84,10 @@ src/
   ui/words.js          money spelled out (pure, unit tested)
   ui/rank.js           end-of-run titles (pure, unit tested)
 docs/                  design brief + style guide — the spec, written to be checked against
-                       lighting-brief.html — dusk lighting exploration, NOT implemented
+                       lighting-brief.html — dusk lighting: tiers 0–2 shipped, 2.5 and 3 parked
                        park-brief.html    — level 2, the park: design, ladder, what it caught
                        level-2-brief.html — level 3, the roofline (filename predates the slot)
+                       menu-brief.html    — progress, level select and pause: PROPOSED, not built
 ```
 
 Pure logic goes in its own module so `smoke.mjs` can test it without a DOM.
@@ -510,6 +511,26 @@ screen, nothing is outlined.
 They are also deployed to the **password-gated** `/research/` area of the sibling
 `beacon2` repo — *not* `/notes`, which is public despite the name. After editing a
 doc, copy it to `../beacon2/research/small-change-*.html` and commit both repos.
+
+**Copying the file is only half of publishing it.** `beacon2/research/index.html`
+is a hand-maintained list of cards and nothing generates it, so a copied doc is
+reachable only by someone who already knows its URL — which is how the park
+brief and the lighting brief sat deployed and unlinked for weeks, and the menu
+brief for an afternoon. A new doc needs a card in that file too. The check is
+four lines, and it is worth running after any doc lands:
+
+```bash
+cd ../beacon2 && node -e "
+const h=require('fs').readFileSync('research/index.html','utf8');
+const links=[...h.matchAll(/href=\"\/research\/([^\"]+)\"/g)].map(m=>m[1]);
+const files=require('fs').readdirSync('research').filter(f=>f.endsWith('.html')&&f!=='index.html');
+console.log('unlisted:',files.filter(f=>!links.includes(f)));
+console.log('broken :',links.filter(l=>!files.includes(l)&&l!=='logout'));"
+```
+
+Mockups inside a brief are rendered by `npm run mocks`, which photographs every
+element carrying `data-shot` into `shots/`. It opens the doc over `file://`, so
+it also fails on a brief that has stopped being self-contained.
 
 ## Brand surfaces
 

@@ -11,6 +11,7 @@
     "check": "node scripts/smoke.mjs && vite build",
     "preview": "node scripts/preview.mjs",
     "preview:sheet": "node scripts/preview-sheet.mjs",
+    "mocks": "node scripts/mock-shots.mjs",
     "serve:static": "node scripts/serve-static.mjs"
   },
   "keywords": [],

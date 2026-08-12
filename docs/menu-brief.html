@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<title>Small Change — The Menu</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  html { -webkit-text-size-adjust: 100%; }
+  :root {
+    --paper:      #E9E5DA;
+    --paper-2:    #DFDACB;
+    --ink:        #141C18;
+    --ink-soft:   #3E4A44;
+    --nickel:     #8B948F;
+    --rule:       #C3BFB1;
+    --enamel:     #1F4D3D;
+    --enamel-2:   #17392E;
+    --brass:      #A87C22;
+    --brass-lit:  #C79A34;
+    --sheen:      #4B4B7A;
+    --band-text:  #EDEAE0;
+    --band-dim:   #9FB5AB;
+    --chip-bg:    #D7D2C2;
+    --shadow:     rgba(20,28,24,.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:     #131815;
+      --paper-2:   #1A211D;
+      --ink:       #E4E2D7;
+      --ink-soft:  #A3ADA6;
+      --nickel:    #7C857F;
+      --rule:      #2C3630;
+      --enamel:    #16332A;
+      --enamel-2:  #102520;
+      --brass:     #D2A644;
+      --brass-lit: #E0B85C;
+      --sheen:     #8A8AC4;
+      --band-text: #E4E2D7;
+      --band-dim:  #7E9A8D;
+      --chip-bg:   #212925;
+      --shadow:    rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:     #131815;
+    --paper-2:   #1A211D;
+    --ink:       #E4E2D7;
+    --ink-soft:  #A3ADA6;
+    --nickel:    #7C857F;
+    --rule:      #2C3630;
+    --enamel:    #16332A;
+    --enamel-2:  #102520;
+    --brass:     #D2A644;
+    --brass-lit: #E0B85C;
+    --sheen:     #8A8AC4;
+    --band-text: #E4E2D7;
+    --band-dim:  #7E9A8D;
+    --chip-bg:   #212925;
+    --shadow:    rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .display {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold",
+                 "Arial Narrow", "Helvetica Neue", sans-serif;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-wrap: balance;
+  }
+  .mono {
+    font-family: Menlo, ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: .82em;
+    letter-spacing: .01em;
+  }
+
+  /* ---- sign band ---- */
+  .band {
+    background: var(--enamel);
+    color: var(--band-text);
+    padding: 3.2rem 1.5rem 2.4rem;
+    border-bottom: 6px solid var(--brass);
+  }
+  .band-inner { max-width: 62rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1.1rem; }
+  .band .eyebrow {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .72rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--band-dim);
+  }
+  h1.title {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: clamp(3rem, 11vw, 6.5rem);
+    line-height: .86;
+    letter-spacing: .005em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  h1.title .thin { display: block; color: var(--brass-lit); }
+  .band .deck {
+    font-size: 1.12rem; max-width: 34rem; color: var(--band-text);
+    opacity: .88; margin: 0;
+  }
+  .facts {
+    display: flex; flex-wrap: wrap; gap: 0 2.2rem;
+    border-top: 1px solid rgba(159,181,171,.28);
+    padding-top: 1rem; margin-top: .4rem;
+  }
+  .facts div { display: flex; flex-direction: column; gap: .1rem; }
+  .facts dt {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .18em; text-transform: uppercase; color: var(--band-dim);
+  }
+  .facts dd { margin: 0; font-size: .95rem; }
+
+  /* ---- document body ---- */
+  main { max-width: 62rem; margin: 0 auto; padding: 0 1.5rem 6rem; }
+  .col { max-width: 38rem; }
+
+  section { padding-top: 3.4rem; }
+  section > * + * { margin-top: 1rem; }
+
+  h2 {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase;
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+    line-height: 1.05; letter-spacing: .015em;
+    margin: 0 0 .2rem; padding-bottom: .55rem;
+    border-bottom: 2px solid var(--ink);
+    display: flex; align-items: baseline; gap: .7rem;
+  }
+  h2 .sec {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .7rem; font-weight: 400; letter-spacing: .12em;
+    color: var(--brass); flex: none;
+  }
+  h3 {
+    font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    font-size: .95rem; margin: 1.8rem 0 .3rem; color: var(--ink);
+  }
+  p { margin: 0; }
+  section p + p { margin-top: .85rem; }
+  a { color: var(--brass); }
+
+  ul, ol { margin: .2rem 0; padding-left: 1.15rem; }
+  li { margin: .3rem 0; }
+  li::marker { color: var(--nickel); }
+
+  strong { font-weight: 700; }
+  em.term { font-style: normal; font-weight: 700; color: var(--sheen); }
+
+  /* ---- exhibits ---- */
+  .exhibit { margin: 2rem 0 0; }
+  .exhibit-cap {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--nickel); margin-top: .6rem;
+  }
+  .exhibit-cap b { color: var(--brass); font-weight: 400; }
+  .plate {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    padding: 1.2rem;
+    overflow-x: auto;
+  }
+
+  /* ---- tables ---- */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--rule); background: var(--paper-2); }
+  table { border-collapse: collapse; width: 100%; min-width: 34rem; font-size: .92rem; }
+  th, td { text-align: left; padding: .6rem .85rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); background: var(--chip-bg); border-bottom: 2px solid var(--ink);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num { font-family: Menlo, ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.val { font-family: Menlo, ui-monospace, monospace; font-variant-numeric: tabular-nums; color: var(--brass); white-space: nowrap; }
+
+  /* ---- key caps ---- */
+  kbd {
+    font-family: Menlo, ui-monospace, monospace; font-size: .74rem;
+    background: var(--chip-bg); border: 1px solid var(--rule);
+    border-bottom-width: 2px; border-radius: 3px;
+    padding: .1rem .38rem; color: var(--ink); white-space: nowrap;
+  }
+
+  /* ---- callout ---- */
+  .note {
+    border-left: 4px solid var(--brass);
+    background: var(--paper-2);
+    padding: .9rem 1.1rem;
+    font-size: .95rem;
+  }
+  .note .lbl {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--brass); display: block; margin-bottom: .25rem;
+  }
+  .note.pick { border-left-color: var(--sheen); }
+  .note.pick .lbl { color: var(--sheen); }
+
+  /* ---- code ---- */
+  pre {
+    background: var(--paper-2); border: 1px solid var(--rule);
+    padding: .9rem 1.1rem; overflow-x: auto; margin: 0;
+    font-family: Menlo, ui-monospace, monospace; font-size: .78rem;
+    line-height: 1.6; color: var(--ink);
+  }
+  pre .c { color: var(--nickel); }
+  pre .k { color: var(--brass); }
+
+  /* ---- scope columns ---- */
+  .scope { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0; border: 1px solid var(--rule); }
+  .scope > div { padding: 1rem 1.15rem; border-right: 1px solid var(--rule); }
+  .scope > div:last-child { border-right: 0; }
+  .scope h4 {
+    font-family: Menlo, ui-monospace, monospace; font-weight: 400;
+    font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+    margin: 0 0 .5rem; color: var(--ink-soft);
+  }
+  .scope ul { padding-left: 1rem; font-size: .9rem; }
+  .scope.in > div:first-child { background: var(--paper-2); }
+
+  /* ---- milestones ---- */
+  .miles { border-top: 2px solid var(--ink); }
+  .mile {
+    display: grid; grid-template-columns: 5.5rem 1fr; gap: 1.2rem;
+    padding: .85rem 0; border-bottom: 1px solid var(--rule); align-items: baseline;
+  }
+  .mile .m-id {
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; color: var(--brass); padding-top: .15rem;
+  }
+  .mile .m-body strong { display: block; font-family: "Avenir Next Condensed","Arial Narrow",sans-serif; text-transform: uppercase; letter-spacing: .04em; font-size: 1rem; }
+  .mile .m-body span { font-size: .9rem; color: var(--ink-soft); }
+
+  footer {
+    border-top: 2px solid var(--ink); margin-top: 4rem; padding-top: 1rem;
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--nickel);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     MOCKUPS
+
+     Not drawings. These are the game's own tokens and the game's own type,
+     re-declared here because the doc has to stay self-contained — a mockup
+     that invents its own brass is a mockup that lies about the result.
+     Fixed 900px so the exhibits are pixel-comparable with each other and
+     screenshot cleanly; the plate scrolls on a narrow window.
+     ══════════════════════════════════════════════════════════════════════ */
+  .mock {
+    --g-brass:  #e0b348;
+    --g-brassd: #a87c22;
+    --g-paper:  #e9e5da;
+    --g-enamel: #1f4d3d;
+    --g-dim:    #9fb5ab;
+    --g-ink:    #0f0d14;
+    --g-red:    #d95f4c;
+    --g-disp: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", "Helvetica Neue", sans-serif;
+    --g-mono: Menlo, ui-monospace, "SF Mono", Consolas, monospace;
+    position: relative; width: 900px; height: 540px;
+    background: #16332a; color: var(--g-paper);
+    font-family: var(--g-disp); font-weight: 700;
+    overflow: hidden; flex: none;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mock.wide { height: 420px; }
+
+  /* the title card's ground, straight from index.html */
+  .mock.card { background: linear-gradient(#1f4d3d 0%, #16332a 55%, #0f2820 100%); }
+  .mock.flat { background: #16332a; }
+
+  .mock .stack {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 28px 30px; text-align: center;
+  }
+
+  .m-title {
+    font-size: 78px; line-height: .84; margin: 0;
+    text-transform: uppercase; letter-spacing: .01em; color: var(--g-paper);
+  }
+  .m-title span { display: block; color: var(--g-brass); }
+  .m-sub {
+    font-family: Charter, Georgia, serif; font-weight: 400;
+    font-size: 14px; line-height: 1.6; max-width: 30rem;
+    color: #cfe0d8; margin: 16px 0 0;
+  }
+  .m-sub b { color: var(--g-paper); }
+  .m-keys {
+    display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: center;
+    margin: 20px 0 0; font-family: var(--g-mono); font-weight: 400; font-size: 10px;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--g-dim);
+  }
+  .m-keys b { color: var(--g-paper); }
+  .m-fine {
+    margin: 20px 0 0; font-family: var(--g-mono); font-weight: 400; font-size: 9px;
+    letter-spacing: .16em; text-transform: uppercase; color: #6f8c80;
+  }
+  .m-fine a { color: #6f8c80; text-decoration: underline; text-underline-offset: 2px; }
+
+  /* buttons — .start and .start.ghost from index.html */
+  .m-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--g-brass); color: #14261f; border: 0;
+    font-family: var(--g-disp); font-weight: 700; font-size: 18px;
+    text-transform: uppercase; letter-spacing: .1em;
+    padding: 13px 40px; border-bottom: 4px solid var(--g-brassd);
+  }
+  .m-btn.ghost {
+    background: transparent; color: var(--g-paper);
+    border: 2px solid rgba(233,229,218,.42); border-bottom-width: 4px;
+    font-size: 15px; padding: 11px 26px;
+  }
+  .m-btn.sm { font-size: 15px; padding: 10px 26px; }
+  .m-actions { display: flex; gap: 12px; align-items: stretch; justify-content: center; margin-top: 24px; }
+
+  /* ---- the block chip ---- */
+  .m-chips { display: flex; gap: 12px; justify-content: center; margin-top: 24px; }
+  .m-chip {
+    width: 150px; text-align: left; padding: 10px 12px 11px;
+    background: rgba(31,77,61,.92);
+    border: 2px solid transparent;
+    border-bottom: 3px solid var(--g-brassd);
+    display: flex; flex-direction: column; gap: 1px;
+  }
+  .m-chip .n {
+    font-family: var(--g-mono); font-weight: 400; font-size: 9px;
+    letter-spacing: .2em; color: var(--g-dim);
+  }
+  .m-chip .nm {
+    font-size: 19px; line-height: 1.05; text-transform: uppercase;
+    letter-spacing: .02em; color: var(--g-paper); margin-top: 2px;
+  }
+  .m-chip .g {
+    font-family: var(--g-mono); font-weight: 700; font-size: 13px;
+    color: var(--g-brass); margin-top: 3px;
+  }
+  .m-chip .st {
+    font-family: var(--g-mono); font-weight: 400; font-size: 8.5px;
+    letter-spacing: .16em; text-transform: uppercase; color: #7e9a8d;
+    margin-top: 7px; border-top: 1px solid rgba(159,181,171,.22); padding-top: 6px;
+  }
+  .m-chip .st.rec { color: var(--g-dim); }
+  /* selected: outline only. The Begin button stays the one loud thing on the
+     card, so a chip may never be brass-filled. */
+  .m-chip.sel { border-color: var(--g-brass); border-bottom-color: var(--g-brass); }
+  .m-chip.lock { opacity: .40; border-bottom-color: rgba(159,181,171,.35); }
+  .m-chip.lock .g { color: var(--g-dim); }
+  .m-chip .lk { letter-spacing: .16em; }
+  .m-chiplbl {
+    font-family: var(--g-mono); font-weight: 400; font-size: 9px;
+    letter-spacing: .22em; text-transform: uppercase; color: #6f8c80;
+    margin-top: 26px;
+  }
+
+  /* ---- fake scene behind the pause overlay ----
+     A stand-in for a block, in the real palette: paving 0xd8c6a8, shade
+     0x6e6478, terracotta, the sunset ramp's t=0 sky. It only has to read as
+     "a city block at five o'clock" through a scrim. Ground sits at 58% and the
+     buildings' feet are drawn under it, so they stand on the paving rather than
+     float above it. */
+  .m-scene { position: absolute; inset: 0; background: #d8c6a8; overflow: hidden; }
+  .m-sky { position: absolute; left: 0; right: 0; top: 0; height: 58%; background: linear-gradient(#8fb4c4 0%, #a8bcc0 40%, #e2c193 78%, #f2c879 100%); }
+  /* distance haze along the horizon */
+  .m-sky::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 22%; background: linear-gradient(rgba(242,200,121,0), rgba(242,200,121,.55)); }
+  .m-ground { position: absolute; left: 0; right: 0; top: 58%; bottom: 0; background: #d8c6a8; }
+  /* far paving reads cooler and darker; shade is violet, never grey */
+  .m-ground::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 34%; background: linear-gradient(rgba(110,100,120,.30), rgba(110,100,120,0)); }
+  .m-kerb { position: absolute; left: 0; right: 0; bottom: 0; height: 26px; background: #bfa98a; }
+  .m-slab { position: absolute; background: #cbb89a; }
+  .m-bldg { position: absolute; bottom: 40%; }
+  .m-bldg i { position: absolute; display: block; background: rgba(15,13,20,.16); }
+  /* raking sunset shadows across the paving */
+  .m-shadow { position: absolute; background: rgba(110,100,120,.34); transform: skewX(-34deg); }
+  .m-lamp { position: absolute; width: 5px; background: #6e7480; }
+  .m-lamp::after { content: ""; position: absolute; top: -7px; left: -7px; width: 19px; height: 8px; background: #8a8f98; }
+  .m-crow { position: absolute; width: 30px; height: 17px; background: #1e1a24; border-radius: 44% 58% 46% 40%; }
+  .m-crow::after { content: ""; position: absolute; right: -10px; top: 4px; width: 12px; height: 6px; background: #2a2530; clip-path: polygon(0 0, 100% 45%, 0 100%); }
+  .m-crow::before { content: ""; position: absolute; left: 3px; bottom: -13px; width: 34px; height: 7px; border-radius: 50%; background: rgba(110,100,120,.42); transform: skewX(-40deg); }
+
+  /* ---- fake HUD chrome ---- */
+  .m-hud { position: absolute; inset: 0; }
+  .m-money {
+    position: absolute; top: 14px; left: 14px; min-width: 148px;
+    background: var(--g-enamel); border-bottom: 3px solid var(--g-brass);
+    padding: 8px 14px 7px; box-shadow: 0 3px 0 rgba(0,0,0,.22);
+  }
+  .m-money .lbl { font-family: var(--g-mono); font-weight: 400; font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: var(--g-dim); display: block; }
+  .m-money .amt { font-family: var(--g-mono); font-size: 27px; color: var(--g-brass); display: block; line-height: 1.05; }
+  .m-money .goal { font-family: var(--g-mono); font-weight: 400; font-size: 10px; color: var(--g-dim); letter-spacing: .08em; }
+  .m-money .bar { height: 4px; background: rgba(255,255,255,.14); margin-top: 6px; }
+  .m-money .bar i { display: block; height: 100%; background: var(--g-brass); }
+  .m-tasks {
+    position: absolute; top: 14px; right: 14px; width: 230px;
+    background: rgba(31,77,61,.92); border-bottom: 3px solid var(--g-brass);
+    padding: 9px 13px 10px; box-shadow: 0 3px 0 rgba(0,0,0,.22);
+  }
+  .m-tasks .hd { display: flex; justify-content: space-between; font-family: var(--g-mono); font-weight: 400; font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: var(--g-dim); padding-bottom: 6px; }
+  .m-tasks .hd b { color: var(--g-brass); }
+  .m-tasks ul { margin: 0; padding: 0; list-style: none; }
+  .m-tasks li { font-weight: 400; font-size: 13px; line-height: 1.34; margin: 3px 0; color: var(--g-paper); display: flex; gap: 7px; }
+  .m-tasks li::before { content: "\25A1"; color: var(--g-brass); font-family: var(--g-mono); font-size: 11px; }
+  .m-tasks li.done { color: #7e9a8d; text-decoration: line-through; }
+  .m-tasks li.done::before { content: "\25A3"; }
+  .m-sun { position: absolute; bottom: 16px; right: 16px; }
+  .m-stam { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); width: 128px; height: 4px; background: rgba(15,13,20,.5); }
+  .m-stam i { display: block; height: 100%; width: 62%; background: var(--g-paper); }
+  .m-ctl {
+    position: absolute; left: 14px; bottom: 14px; width: 208px;
+    background: rgba(22,51,42,.42); border-bottom: 2px solid rgba(224,179,72,.30);
+    opacity: .72; padding: 8px 12px 9px;
+  }
+  .m-ctl .hd { font-family: var(--g-mono); font-weight: 400; font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: rgba(159,181,171,.85); margin-bottom: 6px; }
+  .m-ctl .row { display: flex; gap: 9px; align-items: baseline; margin: 3px 0; }
+  .m-ctl .row dt { font-family: var(--g-mono); font-weight: 400; font-size: 9.5px; color: rgba(224,179,72,.82); min-width: 52px; letter-spacing: .05em; }
+  .m-ctl .row dd { margin: 0; font-weight: 400; font-size: 12px; color: rgba(233,229,218,.82); }
+  .m-ctl .row.new dt { color: var(--g-brass); }
+  .m-ctl .row.new dd { color: var(--g-paper); }
+
+  /* ---- the pause scrim ---- */
+  .m-scrim {
+    position: absolute; inset: 0; background: rgba(15,13,20,.78);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 24px;
+  }
+  .m-eyebrow {
+    font-family: var(--g-mono); font-weight: 400; font-size: 11px;
+    letter-spacing: .3em; text-transform: uppercase; color: var(--g-dim);
+  }
+  .m-h {
+    font-size: 46px; line-height: .9; margin: 6px 0 0;
+    text-transform: uppercase; color: var(--g-paper); letter-spacing: .02em;
+  }
+
+  /* ---- touch mock ---- */
+  .m-pausebtn {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(233,229,218,.16); border: 2px solid rgba(233,229,218,.42);
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .m-pausebtn i { display: block; width: 4px; height: 15px; background: var(--g-paper); opacity: .9; }
+  .m-stick { position: absolute; left: 128px; bottom: 96px; width: 118px; height: 118px; border: 2px solid rgba(233,229,218,.30); border-radius: 50%; }
+  .m-stick::after { content: ""; position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; margin: -25px 0 0 -25px; border-radius: 50%; background: rgba(233,229,218,.32); border: 2px solid rgba(233,229,218,.5); }
+  .m-btns { position: absolute; right: 20px; bottom: 26px; display: grid; grid-template-columns: repeat(2, auto); gap: 12px; align-items: end; justify-items: center; }
+  .m-tbtn { width: 68px; height: 68px; border-radius: 50%; background: rgba(233,229,218,.16); border: 2px solid rgba(233,229,218,.42); color: var(--g-paper); font-family: var(--g-mono); font-weight: 400; font-size: 10px; letter-spacing: .1em; display: flex; align-items: center; justify-content: center; text-transform: uppercase; }
+  .m-tbtn.fly { width: 84px; height: 84px; grid-column: 2; grid-row: 1 / span 2; font-size: 12px; }
+
+  /* ---- the forfeit line ---- */
+  .m-forfeit {
+    border: 2px solid rgba(217,95,76,.65); background: rgba(15,13,20,.72);
+    padding: 16px 20px 18px; margin-top: 24px; max-width: 30rem;
+  }
+  .m-forfeit p { font-family: Charter, Georgia, serif; font-weight: 400; font-size: 15px; color: #e8ddd6; margin: 0; }
+  .m-forfeit p b { color: var(--g-red); font-weight: 700; }
+  .m-forfeit .row { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
+
+  /* ---- ending mock ---- */
+  .m-endh { font-size: 52px; line-height: .88; margin: 0; text-transform: uppercase; color: var(--g-paper); }
+  .m-endh span { display: block; color: var(--g-brass); }
+  .m-rank { font-family: var(--g-mono); font-weight: 400; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--g-brass); margin-top: 14px; }
+  .m-endbody { font-family: Charter, Georgia, serif; font-weight: 400; font-size: 15px; line-height: 1.65; max-width: 28rem; color: #d8e4de; margin: 14px 0 0; }
+
+  /* side-by-side exhibit pairs */
+  .pair { display: flex; gap: 1.2rem; }
+
+  @media (max-width: 40rem) {
+    body { font-size: 16px; }
+    .mile { grid-template-columns: 1fr; gap: .1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="band">
+  <div class="band-inner">
+    <div class="eyebrow">Interface Brief &nbsp;·&nbsp; Progress &amp; the Menu &nbsp;·&nbsp; Proposed — nothing built yet</div>
+    <h1 class="title">The<br>Menu<span class="thin">And a game that remembers you</span></h1>
+    <p class="deck">Three blocks, a ladder that runs $20 → $25 → $30, and a game that forgets
+      all of it the moment the tab closes. This is the proposal for the save file, the level
+      select, and the pause screen that has to exist for either of them to be reachable.</p>
+    <dl class="facts">
+      <div><dt>Status</dt><dd>Proposal, for review</dd></div>
+      <div><dt>New files</dt><dd>1 — <span class="mono">core/save.js</span></dd></div>
+      <div><dt>New screens</dt><dd>0 or 1, see §2</dd></div>
+      <div><dt>Open decisions</dt><dd>Two</dd></div>
+      <div><dt>Blocks affected</dt><dd>All three, equally</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main>
+
+  <section id="status">
+    <h2><span class="sec">§0</span> Where this stands</h2>
+    <div class="col">
+      <p>Nothing here is built. Every mockup below is HTML and CSS assembled from the game's own
+      tokens — <span class="mono">--brass</span>, <span class="mono">--enamel</span>, the two
+      typefaces, the real <span class="mono">.start</span> and
+      <span class="mono">.start.ghost</span> button rules — so what you are looking at is close
+      to what the code would produce, not an impression of it. It is not, however, running.</p>
+
+      <p>Two decisions in here change what gets written. They are called out in
+      <a href="#doors">§2</a> and <a href="#chip">§3</a>, and everything else follows from them.</p>
+
+      <div class="note">
+        <span class="lbl">The problem, stated once</span>
+        You finish the block. The ending screen hands you the park. You close the tab. You come
+        back and you are on the block again, with no record that you ever cleared it, and no way
+        to reach the park except by typing <span class="mono">?level=2</span> into the address
+        bar. The ladder is the spine of this game and the game does not remember climbing it.
+      </div>
+    </div>
+  </section>
+
+  <section id="free">
+    <h2><span class="sec">§1</span> What the engine already gives us</h2>
+    <div class="col">
+      <p>Three things fell out of reading <span class="mono">main.js</span>, and together they
+      mean this is mostly interface work rather than engine work.</p>
+
+      <p><strong>Pause is already free.</strong> <span class="mono">elapsed</span> only advances
+      inside <span class="mono">_tickSim</span>, and <span class="mono">_tickSim</span> only runs
+      under <span class="mono">if (this.running)</span>. Setting
+      <span class="mono">running = false</span> stops the simulation <em>and</em> the day clock
+      with it, which is the thing a pause must not get wrong — pausing at 6:40 into an 8-minute
+      day and coming back to find the sun down would be worse than having no pause at all.</p>
+
+      <p><strong>The scene keeps rendering while paused.</strong> The camera follow, the light
+      ramp and the night lights all sit <em>outside</em> the <span class="mono">running</span>
+      guard in <span class="mono">_frame</span>. So a pause overlay sits over a living picture —
+      the sun still crawls, the lamps still warm — rather than over a freeze-frame. That is the
+      good version, and it is already the default.</p>
+
+      <p><strong><span class="mono">loadLevel(id, autoStart)</span> is the whole menu API.</strong>
+      It tears down, rebuilds, drops you straight into play, and keeps the address bar in step. A
+      level chip is a call to it.</p>
+
+      <div class="note">
+        <span class="lbl">The one thing to get right</span>
+        Resuming must reset <span class="mono">_last</span> and <span class="mono">_acc</span>
+        exactly as <span class="mono">begin()</span> does. Otherwise the fixed-step accumulator
+        comes back holding the entire length of the pause and spends it on catch-up steps — the
+        <span class="mono">steps &lt; 6</span> clamp bounds the damage, but the first frame after
+        a pause would still run six ticks of simulation the player did not ask for.
+        <span class="mono">input.flush()</span> belongs there too, for the same reason the ending
+        screen needs it: the key that dismissed the overlay is still down.
+      </div>
+    </div>
+  </section>
+
+  <section id="doors">
+    <h2><span class="sec">§2</span> Decision one: one door, or two</h2>
+    <div class="col">
+      <p>The game has two full-screen cards today — the title and the ending — and a level list
+      has to live somewhere. The choice is whether it is a third card you navigate <em>to</em>, or
+      whether the title card grows into it.</p>
+
+      <p>Here is what ships today, for comparison:</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate">
+        <div class="mock card" data-shot="a-title-today">
+          <div class="stack">
+            <h1 class="m-title">Small<span>Change</span></h1>
+            <p class="m-sub">You were a person this morning. Someone turned you into a crow. Your
+              goal is to collect a bunch of money (<b>twenty dollars</b>) to break the curse
+              before the sun goes down.</p>
+            <div class="m-keys">
+              <span><b>WASD</b> Move</span><span><b>Space</b> Fly (hold)</span>
+              <span><b>J</b> Beak</span><span><b>K</b> Caw</span>
+            </div>
+            <div class="m-actions"><div class="m-btn">Begin</div></div>
+            <p class="m-fine">Money only counts once it is in the nest · One thing in the beak at a time</p>
+          </div>
+        </div>
+      </div>
+      <p class="exhibit-cap"><b>A</b> · The title card as it ships. Unchanged on a first-ever visit under either option.</p>
+    </div>
+
+    <div class="col">
+      <h3>Option 1 — the title card becomes the menu</h3>
+      <p>On a machine with no save, exhibit A is exactly what you get: one button, no list, no
+      evidence that levels are a thing. The moment there is progress to show, the same card grows
+      a row of chips under the strapline and <strong>Begin</strong> starts whichever one is
+      selected. No new screen, no navigation, and the front door stays the front door.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate">
+        <div class="mock card" data-shot="b-title-returning">
+          <div class="stack">
+            <h1 class="m-title">Small<span>Change</span></h1>
+            <p class="m-sub">You were a person this morning. Someone turned you into a crow. Your
+              goal is to collect a bunch of money to break the curse before the sun goes down.</p>
+            <div class="m-chips">
+              <div class="m-chip">
+                <span class="n">01</span><span class="nm">The block</span>
+                <span class="g">$20</span><span class="st">▣ Cleared</span>
+              </div>
+              <div class="m-chip sel">
+                <span class="n">02</span><span class="nm">The park</span>
+                <span class="g">$25</span><span class="st">▣ Cleared</span>
+              </div>
+              <div class="m-chip lock">
+                <span class="n">03</span><span class="nm">The hotel</span>
+                <span class="g">$30</span><span class="st lk">Locked</span>
+              </div>
+            </div>
+            <div class="m-actions"><div class="m-btn">Begin</div></div>
+            <p class="m-fine">Money only counts once it is in the nest · One thing in the beak at a time</p>
+          </div>
+        </div>
+      </div>
+      <p class="exhibit-cap"><b>B</b> · Option 1 — the returning title card. Same card, one new row. The chips select; Begin is still the only thing that starts anything.</p>
+    </div>
+
+    <div class="col">
+      <h3>Option 2 — a separate Levels screen</h3>
+      <p>The title keeps its current job and gains a quiet link. The list is its own card, reached
+      from the title, from pause, and from the ending. It has more room, so it can carry more per
+      block — but it makes the title card a hallway, and it puts a click between a returning
+      player and the game.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate">
+        <div class="mock flat" data-shot="c-levels-screen">
+          <div class="stack">
+            <div class="m-eyebrow">Small Change</div>
+            <h1 class="m-h">Levels</h1>
+            <div class="m-chips" style="margin-top:30px">
+              <div class="m-chip" style="width:186px">
+                <span class="n">01</span><span class="nm">The block</span>
+                <span class="g">$20</span><span class="st">▣ Cleared</span>
+              </div>
+              <div class="m-chip sel" style="width:186px">
+                <span class="n">02</span><span class="nm">The park</span>
+                <span class="g">$25</span><span class="st">▣ Cleared</span>
+              </div>
+              <div class="m-chip lock" style="width:186px">
+                <span class="n">03</span><span class="nm">The hotel</span>
+                <span class="g">$30</span><span class="st lk">Locked</span>
+              </div>
+            </div>
+            <div class="m-actions">
+              <div class="m-btn">Play the park</div>
+              <div class="m-btn ghost">Back</div>
+            </div>
+            <p class="m-fine">Clear a block to open the next one · <a href="#">Forget my progress</a></p>
+          </div>
+        </div>
+      </div>
+      <p class="exhibit-cap"><b>C</b> · Option 2 — the level list as its own card.</p>
+    </div>
+
+    <div class="col">
+      <div class="note pick">
+        <span class="lbl">Recommendation — Option 1</span>
+        The list is three rows long and will be four for a long time. A whole screen for three
+        chips is a screen built for a game that does not exist yet, and it costs a returning
+        player a click every single session to reach a game they have already opened. Option 1
+        also keeps <strong>one</strong> place where blocks are named and priced, which is the
+        thing that decays first when there are two. If the roster ever gets long enough to need
+        scrolling, Option 2 is the migration, and the chip component moves across unchanged.
+      </div>
+    </div>
+  </section>
+
+  <section id="chip">
+    <h2><span class="sec">§3</span> Decision two: what a chip knows</h2>
+    <div class="col">
+      <p>The chip is the one component the whole feature hangs off: it appears on the title card,
+      in the pause overlay, and — under Option 2 — on the level screen. It has three states and
+      one open question.</p>
+
+      <h3>The three states</h3>
+      <p><strong>Cleared</strong> is full strength with a brass underline.
+      <strong>Selected</strong> adds a brass outline and nothing else — it may
+      <em>not</em> be brass-filled, because the ending screen's design rule is that there is
+      exactly one loud thing on a card and that thing is the button. A brass chip beside a brass
+      Begin is two.
+      <strong>Locked</strong> drops to 40% and loses its brass. It stays on screen: the ladder
+      — $20 / $25 / $30, one deck / two / four — is the reason to keep playing, and a menu that
+      hides what is next hides the reason.</p>
+
+      <h3>The open question: does it keep a best?</h3>
+      <p>The minimum save is a set of cleared ids. The larger one also keeps your best run per
+      block — most banked, and the clock reading when you hit the goal.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate">
+        <div class="mock flat" data-shot="d-chip-states" style="height:400px">
+          <div class="stack">
+            <div class="m-chiplbl" style="margin-top:0">Cleared only — the minimum save</div>
+            <div class="m-chips">
+              <div class="m-chip"><span class="n">01</span><span class="nm">The block</span><span class="g">$20</span><span class="st">▣ Cleared</span></div>
+              <div class="m-chip sel"><span class="n">02</span><span class="nm">The park</span><span class="g">$25</span><span class="st">▣ Cleared</span></div>
+              <div class="m-chip lock"><span class="n">03</span><span class="nm">The hotel</span><span class="g">$30</span><span class="st lk">Locked</span></div>
+            </div>
+            <div class="m-chiplbl">Cleared plus a best — the larger save</div>
+            <div class="m-chips">
+              <div class="m-chip"><span class="n">01</span><span class="nm">The block</span><span class="g">$20</span><span class="st rec">$32.40 · 4:12</span></div>
+              <div class="m-chip sel"><span class="n">02</span><span class="nm">The park</span><span class="g">$25</span><span class="st rec">$27.10 · 6:38</span></div>
+              <div class="m-chip lock"><span class="n">03</span><span class="nm">The hotel</span><span class="g">$30</span><span class="st lk">Locked</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="exhibit-cap"><b>D</b> · The chip, both depths, all three states. Left to right: cleared, cleared and selected, locked.</p>
+    </div>
+
+    <div class="col">
+      <div class="note pick">
+        <span class="lbl">Recommendation — cleared only, for now</span>
+        Not because the bests look bad. Because <strong>a best time on a chip is a design change
+        to the blocks, not to the menu</strong>. The sun dial currently means "you are running out
+        of day"; put a clock on the results and it also means "you are being timed", and every
+        block gets replayed by a player optimising against a number rather than robbing a café.
+        That may well be a good direction — it is just a bigger conversation than persistence, and
+        the save blob is versioned so adding <span class="mono">best</span> later costs nothing.
+      </div>
+
+      <h3>Copy</h3>
+      <p>Chips inherit their names from <span class="mono">shortName</span> and their price from
+      <span class="mono">goal</span>, both already on the level descriptor and both already used
+      by the ending screen's onward button. A menu that invents a second set of names for the same
+      three blocks is a menu that will disagree with the ending screen within a month.</p>
+      <p>Locked reads <strong>Locked</strong>, flatly. It was tempting to write something with more
+      voice in it, but this is wayfinding copy, and the block that taught us that lesson is the
+      roofline — <em>parapet</em> sent an American playtester to a dictionary instead of to a roof
+      edge.</p>
+    </div>
+  </section>
+
+  <section id="pause">
+    <h2><span class="sec">§4</span> Pause</h2>
+    <div class="col">
+      <p>There is no pause today. It has to exist before a level list is reachable from inside a
+      run, and it is worth having on its own — this is a game with a clock in it, on a phone,
+      where a run gets interrupted by the world.</p>
+
+      <p>The overlay is <strong>a scrim, not a card</strong>. The title and ending screens are
+      opaque <span class="mono">#16332a</span> because there is nothing behind them worth looking
+      at. Pause is 78% ink over a scene that is still moving — the sun still crawling, the lamps
+      still warming — because the whole message of a pause screen is <em>your block is still
+      there</em>. That distinction is free, given §1, and losing it would make pause feel like
+      quitting.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate">
+        <div class="mock" data-shot="e-pause">
+          <div class="m-scene">
+            <div class="m-sky"></div>
+            <div class="m-bldg" style="left:-20px;width:172px;height:196px;background:#b4643c"><i style="left:20px;top:26px;width:34px;height:44px"></i><i style="left:74px;top:26px;width:34px;height:44px"></i><i style="left:20px;top:96px;width:34px;height:44px"></i><i style="left:74px;top:96px;width:34px;height:44px"></i></div>
+            <div class="m-bldg" style="left:152px;width:104px;height:126px;background:#d07e52"><i style="left:22px;top:24px;width:26px;height:34px"></i><i style="left:60px;top:24px;width:26px;height:34px"></i></div>
+            <div class="m-bldg" style="left:256px;width:78px;height:88px;background:#c9bda8"></div>
+            <div class="m-bldg" style="left:614px;width:150px;height:170px;background:#b4643c"><i style="left:22px;top:28px;width:30px;height:40px"></i><i style="left:72px;top:28px;width:30px;height:40px"></i><i style="left:22px;top:94px;width:30px;height:40px"></i></div>
+            <div class="m-bldg" style="left:764px;width:156px;height:112px;background:#d07e52"><i style="left:24px;top:26px;width:28px;height:34px"></i><i style="left:70px;top:26px;width:28px;height:34px"></i></div>
+            <div class="m-ground"></div>
+            <div class="m-shadow" style="left:150px;top:60%;width:210px;height:96px"></div>
+            <div class="m-shadow" style="left:600px;top:60%;width:170px;height:78px"></div>
+            <div class="m-slab" style="left:318px;top:70%;width:200px;height:62px;border-radius:50%;background:#e4dacb"></div>
+            <div class="m-slab" style="left:352px;top:73%;width:132px;height:38px;border-radius:50%;background:#4e9bb0"></div>
+            <div class="m-lamp" style="left:560px;top:40%;height:130px"></div>
+            <div class="m-crow" style="left:236px;top:76%"></div>
+            <div class="m-kerb"></div>
+          </div>
+          <div class="m-hud">
+            <div class="m-money">
+              <span class="lbl">In the nest</span>
+              <span class="amt">$12.60</span>
+              <span class="goal">of $25.00</span>
+              <div class="bar"><i style="width:50%"></i></div>
+            </div>
+            <div class="m-tasks">
+              <div class="hd"><span>Things a crow could try</span><b>2/5</b></div>
+              <ul>
+                <li class="done">Dive the pond</li>
+                <li class="done">Trade something shiny</li>
+                <li>Lift the five off the cooler</li>
+                <li>Get the vendor away from his cart</li>
+                <li>Get the ten</li>
+              </ul>
+            </div>
+            <svg class="m-sun" width="108" height="58" viewBox="0 0 108 58">
+              <path d="M8 52 A 46 46 0 0 1 100 52" fill="none" stroke="rgba(233,229,218,.3)" stroke-width="2"/>
+              <circle cx="66" cy="18" r="5" fill="#e0b348"/>
+            </svg>
+          </div>
+          <div class="m-scrim">
+            <div class="m-eyebrow">The park · $12.60 in the nest</div>
+            <h1 class="m-h">Paused</h1>
+            <div class="m-actions">
+              <div class="m-btn">Resume</div>
+              <div class="m-btn ghost">Start over</div>
+            </div>
+            <div class="m-chiplbl" style="margin-top:22px">Go somewhere else</div>
+            <div class="m-chips" style="margin-top:9px">
+              <div class="m-chip" style="width:136px"><span class="n">01</span><span class="nm">The block</span><span class="g">$20</span><span class="st">▣ Cleared</span></div>
+              <div class="m-chip sel" style="width:136px"><span class="n">02</span><span class="nm">The park</span><span class="g">$25</span><span class="st rec">Playing</span></div>
+              <div class="m-chip lock" style="width:136px"><span class="n">03</span><span class="nm">The hotel</span><span class="g">$30</span><span class="st lk">Locked</span></div>
+            </div>
+            <p class="m-fine">Esc to resume · M mutes · <a href="#">Quit to title</a></p>
+          </div>
+        </div>
+      </div>
+      <p class="exhibit-cap"><b>E</b> · Pause, on desktop. The block is dimmed, not hidden — and it is still ticking its light rig behind the scrim.</p>
+    </div>
+
+    <div class="col">
+      <p>The eyebrow carries the block's name and what is in the nest, so the screen answers
+      "where am I and how am I doing" without you having to read the HUD through a scrim.
+      <strong>Resume</strong> is the loud thing. <strong>Start over</strong> restarts the current
+      block. The chip row is the same component from §3, one size down, with the block you are on
+      marked <span class="mono">Playing</span> rather than selected.</p>
+      <p><span class="mono">Esc</span> opens and closes it, and the controls legend gains a row —
+      which is also the argument for why touch needs its own affordance, since that legend is
+      <span class="mono">display:none</span> under <span class="mono">body.touch</span>.</p>
+    </div>
+  </section>
+
+  <section id="touch">
+    <h2><span class="sec">§5</span> Pause, on a phone</h2>
+    <div class="col">
+      <p>There is no <span class="mono">Esc</span> on an iPad, and this whole thing is being built
+      to package with Capacitor. A pause the touch build cannot reach is a pause that does not
+      exist on the platform the game is aimed at.</p>
+      <p>Top-centre is the one piece of chrome that is free: money is top-left, tasks are
+      top-right, the sun dial and the buttons own the bottom-right, the stick appears wherever the
+      left thumb lands. It is also the hardest place on the screen to hit by accident while
+      playing, which matters for a button whose job is to stop the game.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate">
+        <div class="mock wide" data-shot="f-touch">
+          <div class="m-scene">
+            <div class="m-sky"></div>
+            <div class="m-bldg" style="left:-16px;width:158px;height:150px;background:#b4643c"><i style="left:20px;top:22px;width:30px;height:38px"></i><i style="left:70px;top:22px;width:30px;height:38px"></i></div>
+            <div class="m-bldg" style="left:142px;width:112px;height:104px;background:#d07e52"><i style="left:20px;top:20px;width:26px;height:32px"></i><i style="left:60px;top:20px;width:26px;height:32px"></i></div>
+            <div class="m-bldg" style="left:254px;width:96px;height:126px;background:#c9bda8"><i style="left:24px;top:26px;width:24px;height:34px"></i></div>
+            <div class="m-bldg" style="left:350px;width:140px;height:92px;background:#b4643c"><i style="left:26px;top:22px;width:28px;height:30px"></i><i style="left:76px;top:22px;width:28px;height:30px"></i></div>
+            <div class="m-bldg" style="left:490px;width:118px;height:118px;background:#d07e52"><i style="left:24px;top:24px;width:26px;height:34px"></i></div>
+            <div class="m-bldg" style="left:608px;width:88px;height:84px;background:#2e8c8c"></div>
+            <div class="m-bldg" style="left:696px;width:134px;height:138px;background:#b4643c"><i style="left:24px;top:26px;width:28px;height:36px"></i><i style="left:74px;top:26px;width:28px;height:36px"></i></div>
+            <div class="m-bldg" style="left:830px;width:90px;height:100px;background:#d07e52"></div>
+            <div class="m-ground"></div>
+            <div class="m-shadow" style="left:120px;top:60%;width:230px;height:82px"></div>
+            <div class="m-shadow" style="left:600px;top:60%;width:170px;height:64px"></div>
+            <div class="m-slab" style="left:250px;top:72%;width:300px;height:74px;border-radius:50%;background:#cbb89a"></div>
+            <div class="m-slab" style="left:296px;top:75%;width:208px;height:46px;border-radius:50%;background:#4e9bb0"></div>
+            <div class="m-lamp" style="left:596px;top:36%;height:126px"></div>
+            <div class="m-crow" style="left:398px;top:70%"></div>
+            <div class="m-kerb" style="height:34px;background:#bfa98a"></div>
+          </div>
+          <div class="m-hud">
+            <div class="m-money" style="min-width:124px;padding:6px 11px 5px">
+              <span class="lbl">In the nest</span>
+              <span class="amt" style="font-size:22px">$12.60</span>
+              <span class="goal">of $25.00</span>
+              <div class="bar"><i style="width:50%"></i></div>
+            </div>
+            <div class="m-tasks" style="width:172px;padding:7px 10px 8px">
+              <div class="hd" style="font-size:8.5px;letter-spacing:.12em"><span>Things to try</span><b>2/5</b></div>
+              <ul><li class="done" style="font-size:11.5px">Dive the pond</li><li style="font-size:11.5px">Get the ten</li></ul>
+            </div>
+            <div class="m-pausebtn"><i></i><i></i></div>
+            <div class="m-stick"></div>
+            <div class="m-btns">
+              <div class="m-tbtn fly">Fly</div>
+              <div class="m-tbtn" style="grid-column:1;grid-row:1">Beak</div>
+              <div class="m-tbtn" style="grid-column:1;grid-row:2">Caw</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="exhibit-cap"><b>F</b> · The touch build. One new 44&nbsp;px control, top-centre — the only free corner, and the one a thumb never crosses.</p>
+    </div>
+
+    <div class="col">
+      <div class="note">
+        <span class="lbl">Watch for</span>
+        <span class="mono">#testmode</span> also lives top-centre. It only appears when a
+        <span class="mono">TEST_*</span> cheat is active, and the badge must stay the more visible
+        of the two — those three tripwires exist so a cheat cannot ship by accident, and a pause
+        button sitting on top of the badge would quietly disable one of them. Simplest fix: the
+        badge pushes the pause control down, not the other way round.
+      </div>
+    </div>
+  </section>
+
+  <section id="ending">
+    <h2><span class="sec">§6</span> The ending needs a third way out</h2>
+    <div class="col">
+      <p>The ending screen today offers <strong>The hotel →</strong> and <strong>Again!</strong>,
+      and that is a complete set of choices for a game with no menu: forward, or repeat. Once a
+      menu exists, an ending that can only go forward or repeat becomes the one screen in the game
+      you cannot get out of.</p>
+      <p>It does not get a third <span class="mono">.start</span>. The card's whole compositional
+      rule is one filled button and one outlined one — a third would flatten the hierarchy the
+      ending was carefully given. It goes in the fine print instead, which is already styled and
+      already sits under the buttons.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate">
+        <div class="mock flat" data-shot="g-ending">
+          <div class="stack">
+            <h1 class="m-endh">Twenty&#8209;Seven<span>Dollars Ten</span></h1>
+            <div class="m-rank">Opportunist · 6:38 · 4 of 5 · never caught</div>
+            <p class="m-endbody">The curse lifts somewhere between the pond and the pavilion. You
+              are a person again, standing on a lawn in the dark, holding twenty-seven dollars and
+              ten cents in small denominations that you cannot explain.</p>
+            <div class="m-actions">
+              <div class="m-btn">The hotel <span style="display:inline-block">→</span></div>
+              <div class="m-btn ghost">Again!</div>
+            </div>
+            <p class="m-fine"><a href="#">Levels</a></p>
+          </div>
+        </div>
+      </div>
+      <p class="exhibit-cap"><b>G</b> · The ending, with the quiet route added. Two buttons, unchanged; one new line of fine print.</p>
+    </div>
+  </section>
+
+  <section id="forfeit">
+    <h2><span class="sec">§7</span> Leaving a block you are in the middle of</h2>
+    <div class="col">
+      <p>There is no mid-run save and there should not be one. A block is eight minutes; the
+      session <em>is</em> the unit. Leaving one abandons it.</p>
+      <p>But it should not abandon it silently when there is something to lose. The rule:
+      <strong>if the nest is empty, switching blocks just switches</strong> — no friction, nothing
+      was at stake. If you have banked money, the chip row is replaced in place by one line and
+      two buttons. Replaced <em>in place</em>, not stacked on top: a confirmation dialogue over a
+      pause overlay over a game is three layers, and this is a game about a bird.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate">
+        <div class="mock" data-shot="h-forfeit" style="height:460px">
+          <div class="m-scene">
+            <div class="m-sky"></div>
+            <div class="m-bldg" style="left:-10px;width:158px;height:164px;background:#b4643c"><i style="left:20px;top:24px;width:32px;height:40px"></i><i style="left:72px;top:24px;width:32px;height:40px"></i></div>
+            <div class="m-bldg" style="left:148px;width:96px;height:104px;background:#d07e52"></div>
+            <div class="m-bldg" style="left:640px;width:150px;height:150px;background:#b4643c"><i style="left:22px;top:26px;width:30px;height:38px"></i><i style="left:72px;top:26px;width:30px;height:38px"></i></div>
+            <div class="m-bldg" style="left:790px;width:130px;height:104px;background:#d07e52"></div>
+            <div class="m-ground"></div>
+            <div class="m-shadow" style="left:146px;top:62%;width:190px;height:80px"></div>
+            <div class="m-lamp" style="left:566px;top:40%;height:118px"></div>
+            <div class="m-crow" style="left:250px;top:78%"></div>
+            <div class="m-kerb"></div>
+          </div>
+          <div class="m-scrim">
+            <div class="m-eyebrow">The park · $12.60 in the nest</div>
+            <h1 class="m-h">Paused</h1>
+            <div class="m-forfeit">
+              <p>You have <b>$12.60</b> in the nest and four minutes of day left. Going to the
+                block ends this run — nothing about it is kept.</p>
+              <div class="row">
+                <div class="m-btn ghost sm">Go to the block</div>
+                <div class="m-btn sm">Stay here</div>
+              </div>
+            </div>
+            <p class="m-fine">Esc to resume</p>
+          </div>
+        </div>
+      </div>
+      <p class="exhibit-cap"><b>H</b> · The forfeit, in place of the chip row. Note which button is brass: staying is the recommended action, so leaving is the outlined one.</p>
+    </div>
+  </section>
+
+  <section id="save">
+    <h2><span class="sec">§8</span> The save file</h2>
+    <div class="col">
+      <p>One new module, <span class="mono">core/save.js</span>, pure and DOM-free so
+      <span class="mono">smoke.mjs</span> can test it without a browser — the same reason
+      <span class="mono">words.js</span> and <span class="mono">rank.js</span> are their own
+      files. One key, one versioned blob.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate" style="padding:0;border:0">
+<pre><span class="c">// localStorage["smallchange.progress"]</span>
+{
+  <span class="k">v</span>: 1,                <span class="c">// bumped when the shape changes; a blob from</span>
+                       <span class="c">// another version is discarded, never migrated</span>
+  <span class="k">cleared</span>: [1, 2]       <span class="c">// level ids, in no particular order</span>
+}
+
+<span class="c">// the larger save from §3, if we take it — same key, same version gate</span>
+{
+  <span class="k">v</span>: 1,
+  <span class="k">cleared</span>: [1, 2],
+  <span class="k">best</span>: { 1: { total: 3240, secs: 252 } }   <span class="c">// cents and whole seconds:</span>
+}                                            <span class="c">// no floats in a save file</span></pre>
+      </div>
+      <p class="exhibit-cap"><b>I</b> · The blob. Small on purpose.</p>
+    </div>
+
+    <div class="col">
+      <h3>It has to be allowed to fail</h3>
+      <p><span class="mono">localStorage</span> is not a guarantee. It throws on access in Safari
+      private mode, it throws on write when the quota is full, and it is one of the things that
+      behaves its own way inside a <span class="mono">WKWebView</span> — which is precisely the
+      shell this game is being built to ship in. Every read and every write is wrapped, and a
+      failure degrades to an in-memory store: the menu still works for the session, and nothing
+      survives the tab. <strong>The game must be fully playable with no storage at all</strong>,
+      and that is a test rather than a hope.</p>
+
+      <h3>A save must not be trusted</h3>
+      <p>It is a string on a stranger's machine. It can be hand-edited, it can be truncated, and
+      it can have been written by a future build that had five levels in it. So: parse in a
+      <span class="mono">try</span>, check <span class="mono">v</span>, drop ids that
+      <span class="mono">getLevel</span> does not recognise, and treat anything unparseable as
+      "no progress" rather than as an error. A save file that crashes the title card is worse than
+      no save file.</p>
+
+      <h3>What still bypasses it</h3>
+      <p><span class="mono">?level=N</span> keeps working and keeps ignoring the lock. It is how
+      <span class="mono">shoot.mjs</span> drives the game and how you spot-check a block without
+      playing two others first. The menu gates; the URL does not.</p>
+
+      <div class="note">
+        <span class="lbl">Forget my progress</span>
+        One line of fine print, on the title card. It is needed for testing the empty state, and
+        it is the honest thing to put next to the only feature in this game that writes to
+        somebody's machine.
+      </div>
+    </div>
+  </section>
+
+  <section id="scope">
+    <h2><span class="sec">§9</span> Scope</h2>
+    <div class="scope in">
+      <div>
+        <h4>In</h4>
+        <ul>
+          <li><span class="mono">core/save.js</span> — versioned, wrapped, unit tested</li>
+          <li>Chips on the title card, once there is progress</li>
+          <li>Pause: <kbd>Esc</kbd>, a touch control, a scrim over the live scene</li>
+          <li>Level switching from pause, with the forfeit line</li>
+          <li>A <em>Levels</em> route out of the ending screen</li>
+          <li><em>Forget my progress</em></li>
+          <li>Harness coverage — see §10</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Out</h4>
+        <ul>
+          <li>Mid-run save and resume. A block is one sitting.</li>
+          <li>A stats or records screen</li>
+          <li>A settings screen — mute is a key and a line in the legend</li>
+          <li>Achievements, medals, stars</li>
+          <li>A fourth block. This is the thing that makes a fourth block worth having, not the fourth block.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="verify">
+    <h2><span class="sec">§10</span> How it gets verified</h2>
+    <div class="col">
+      <p>The convention holds: prefer an assertion to a fix. Most of these exist because the level
+      swap path <em>already</em> has known traps, and a menu is about to start driving that path
+      far harder than an ending screen ever did.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Where</th><th>Assertion</th><th>Because</th></tr></thead>
+          <tbody>
+            <tr><td class="num">smoke</td><td>A cleared set round-trips through save and load</td><td>The whole feature, in one line</td></tr>
+            <tr><td class="num">smoke</td><td>A throwing storage degrades to in-memory; nothing raises</td><td>Safari private mode, and the WKWebView this ships into</td></tr>
+            <tr><td class="num">smoke</td><td>Garbage, truncation and a wrong <span class="mono">v</span> all read as "no progress"</td><td>A save file must never crash the title card</td></tr>
+            <tr><td class="num">smoke</td><td>A save naming level 9 loads clean on a three-level build</td><td>A save can outlive the build that wrote it</td></tr>
+            <tr><td class="num">smoke</td><td>Every level with a <span class="mono">next</span> is reachable by clearing its predecessor</td><td>An unreachable block is a block nobody plays</td></tr>
+            <tr><td class="num">shoot</td><td>The eight level swaps are driven <em>through the menu</em>, and the GPU still gets its memory back</td><td>Test the real path, not a parallel one</td></tr>
+            <tr><td class="num">shoot</td><td>After a menu swap, the task list is the new block's five rows — not nine</td><td><span class="mono">hud.setTasks</span> keys off id and only appends</td></tr>
+            <tr><td class="num">shoot</td><td>After a menu swap, the camera is at the new spawn on frame one</td><td><span class="mono">stage._smoothed</span> survives a swap and sails across the map</td></tr>
+            <tr><td class="num">shoot</td><td>Pausing for 3 s does not advance the sun dial or <span class="mono">elapsed</span></td><td>The one thing a pause must not get wrong</td></tr>
+            <tr><td class="num">shoot</td><td>One frame after resume moves the crow no further than one frame should</td><td>The accumulator holds the whole pause otherwise</td></tr>
+            <tr><td class="num">shoot</td><td>A locked chip does not load a level; <span class="mono">?level=3</span> still does</td><td>The gate is the menu's, not the game's</td></tr>
+            <tr><td class="num">shoot</td><td>Screenshot the title card in both states, and the pause overlay</td><td>Because the black-mesh bug shipped by not looking</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="exhibit-cap"><b>J</b> · The check list. Five of these are re-tests of traps the level-swap path has already sprung once.</p>
+    </div>
+  </section>
+
+  <section id="plan">
+    <h2><span class="sec">§11</span> Order of work</h2>
+    <div class="miles">
+      <div class="mile">
+        <div class="m-id">M1</div>
+        <div class="m-body"><strong>The save module</strong>
+          <span><span class="mono">core/save.js</span> plus its smoke tests, including the
+          throwing-storage and garbage-blob cases. Nothing on screen yet. Landing this alone means
+          the persistence layer is never being debugged at the same time as the interface — the
+          same reason level 1 was rebuilt on the kit before the roofline was written.</span></div>
+      </div>
+      <div class="mile">
+        <div class="m-id">M2</div>
+        <div class="m-body"><strong>Chips on the title card</strong>
+          <span>The chip component, the three states, the empty state that looks exactly like
+          today. Clearing a block writes to the save. At the end of this the feature is real, if
+          only reachable from the front door.</span></div>
+      </div>
+      <div class="mile">
+        <div class="m-id">M3</div>
+        <div class="m-body"><strong>Pause</strong>
+          <span><kbd>Esc</kbd>, the scrim, resume and restart, the accumulator reset and the input
+          flush. No level switching in it yet — pause is worth shipping on its own merits and is
+          easier to trust when it does one thing.</span></div>
+      </div>
+      <div class="mile">
+        <div class="m-id">M4</div>
+        <div class="m-body"><strong>Switching from pause, and the way out of the ending</strong>
+          <span>The chip row inside the scrim, the forfeit line, the <em>Levels</em> fine print on
+          the ending. This is the milestone that turns three screens into one loop.</span></div>
+      </div>
+      <div class="mile">
+        <div class="m-id">M5</div>
+        <div class="m-body"><strong>The touch control, and the harness</strong>
+          <span>The pause button and its relationship with the TEST MODE badge; then the
+          <span class="mono">shoot</span> work — swaps re-pointed through the menu, the pause
+          assertions, the new screenshots. Read the PNGs.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="open">
+    <h2><span class="sec">§12</span> What I need from you</h2>
+    <div class="col">
+      <ol>
+        <li><strong>§2 — one door or two.</strong> I recommend the title card growing into the
+        menu (exhibit B).</li>
+        <li><strong>§3 — cleared only, or cleared plus a best.</strong> I recommend cleared only,
+        because a best time changes what the blocks are about and that deserves its own
+        conversation.</li>
+      </ol>
+      <p>Everything else in here I would just build. If any of it looks wrong, it is cheaper to
+      say so against a mockup than against a merge.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>Small Change — Interface Brief</span>
+    <span>Progress &amp; the Menu · Proposed</span>
+  </footer>
+
+</main>
+</body>
+</html>
