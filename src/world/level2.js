@@ -650,7 +650,14 @@ export function buildLevel() {
     root, colliders, occluders, perches,
     nightLights: night,
     fountain: FOUNTAIN,
-    waterDeck: DECK.yard,
+    // forecourt, not `DECK.yard` — there is no `yard` key, so this read
+    // `undefined` for as long as the fountain has been down here. Harmless by
+    // luck: the audit coalesces it to 0 and 0 is where the water actually is.
+    // What it silently switched off is the shoot check that a crow *under* a
+    // raised pool is not counted as swimming, which is guarded by
+    // `waterDeck > 1`. Put the pool back on the terrace and that guard would
+    // have stayed off with nothing to say so.
+    waterDeck: DECK.forecourt,
     nest: NEST,
     nestPlatform: 3.35,
     nestFootprint: 1.5,
