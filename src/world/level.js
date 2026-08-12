@@ -34,7 +34,7 @@ export function buildLevel() {
 
   const kit = makeKit({ root, colliders, occluders, perches, night });
   const {
-    solid, addTree, addPlanter, addBench, addLamp, addBin, addTable,
+    solid, addDecal, addTree, addPlanter, addBench, addLamp, addBin, addTable,
     addSkyline, makeNest, addPool,
   } = kit;
 
@@ -45,15 +45,11 @@ export function buildLevel() {
 
   // Paving variation — flat slabs a hair above the ground, purely to break up
   // a very large single colour.
+  // These overlap each other, so each needs its own height — see `addDecal`.
   for (const [x, z, w, d, c] of [
     [-22, 0, 16, 16, PAL.pavingMid], [12, 2, 22, 14, PAL.pavingMid],
     [-2, 8, 20, 9, PAL.stoneMid], [24, -4, 14, 12, PAL.pavingMid],
-  ]) {
-    // A decal on the ground: see the `decal` note in render/shapes.js.
-    const s = plane(w, d, c, { receive: true, decal: true });
-    s.position.set(x, 0.012, z);
-    root.add(s);
-  }
+  ]) addDecal(x, z, w, d, c);
 
   // Kerb along the near edge, so the block has an edge instead of just stopping.
   const kerb = box(120, 0.34, 1.2, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });

@@ -90,21 +90,18 @@ export function buildLevel() {
 
   const kit = makeKit({ root, colliders, occluders, perches, night });
   const {
-    solid, perch, addPlanter, addBench, addLamp, addBin, addTable, addTree,
-    addSkyline, makeNest, addPool,
+    solid, perch, addDecal, addPlanter, addBench, addLamp, addBin, addTable,
+    addTree, addSkyline, makeNest, addPool,
   } = kit;
 
   // ── the forecourt floor ───────────────────────────────────────────────────
   const ground = plane(170, 96, PAL.paving, { receive: true });
   root.add(ground);
+  // The 64 x 4 strip along the building crosses both of the big patches, so all
+  // three need their own height — see `addDecal` in world/kit.js.
   for (const [x, z, w, d, c] of [
     [-16, 9, 26, 16, PAL.pavingMid], [18, 10, 30, 14, PAL.paving], [0, 3.4, 64, 4, PAL.stoneMid],
-  ]) {
-    // A decal on the ground: see the `decal` note in render/shapes.js.
-    const sl = plane(w, d, c, { receive: true, decal: true });
-    sl.position.set(x, 0.012, z);
-    root.add(sl);
-  }
+  ]) addDecal(x, z, w, d, c);
 
   // A kerb and a strip of road along the near edge, so the forecourt stops
   // somewhere instead of fading out into paving. It is also what the guest is
@@ -114,9 +111,7 @@ export function buildLevel() {
     // foreground is a third of the frame the lamps never reach, and it took the
     // forecourt's dusk median from 53 to 42 against a floor of 48 — a kerb is
     // worth having, a black river in front of it is not.
-    const road = plane(170, 5, PAL.stoneMid, { receive: true, decal: true });
-    road.position.set(0, 0.008, 19);
-    root.add(road);
+    addDecal(0, 19, 170, 5, PAL.stoneMid);
     const kerb = box(170, 0.34, 1.2, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
     kerb.position.set(0, 0.17, 15.8);
     root.add(kerb);
@@ -206,9 +201,7 @@ export function buildLevel() {
 
   // ── the terrace deck surface and its parapet ──────────────────────────────
   {
-    const deck = plane(63, 13, PAL.stone, { receive: true, decal: true });
-    deck.position.set(0, DECK.terrace + 0.014, -5.25);
-    root.add(deck);
+    addDecal(0, -5.25, 63, 13, PAL.stone, DECK.terrace);
 
     /**
      * The front parapet, unbroken.
@@ -250,9 +243,7 @@ export function buildLevel() {
     root.add(g);
     solid(-21, -8.75, 18, 6.5, DECK.roof);
 
-    const deck = plane(17.6, 6.1, PAL.stoneMid, { receive: true, decal: true });
-    deck.position.set(-21, DECK.roof + 0.014, -8.75);
-    root.add(deck);
+    addDecal(-21, -8.75, 17.6, 6.1, PAL.stoneMid, DECK.roof);
 
     const rail = box(18, 0.6, 0.5, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
     rail.position.set(-21, DECK.roof + 0.3, -5.75);

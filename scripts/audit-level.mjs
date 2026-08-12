@@ -494,6 +494,47 @@ export function auditLevel({ level, world, check, deps }) {
   }
 
   /**
+   * And no two of them overlap at the same height.
+   *
+   * This is the one that actually mattered, and it took three rounds to find
+   * because the symptom is identical to every other depth complaint. Three
+   * paving patches shared y = 0.012 and two of them were crossed by a 64 x 4
+   * strip running along the building: at *identical* depth the winner is a coin
+   * flip per pixel, and it drew a staircase down the whole frontage.
+   *
+   * `polygonOffset` cannot fix that — it nudges every decal by the same amount
+   * and leaves them exactly as coplanar with each other as they were, which is
+   * precisely why the first fix looked right and changed nothing. Heights are
+   * assigned in add order by `addDecal`; this checks the result rather than
+   * trusting the habit.
+   */
+  {
+    const v = new THREE.Vector3();
+    const decals = [];
+    world.root.traverse((o) => {
+      if (!o.isMesh || o.geometry.type !== 'PlaneGeometry') return;
+      const m = Array.isArray(o.material) ? o.material[0] : o.material;
+      if (!m || m.depthWrite === false || !m.polygonOffset) return;
+      o.getWorldPosition(v);
+      o.geometry.computeBoundingBox();
+      const size = o.geometry.boundingBox.getSize(new THREE.Vector3());
+      decals.push({ y: v.y, x: v.x, z: v.z, w: size.x, d: size.z });
+    });
+    const coplanar = [];
+    for (let i = 0; i < decals.length; i++) {
+      for (let j = i + 1; j < decals.length; j++) {
+        const a = decals[i], b = decals[j];
+        if (Math.abs(a.y - b.y) > 0.0015) continue;
+        if (Math.abs(a.x - b.x) * 2 >= a.w + b.w) continue;
+        if (Math.abs(a.z - b.z) * 2 >= a.d + b.d) continue;
+        coplanar.push(`two patches overlap at y ${a.y.toFixed(3)}`);
+      }
+    }
+    check(say('no two ground decals overlap at the same height'),
+      coplanar.length === 0, `(${[...new Set(coplanar)].join('; ')})`);
+  }
+
+  /**
    * Nothing is standing in the block's edge kerb.
    *
    * A bin was, on level 2, half-sunk into the kerb along the near edge — which

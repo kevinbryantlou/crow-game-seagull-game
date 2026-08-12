@@ -673,9 +673,22 @@ Two rounds of it.
       <h3>The two that looked like z-fighting, and were two different things</h3>
       <p>Reported twice, from two playtests, as textures clipping into one another along the
       hotel frontage. They looked identical and had nothing to do with each other.</p>
-      <p>The second one is the paving. The slabs that break up the ground colour lie twelve
-      millimetres above it — ample at the near plane, and nothing like enough sixty metres out at
-      a grazing angle, where the boundary breaks into a staircase of depth-test coin flips. The
+      <p>The second one is the paving, and it took three passes to find because every depth
+      complaint looks the same. The first two were wrong about the mechanism in a way worth
+      recording: the slabs were assumed to be fighting the <em>ground</em>, twelve millimetres
+      below them. They were fighting <em>each other</em> — three patches shared
+      <span class="mono">y&nbsp;=&nbsp;0.012</span> and a 64&nbsp;×&nbsp;4 strip along the building
+      crossed two of them, and at identical depth the winner is a coin flip per pixel.
+      <span class="mono">polygonOffset</span> cannot fix that, because it nudges every decal by
+      the same amount and leaves them exactly as coplanar with each other as they were. That is
+      why the fix looked correct and changed nothing.</p>
+      <p>Ground patches are now stacked four millimetres apart in the order they are added, by a
+      single <span class="mono">addDecal()</span> in the kit, and rule 17 checks the result rather
+      than trusting the habit. The offset stays too — it is still the right tool against the
+      ground underneath.</p>
+      <p class="mono" style="opacity:.7">The older, wrong-but-not-useless version follows.</p>
+      <p>The slabs lie twelve millimetres above the ground they cover. The slabs that break up the ground colour lie twelve
+      millimetres above it — thin at sixty metres and a grazing angle. The
       fix is <span class="mono">polygonOffset</span> rather than more height, because it scales
       with the polygon's own depth slope, which is the term that blows up; raising the geometry
       would put a visible step at the edge of every slab instead. It is now a declared
@@ -736,7 +749,9 @@ Two rounds of it.
           <tr><td class="num">15</td><td>Nothing is standing in the edge kerb</td>
             <td>The kerb runs the whole length of a block, so anything careless near the near edge ends up half-sunk in it. A bin was.</td></tr>
           <tr><td class="num">16</td><td>Every plane lying on another surface is a depth decal</td>
-            <td>Twelve millimetres of clearance is a coin flip at sixty metres and a grazing angle. Declaring it is one word, and easy to leave out on the next slab.</td></tr>
+            <td>Twelve millimetres of clearance is thin at sixty metres and a grazing angle. Declaring it is one word, and easy to leave out on the next slab.</td></tr>
+          <tr><td class="num">17</td><td>No two ground decals overlap at the same height</td>
+            <td>The one that actually mattered. Identical depth is a coin flip per pixel, and polygon offset cannot separate two things it nudges equally.</td></tr>
         </tbody>
       </table>
       <div class="exhibit-cap">Exhibit D — rules 1–8 are level 1's, unchanged, and now enforced on both.</div>

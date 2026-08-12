@@ -248,16 +248,26 @@ That's why `words.js` and `rank.js` are separate from `hud.js`.
   in either block sits. When a character has to be identified at the distance
   this camera sits, change the shape, not the shade.
 
-- **A 12mm gap is not clearance, it is a coin flip.** The paving variation lies
+- **Two ground decals at the *same* height is the bug; the ground underneath is
+  not.** This one took three rounds because the symptom — a staircase down the
+  whole frontage — is identical to every other depth complaint. Three paving
+  patches shared `y = 0.012` and a 64x4 strip along the building crossed two of
+  them. At *identical* depth the winner is a coin flip per pixel. `polygonOffset`
+  cannot help, because it nudges every decal by the same amount and leaves them
+  exactly as coplanar with each other as they were — which is why the first fix
+  looked right and changed nothing at all. Use `kit.addDecal()`, which stacks
+  them 4mm apart in add order; asserted both ways.
+- **A 12mm gap over the ground is thin, and worth `polygonOffset` anyway.** The paving variation lies
   that far above the ground it covers, which is ample at the near plane and
   nothing like enough sixty metres out at a grazing angle: the boundary breaks
   into a staircase, and it got reported twice as "textures clipping into one
   another". The fix is `polygonOffset`, not more height — it scales with the
   polygon's own depth slope, which is the term that blows up, and raising the
   geometry instead would put a visible step at the edge of every slab. Pass
-  `decal: true` to `plane()`/`mat()`; it is part of the material cache key, so
-  one slab asking for it cannot turn it on for all 38 users of a colour. Asserted:
-  any plane sitting 1mm–30cm above a surface must be a decal.
+  `decal: true` to `plane()`/`mat()` — `addDecal` does — and it is part of the
+  material cache key, so one slab asking for it cannot turn it on for all 38
+  users of a colour. Asserted: any plane sitting 1mm–30cm above a surface must be
+  a decal.
 - **When something looks like z-fighting, turn the shadow map off first.** Two
   different artifacts on the same wall in the same week looked identical and had
   nothing to do with each other. One frame with `renderer.shadowMap.enabled =

@@ -13,7 +13,7 @@
 
 import * as THREE from 'three';
 import { PAL } from '../render/palette.js';
-import { box, cyl, cone, ico, at, mat } from '../render/shapes.js';
+import { box, cyl, cone, ico, plane, at, mat } from '../render/shapes.js';
 
 /**
  * Bind the kit to one level under construction.
@@ -50,6 +50,33 @@ export function makeKit(ctx) {
   };
 
   const perch = (x, y, z) => { perches.push({ x, y, z }); };
+
+  /**
+   * A flat patch lying on a surface: paving variation, a road, a deck top.
+   *
+   * Every one gets its own height, four millimetres apart, in the order it was
+   * added. That is the whole point of this existing.
+   *
+   * The paving slabs used to sit at a shared y = 0.012, and three of them
+   * overlapped: a 64 × 4 strip along the building crossed both of the big ones.
+   * Two decals at *identical* depth is not a near miss, it is a coin flip per
+   * pixel, and it rendered as a staircase along the whole frontage that got
+   * reported three times as textures clipping through each other.
+   *
+   * `polygonOffset` — which these also carry, and which is the right tool
+   * against the ground *underneath* them — cannot help with that, because it
+   * gives every decal the same nudge and leaves them exactly as coplanar with
+   * each other as they were. Depth precision at fifty metres is a fraction of a
+   * millimetre; four is plenty. The stack is invisible and the fight is over.
+   */
+  let decalIndex = 0;
+  const addDecal = (x, z, w, d, colour, base = 0) => {
+    const m = plane(w, d, colour, { receive: true, decal: true });
+    m.position.set(x, base + 0.012 + decalIndex * 0.004, z);
+    decalIndex++;
+    root.add(m);
+    return m;
+  };
 
   // ── planting ──────────────────────────────────────────────────────────────
   const addTree = (x, z, scale = 1, opts = {}) => {
@@ -288,7 +315,7 @@ export function makeKit(ctx) {
   };
 
   return {
-    solid, ring, perch,
+    solid, ring, perch, addDecal,
     addTree, addPlanter, addBench, addLamp, addBin, addTable, addSkyline,
     makeNest, addPool,
   };
