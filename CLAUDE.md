@@ -356,7 +356,7 @@ level data; if both need the same one, it is in `world/rules.js`.
   9.2, nest at 12.35), $30, ±32 wide, starts at `dayStart: 0.42` so the lamps
   catch at 4m08s. `docs/level-2-brief.html` is the spec.
 
-  Playtested and revised once: it reads as **too big a scale leap to follow the
+  Playtested and revised across three rounds: it reads as **too big a scale leap to follow the
   block directly**, so it is parked for slot 3 or 4. That is why the goal is $30
   and not $40 — above the block, below a doubling. Do not renumber the file; the
   order is a registry question, not a filename one.
