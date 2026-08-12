@@ -407,7 +407,9 @@ because the gap between the outer two was measured and found too big.
   unbroken climb, and no new verbs. What it spends instead of altitude is
   **social pressure** — the marquee is three people standing round one cooler
   with $10.85 on and beside it, where the block always gave you a softer
-  district next door. Built and verified; **not yet playtested**.
+  district next door. Built, verified and **playtested — it reads as solid and
+  needed no revision round**, which the other two blocks both did. The pavilion
+  is settled: right for this map, not to be redesigned.
 - **Level 3 — The Hotel (Outside)** (`level2.js`). Four decks (0 / 3.2 / 5.4 /
   9.2, nest at 12.35), $30, ±32 wide, starts at `dayStart: 0.42` so the lamps
   catch at 4m08s. `docs/level-2-brief.html` is the spec.
