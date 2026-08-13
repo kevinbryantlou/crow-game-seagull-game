@@ -657,7 +657,11 @@ worth a run that grinds.
   a soffit across the back seven metres and open air everywhere anybody plays.
 
   It also has the game's only **easter egg**: a pianist, seated, who takes any
-  coin and plays for thirteen seconds. Nothing advertises her. It cost one
+  coin and plays one of three pieces for about fourteen seconds. Nothing
+  advertises her. The pieces rotate **in sequence, not at random** — selection
+  costs the same either way, but three songs picked at random repeat immediately
+  one time in three, and a repeat reads as "it is just the one tune"; a cursor
+  is also assertable, which randomness is not. It cost one
   action kind, one `case`, and a cue in `audio.js` — the money logic is
   untouched, because `total` only moves on `bank`, so a coin given away costs
   exactly what it was worth. What it *does* cost is the kid's silhouette: two

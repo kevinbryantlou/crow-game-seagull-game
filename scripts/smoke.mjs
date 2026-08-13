@@ -485,6 +485,55 @@ for (const s of summary) {
     + `${(s.toNest.toFixed(1) + 'm').padStart(5)}`);
 }
 
+/**
+ * The pianist's repertoire — pure logic, so it is testable with no audio
+ * context at all. `Audio`'s constructor deliberately builds nothing until
+ * `unlock()`, and `piano()` advances its cursor and computes its length before
+ * it looks for a context, which is what makes this possible.
+ */
+console.log('\nthe pianist');
+{
+  const { Audio } = await import('../src/core/audio.js');
+  const a = new Audio();
+  const names = Audio.SONGS.map((x) => x.name);
+  check(`there is more than one piece (${names.length})`, names.length > 1, `(${names.join(', ')})`);
+  check('every piece has a name and notes',
+    Audio.SONGS.every((x) => x.name && x.notes.length > 3 && x.tail));
+
+  // In order, and it wraps. This is the whole reason the rotation is a cursor
+  // rather than a Math.random: a sequence can be asserted and a shuffle cannot.
+  const played = [];
+  const lengths = [];
+  for (let i = 0; i < names.length * 2 + 1; i++) {
+    played.push(Audio.SONGS[a.songIndex % names.length].name);
+    lengths.push(a.piano());
+  }
+  const wanted = [...names, ...names, names[0]];
+  check('the pieces play in order and wrap', JSON.stringify(played) === JSON.stringify(wanted),
+    `(${played.join(' → ')})`);
+
+  /**
+   * And none of them runs away. The cue is scheduled in one go against the
+   * audio clock, so a badly authored song is not a frame-rate problem — it is
+   * a player standing next to a piano unable to do anything else for a minute,
+   * which no other check in this file would catch.
+   */
+  const strays = lengths.filter((n) => !(n > 8 && n < 20));
+  check('every piece runs between 8 and 20 seconds', strays.length === 0,
+    `(${lengths.map((n) => n.toFixed(1)).join(', ')})`);
+  const spread = Math.max(...lengths) - Math.min(...lengths);
+  check('the pieces are all about the same length', spread < 3,
+    `(spread ${spread.toFixed(1)}s)`);
+  console.log(`       ${names.length} pieces, ${lengths.slice(0, names.length).map((n) => n.toFixed(1) + 's').join(' / ')}`);
+
+  // A muted player must see the same rotation a listening one does, or turning
+  // the sound off parks the pianist on one song forever.
+  const b2 = new Audio();
+  b2.setMuted(true);
+  b2.piano(); b2.piano();
+  check('the rotation advances even when muted', b2.songIndex === 2, `(${b2.songIndex})`);
+}
+
 // Loud warning if a temporary test cheat is still wired in.
 const mainSrc = await import('node:fs').then((fs) => fs.readFileSync('src/main.js', 'utf8'));
 const active = [...mainSrc.matchAll(/const (TEST_\w+) = ([^;]+);/g)]

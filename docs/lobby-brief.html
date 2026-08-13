@@ -976,10 +976,42 @@
       an id, <span class="mono">main.js</span> looks it up, and a block without one has no pianist
       and no cost.</p>
 
-      <p>The cue is sixteen bars of ii–V–I scheduled against the audio clock in one go rather than
-      driven from the frame loop, so a thirteen-second piece costs nothing per frame. It is two
-      detuned triangles and a sine an octave down — not a piano and not trying to be, but the same
-      register and the same envelope, which at this volume is what "piano" means.</p>
+      <p>The cue is scheduled against the audio clock in one go rather than driven from the frame
+      loop, so a thirteen-second piece costs nothing per frame. It is two detuned triangles and a
+      sine an octave down — not a piano and not trying to be, but the same register and the same
+      envelope, which at this volume is what "piano" means.</p>
+
+      <h3>Three pieces, in order</h3>
+      <p>She knows <strong>the standard</strong> (a warm ii–V–I in F, resolving), <strong>the sad
+      one</strong>, and <strong>the brisk one</strong>. All three land within half a second of each
+      other, at 13.2 / 13.5 / 13.7 s.</p>
+
+      <p>They play <em>in sequence</em>, and the reason is not performance. Selection is one array
+      index either way — about a five-hundredth of the work in the call that schedules two hundred
+      audio nodes, once every fourteen seconds. It is that three songs picked at random repeat
+      immediately one time in three, and a repeat reads as "it is just the one tune", which is the
+      only thing this easter egg has to sell. A cursor also makes it <em>assertable</em>:
+      <span class="mono">smoke</span> walks the rotation with no audio context at all and
+      <span class="mono">shoot</span> tips four times and checks it wrapped. Randomness would have
+      cost that as well — the same trade <span class="mono">addSkyline</span> makes, which is why
+      every assertion about it has to be a bound rather than an equality.</p>
+
+      <p>The sad one is worth a paragraph, because every choice in it is doing that job. It is D
+      minor over a <strong>lament bass</strong> — D, C, B♭, A, the oldest sad figure there is —
+      under a melody that climbs to the fourth and falls the whole way back down it, with an E over
+      the C that suspends and never resolves the way it wants to. Two things make it <em>yearning</em>
+      rather than merely sad: the second pass does not go up an octave like the standard's but
+      repeats at pitch and quieter, which reads as a thought recurring rather than a tune
+      developing; and it ends on <strong>A major</strong>, the dominant, with a C♯ that appears
+      nowhere else in the piece. The last chord is a question. Resolving it to D minor would have
+      been the same notes and a completely different feeling.</p>
+
+      <p>One thing that would matter if these grow: each note spins up six audio nodes, so a piece
+      allocates roughly two hundred in a burst when it is triggered. That is invisible at fourteen
+      seconds and it scales with a song's <em>length</em>, not with how many songs exist — three
+      short pieces are free, one long one is the thing to measure. Smoke bounds every piece to
+      between 8 and 20 seconds, which is a check about the <em>player</em> rather than the frame
+      rate: a runaway song is somebody standing next to a piano unable to do anything else.</p>
 
       <h3>What it costs the game</h3>
       <div class="note">

@@ -1386,6 +1386,67 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
   if (trade4 && !trade4.parentedToBeak) errors.push('L4 trade reward was not auto-equipped');
 
   /**
+   * The pianist, who is the one thing on this block nothing tells you about.
+   *
+   * Checked in the real page rather than headless because the interesting half
+   * is the *prompt*: money near her has to offer GIVE without stealing the
+   * kid's trade from a shiny, and the coin has to leave the world without
+   * touching the total — `total` only moves on `bank`, and this is the check
+   * that says so out loud.
+   */
+  const egg = !has4 ? null : await p4.evaluate(async () => {
+    const g = window.__game;
+    const frame = () => new Promise((r) => requestAnimationFrame(r));
+    const q = g.pianist;
+    if (!q) return { error: 'no pianist' };
+    const out = { songs: [], prompts: [] };
+
+    const tip = async () => {
+      const coin = g.pickups.find((x) => x.value > 0 && !x.taken && !x.pinned);
+      g.crow.pos.set(q.pos.x + 1.1, 0, q.pos.z + 0.6);
+      g.crow.vel.set(0, 0, 0);
+      await frame(); await frame();
+      coin.setCarried(g.crow.grip);
+      g.crow.carried = coin;
+      const a = g._bestAction();
+      out.prompts.push(a && `${a.verb} — ${a.noun}`);
+      const before = g.total;
+      out.songs.push(g.audio.songIndex);
+      g.pianoUntil = 0;                       // she has stopped; ask for another
+      g._doAction(a);
+      out.totalHeld = (out.totalHeld ?? true) && g.total === before;
+      out.gone = (out.gone ?? true) && coin.taken;
+    };
+    // Four, so the rotation is seen to wrap rather than merely to advance.
+    for (let i = 0; i < 4; i++) await tip();
+
+    // A shiny next to her is still the kid's business, not hers.
+    const shiny = g.pickups.find((x) => x.kind === 'shiny' && !x.taken);
+    shiny.setCarried(g.crow.grip);
+    g.crow.carried = shiny;
+    const a2 = g._bestAction();
+    out.withShiny = a2 && a2.kind;
+
+    g.crow.carried = null;
+    g.pianoUntil = 0;
+    g.crow.pos.set(7, 0, 5);
+    return out;
+  });
+  if (egg) console.log('  pianist:', JSON.stringify(egg));
+  if (egg && egg.error) errors.push(`L4: ${egg.error}`);
+  if (egg && !egg.error) {
+    if (!egg.prompts.every((t) => /GIVE — to the pianist/.test(t || ''))) {
+      errors.push(`L4: pianist prompt wrong: ${JSON.stringify(egg.prompts)}`);
+    }
+    if (JSON.stringify(egg.songs) !== JSON.stringify([0, 1, 2, 3])) {
+      errors.push(`L4: the repertoire did not advance in order: ${JSON.stringify(egg.songs)}`);
+    }
+    if (!egg.totalHeld) errors.push('L4: tipping the pianist changed the money in the nest');
+    if (!egg.gone) errors.push('L4: the coin given to the pianist is still in the world');
+    if (egg.withShiny === 'tip') errors.push('L4: a shiny near the pianist stole the kid\'s trade');
+  }
+
+  /**
    * Dusk, measured from the two places this room can go dark: the middle of the
    * floor, which is lit by one chandelier and nothing else, and under the
    * gallery, where no key light reaches at any hour of any day.

@@ -12,6 +12,8 @@ export class Audio {
     this.master = null;
     this.muted = false;
     this._coinStep = 0;
+    /** Which of the pianist's pieces comes next. See `piano()`. */
+    this.songIndex = 0;
   }
 
   /** Must be called from a user gesture — browsers and iOS both insist. */
@@ -231,37 +233,113 @@ export class Audio {
   }
 
   /**
-   * The lounge pianist's party piece, and the only piece of *music* in a game
-   * that is otherwise entirely foley.
+   * The lounge pianist's repertoire — three pieces, played in order.
    *
-   * Everything else in this file is one gesture — a caw, a coin, a wingbeat.
-   * This is sixteen bars of ii–V–I in F, scheduled in one go against the audio
-   * clock rather than driven from the frame loop, which is the whole reason a
-   * fifteen-second cue costs nothing per frame: the Web Audio graph runs on its
-   * own thread and `_env` has already been given every note's start time before
-   * the first one sounds.
+   * Everything else in this file is one gesture: a caw, a coin, a wingbeat.
+   * These are the only *music* in the game, and they are scheduled against the
+   * audio clock in one go rather than driven from the frame loop — which is why
+   * a fourteen-second piece costs nothing per frame. The Web Audio graph runs on
+   * its own thread and has been given every note's start time before the first
+   * one sounds.
    *
-   * The timbre is two detuned triangles and a sine an octave down, with a fast
-   * attack and a long decay. It is not a piano and is not trying to be; it is
-   * the same register and the same envelope, which at this volume through a
-   * laptop speaker is what "piano" means.
+   * **In order, not at random**, and the reason is not performance — selection
+   * is one array index either way, about a five-hundredth of the work in the
+   * call that schedules two hundred audio nodes. It is that three songs picked
+   * at random repeat immediately one time in three, and a repeat reads as "it is
+   * just the one tune", which quietly kills the only thing this easter egg has
+   * to offer. A cursor also makes it assertable: `smoke` walks the rotation and
+   * `shoot` tips four times and checks it wrapped. Randomness would cost that
+   * too — see the note in CLAUDE.md about `addSkyline` and bounds.
+   *
+   * Semitones are offsets from F3. `[semi, beat, dur]`.
+   */
+  static SONGS = [
+    {
+      // The standard: a warm ii–V–I in F, the second pass an octave up and
+      // quieter, like somebody noodling. Resolves onto a held tonic.
+      name: 'the standard',
+      beat: 0.46, beats: 8, passes: 2, octaveUp: true, gains: [0.085, 0.055],
+      notes: [
+        [0, 0, 1.4], [7, 0.5, 1.2], [12, 1.0, 1.6], [16, 1.5, 2.0],
+        [-2, 2.0, 1.4], [5, 2.5, 1.2], [9, 3.0, 1.6], [14, 3.5, 2.0],
+        [-4, 4.0, 1.6], [3, 4.5, 1.4], [7, 5.0, 1.8], [12, 5.5, 2.2],
+        [-5, 6.0, 2.0], [2, 6.5, 1.8], [7, 7.0, 2.2], [11, 7.5, 2.6],
+      ],
+      tail: { semis: [-5, 0, 4, 7], dur: 3.0, gain: 0.05 },
+    },
+    {
+      /**
+       * The melancholy one, and every choice in it is doing that job.
+       *
+       * D minor over a **lament bass** — D, C, B♭, A, the oldest sad figure
+       * there is — under a melody that climbs to the fourth and then falls the
+       * whole way back down it. The E over the C is a suspension that never
+       * resolves the way it wants to.
+       *
+       * Two things make it *yearning* rather than merely sad. The second pass
+       * does not go up an octave like the standard's; it repeats at pitch and
+       * quieter, which reads as a thought recurring rather than a tune
+       * developing. And it ends on **A major** — the dominant, with a C♯ that
+       * appears nowhere else in the piece — so the last chord is a question.
+       * Resolving it to D minor would have been the same notes and a different
+       * feeling entirely.
+       */
+      name: 'the sad one',
+      beat: 0.48, beats: 8, passes: 2, octaveUp: false, gains: [0.08, 0.05],
+      notes: [
+        // the lament bass, one note per two beats, held under everything
+        [-3, 0.0, 2.4], [-5, 2.0, 2.4], [-7, 4.0, 2.4], [-8, 6.0, 2.6],
+        // the melody: up to the fourth, then all the way back down
+        [4, 0.0, 1.6], [9, 1.0, 1.4], [12, 2.0, 1.8], [11, 3.0, 2.2],
+        [9, 4.0, 1.6], [7, 5.0, 1.6], [5, 6.0, 2.0], [4, 7.0, 2.8],
+      ],
+      // A major: the question it goes out on.
+      tail: { semis: [-8, -1, 4, 8], dur: 3.0, gain: 0.045 },
+    },
+    {
+      // The brisk one, to sit as far from the sad one as the standard does.
+      // Stride bass on the even beats, a bright tune above it, and it lands.
+      name: 'the brisk one',
+      beat: 0.42, beats: 12, passes: 2, octaveUp: false, gains: [0.075, 0.06],
+      notes: [
+        [-12, 0.0, 0.8], [-5, 2.0, 0.8], [-10, 4.0, 0.8],
+        [-3, 6.0, 0.8], [-12, 8.0, 0.8], [-5, 10.0, 0.8],
+        [12, 0.0, 0.7], [16, 1.0, 0.5], [19, 2.0, 0.7], [17, 3.0, 0.5],
+        [16, 4.0, 0.9], [14, 5.0, 0.5], [12, 6.0, 0.9], [14, 7.0, 0.5],
+        [16, 8.0, 0.7], [12, 9.0, 0.5], [11, 10.0, 0.9], [12, 11.0, 1.4],
+      ],
+      tail: { semis: [0, 4, 7, 12], dur: 2.2, gain: 0.05 },
+    },
+  ];
+
+  /**
+   * Play the next piece and say how long it runs.
+   *
+   * The cursor advances even when there is no context and even when muted, so
+   * a muted player and a headless test see the same rotation a listening player
+   * does — otherwise turning the sound off would silently park the pianist on
+   * one song.
    *
    * @returns {number} how long the piece lasts, in seconds
    */
   piano() {
-    const BARS = [
-      // [semitone from F3, beat, duration] — ii, V, I, vi over four bars, twice,
-      // with the melody an octave up on the repeat.
-      [[0, 0, 1.4], [7, 0.5, 1.2], [12, 1.0, 1.6], [16, 1.5, 2.0]],
-      [[-2, 2.0, 1.4], [5, 2.5, 1.2], [9, 3.0, 1.6], [14, 3.5, 2.0]],
-      [[-4, 4.0, 1.6], [3, 4.5, 1.4], [7, 5.0, 1.8], [12, 5.5, 2.2]],
-      [[-5, 6.0, 2.0], [2, 6.5, 1.8], [7, 7.0, 2.2], [11, 7.5, 2.6]],
-    ];
-    const BEAT = 0.46;
-    if (!this.ctx || this.muted) return BARS.length * 2 * BEAT * 2 + 1.6;
+    const song = Audio.SONGS[this.songIndex % Audio.SONGS.length];
+    this.songIndex++;
+
+    let span = 0;
+    for (let pass = 0; pass < song.passes; pass++) {
+      for (const [, beat, dur] of song.notes) {
+        span = Math.max(span, (pass * song.beats + beat) * song.beat + dur);
+      }
+    }
+    const total = span + song.beat + song.tail.dur;
+    if (!this.ctx || this.muted) return total;
 
     const t0 = this.t + 0.15;
     const F3 = 174.61;
+    // Two detuned triangles and a sine an octave down, fast attack, long decay.
+    // It is not a piano and is not trying to be; it is the same register and
+    // the same envelope, which at this volume is what "piano" means.
     const note = (semi, at, dur, gain) => {
       const f = F3 * Math.pow(2, semi / 12);
       for (const [type, mul, det, g] of [
@@ -276,20 +354,17 @@ export class Audio {
       }
     };
 
-    let end = t0;
-    for (let pass = 0; pass < 2; pass++) {
-      for (const bar of BARS) {
-        for (const [semi, beat, dur] of bar) {
-          const at = t0 + (pass * 8 + beat) * BEAT;
-          // The repeat goes up an octave and quieter, like somebody noodling.
-          note(semi + pass * 12, at, dur, pass ? 0.055 : 0.085);
-          end = Math.max(end, at + dur);
-        }
+    for (let pass = 0; pass < song.passes; pass++) {
+      for (const [semi, beat, dur] of song.notes) {
+        note(semi + (song.octaveUp ? pass * 12 : 0),
+          t0 + (pass * song.beats + beat) * song.beat, dur,
+          song.gains[Math.min(pass, song.gains.length - 1)]);
       }
     }
-    // A last chord, held.
-    for (const semi of [-5, 0, 4, 7]) note(semi, end + BEAT, 3.0, 0.05);
-    return (end + BEAT + 3.0) - this.t;
+    for (const semi of song.tail.semis) {
+      note(semi, t0 + span + song.beat, song.tail.dur, song.tail.gain);
+    }
+    return total;
   }
 
   /** The transformation. */
