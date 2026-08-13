@@ -256,7 +256,7 @@
 
 <header class="band">
   <div class="band-inner">
-    <div class="eyebrow">Level Design Brief &nbsp;·&nbsp; The Lobby &nbsp;·&nbsp; Built, played, revised twice</div>
+    <div class="eyebrow">Level Design Brief &nbsp;·&nbsp; The Lobby &nbsp;·&nbsp; Built, played, revised three times, shipped</div>
     <h1 class="title">The<br>Lobby<span class="thin">The Atrium</span></h1>
     <p class="deck">Inside the hotel whose roof you already robbed. One room, four walls, a glass
       lantern for a ceiling, and nowhere else to go. The roofline taught you that up is where the
@@ -276,7 +276,7 @@
   <section id="status">
     <h2><span class="sec">§0</span> Where this stands</h2>
     <div class="col">
-      <p><strong>Built, played, and revised once.</strong> This document was written before any
+      <p><strong>Built, played, revised three times, and shipped.</strong> This document was written before any
       geometry existed, as the argument and the numbers, so that the geometry could be checked
       against something. It has since been built, checked, played and corrected — the playtest
       round is <a href="#played">§8</a>, and it took out the ceiling, the chandelier and the front
@@ -285,10 +285,11 @@
       <span class="mono">shoot</span> drives it in real WebGL, photographs eleven frames of it and
       measures six dusk samples. Both pass.</p>
 
-      <p>What the plan got wrong is in <a href="#caught">§7</a>, and it is the interesting part —
-      three of the four corrections were things no amount of writing would have found, because they
-      are properties of a <em>picture</em>. The section is written as a record rather than tidied
-      away, because that is what the last three briefs are for.</p>
+      <p>What the plan got wrong is in <a href="#caught">§7</a>, <a href="#played">§8</a> and
+      <a href="#round3">§11</a>, and it is the interesting part — most of the corrections were things
+      no amount of writing would have found, because they are properties of a <em>picture</em> or of
+      a frame rate. Those sections are a record rather than a tidy-up, because that is what the last
+      three briefs are for.</p>
 
       <p>The premise came from the brief for this session: the roofline is the hotel from
       <em>outside</em>, so the block after it is the hotel from <em>inside</em>. That is the one
@@ -708,8 +709,10 @@
         <span class="lbl">The rule that did not get bent</span>
         <span class="mono">duskMedianFloor</span> and <span class="mono">duskShadowFloor</span> were
         not lowered to make this block pass. It failed them twice and the materials changed both
-        times. Shipped: median <strong>48 / 61</strong> against a floor of 48, 5th percentile
-        <strong>35 / 42</strong> against a floor of 24, blue over red by 18 and 34 at t = 0.98.
+        times. Shipped: median <strong>63 / 73</strong> against a floor of 48, 5th percentile
+        <strong>35 / 46</strong> against a floor of 24, blue over red by 10 and 17 at t = 0.98 —
+        a narrower margin than it started with, because warm additive light eats into exactly the
+        violet the style guide is built on. That is the constraint if more gets added.
       </div>
     </div>
   </section>
@@ -953,6 +956,80 @@
     </div>
   </section>
 
+  <section id="round3">
+    <h2><span class="sec">§11</span> Round three: two inherited bugs, and a frame rate</h2>
+    <div class="col">
+      <p>The third pass found nothing wrong with the <em>design</em>. It found two rendering bugs the
+      lobby had inherited from shared code and was the first block to make visible, and one
+      performance regression that was entirely this block's own fault.</p>
+
+      <h3>The evening had a black wedge across it</h3>
+      <p>Reported as "the background buildings are causing odd lighting", which was exactly right.
+      Turning the shadow map off — the first move whenever something looks like a depth artifact —
+      separated it in one frame: cast shadow, not material. A thirty-metre tower sixteen metres
+      behind the block, under a sun whose elevation drops to 0.06, inside a ±34 m shadow camera. On
+      the three outdoor blocks that read as a slightly darker dusk and nobody ever questioned it; on
+      an interior whose back wall is 6.6 m with clear glazing above it, the whole skyline rakes
+      straight in over the top and lands on the floor.</p>
+      <p>The backdrop casts nothing now, on <em>every</em> block. Nobody has ever placed one of these
+      to shade anything — they are weather — and switching it off can only <em>raise</em> luminance
+      while every dusk rule in the game is a floor, so no block can fail because of it. That
+      asymmetry is what made it safe to change three shipped levels at once. Mid-dusk median went
+      L2 71 → 91, L3 70 → 89, L4 55 → 63.</p>
+
+      <h3>The floor looked polished in patches</h3>
+      <p>Not a specular highlight and not brightness — <strong>depth</strong>. The giveaway was that
+      the bright areas had hard straight edges corresponding to no light source. They were decal
+      boundaries.</p>
+      <p><span class="mono">addDecal</span> stacks ground patches four millimetres apart in add
+      order, which is itself a fix for two coplanar patches fighting over depth. Light pools sat a
+      fixed 0.05 above the floor. So a block's tenth decal lands at 0.048 and its thirteenth at
+      0.060 — above the pool. A decal writes depth and a pool does not, so from there the pool is
+      clipped by the floor it is lit on: it draws over the early decals and vanishes on the late
+      ones. A light pool with a bite out of it reads as gloss.</p>
+      <p><span class="mono">NightLights.POOL_LIFT</span> is 0.14 now, which clears 32 decals, and the
+      audit asserts the <em>relationship</em> rather than the headroom — the block that breaks it
+      next will not be the block anybody edited. The park had the same bug at 21 decals and nobody
+      had noticed; its dusk median goes 48 → 63 for free.</p>
+
+      <h3>And the lobby was spending a third of its frame on light</h3>
+      <p>Measured, not guessed: at full dusk this block was spending <strong>38 ms a frame on light
+      pools against the roofline's 6</strong>, on 30 pools to its 12.</p>
+      <div class="note">
+        <span class="lbl">A pool's cost is its area; its brightness is nearly free</span>
+        Alpha is one more term in a fragment shader that already runs. Every extra square metre of
+        quad is fill that gets blended whether or not it lights anything — and pools overlap, so the
+        cost of lighting a room scales with <em>area</em>, not with fixture count.
+      </div>
+      <p>So the fix was not fewer lights but <strong>smaller ones turned up</strong>: radii down
+      about 15%, peaks up about the same, 30 pools down to 18, and the seven column uplights that
+      only doubled up on the gallery washers kept their fixtures and lost their quads. Pools are
+      discs rather than squares now — the falloff already reached zero at the inscribed circle, so
+      the four corners were 21.5% of the fragments being blended for nothing, which is free and
+      applies to all four blocks. Pool cost 38 ms → 18 ms; frame 121 → 101.</p>
+
+      <p>Two footnotes worth keeping. Every pool peak on this block had been tuned <em>while the
+      clipping bug was live</em>, so roughly half the pool area was invisible and the numbers were
+      all wrong the moment it was fixed — the floor went to near-white cream. <strong>Fix the bug,
+      then tune.</strong> And the performance pass broke the check written one round earlier: the
+      pool-vs-decal rule filtered on <span class="mono">PlaneGeometry</span>, so changing pools to
+      <span class="mono">CircleGeometry</span> made it find zero pools and pass on all four blocks.
+      It identifies a pool by what makes one — additive, no depth write — and asserts it found some,
+      because a rule that can quietly end up with nothing to check is not a rule.</p>
+
+      <h3>A hook for looking at one hour</h3>
+      <p><span class="mono">TEST_TIME_OF_DAY</span> pins the light rig. Shortening the day gets you
+      <em>through</em> dusk; this stops you <em>in</em> it, which is the difference between reaching
+      the evening and being able to walk the whole block in it. It carries the same three tripwires
+      as the other two cheats, plus a fourth that matters more:
+      <strong><span class="mono">shoot.mjs</span> refuses to run while it is set.</strong> Every dusk
+      sample in that file would otherwise photograph one hour and report it as t = 0.20, 0.45 and
+      0.98 — three numbers agreeing with each other and with nothing else, which is the
+      hardcoded-18-minute-day bug wearing a different hat. A green shoot with no dusk coverage is
+      worse than a red one.</p>
+    </div>
+  </section>
+
   <section id="pianist">
     <h2><span class="sec">§12</span> The pianist, and what she costs</h2>
     <div class="col">
@@ -1073,7 +1150,7 @@
 
 <footer>
   <span>Small Change · Level 4 · The Lobby</span>
-  <span>Built · playtested · two revision rounds</span>
+  <span>Built · playtested · three revision rounds · shipped</span>
 </footer>
 
 </body>
