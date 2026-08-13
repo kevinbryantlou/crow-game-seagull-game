@@ -253,10 +253,35 @@ export class Hud {
    * @param {{x:number,y:number}|null} at  last eased position, or null to jump
    */
   static _ease(at, x, y, dt) {
-    // A big jump is a teleport, a level swap or the prompt reappearing
-    // somewhere else. Easing across the screen would draw a line between two
-    // unrelated places, so take it whole.
-    if (!at || Math.hypot(x - at.x, y - at.y) > 220 || !(dt > 0)) return { x, y };
+    /**
+     * A big jump is a teleport, a level swap, or the tracked point crossing
+     * behind the camera. Easing across one of those draws a line between two
+     * unrelated places, so it is taken whole.
+     *
+     * Two things about this condition are deliberate.
+     *
+     * The threshold is a fraction of the viewport diagonal, not a constant. It
+     * was 220px, which is fine on a desktop and exactly wrong on a 360px
+     * Android: the nest pointer's clamp rectangle is `innerWidth - 140` wide,
+     * so a pointer flipping from one edge to the other there moves *exactly*
+     * 220px, `> 220` is false by a hair, and it slides across the whole screen
+     * instead of cutting. A viewport-relative bound cannot land on that edge.
+     *
+     * And it is written as `!(d <= T)` rather than `d > T` so that NaN takes
+     * the snap branch. `Math.hypot(NaN, NaN) > 220` is *false*, which sent a
+     * NaN straight into the filter, and once `at` held NaN every later frame
+     * stayed NaN — because NaN never exceeds a threshold either. The transform
+     * string then became `translate3d(NaNpx, …)`, which the CSSOM silently
+     * ignores, so the element froze at its last good position for the rest of
+     * the run. The old code wrote `left: NaNpx` and was equally ignored, but it
+     * healed on the next good frame; the filter is what made it permanent.
+     */
+    // Defaulted so the function is pure enough to unit test, and so a NaN
+    // viewport cannot poison the threshold it is supposed to enforce.
+    const vw = globalThis.innerWidth || 1280;
+    const vh = globalThis.innerHeight || 800;
+    const T = 0.2 * Math.hypot(vw, vh);
+    if (!at || !(Math.hypot(x - at.x, y - at.y) <= T) || !(dt > 0)) return { x, y };
     const k = 1 - Math.exp(-25 * dt);
     return { x: at.x + (x - at.x) * k, y: at.y + (y - at.y) * k };
   }

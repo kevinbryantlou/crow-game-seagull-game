@@ -135,6 +135,55 @@ const FAST = cutoff('Corvid Prodigy');            // 150s — a speedrun
 const SOLID = (() => { let e = FAST; while (e < 3600 && clean(e) === 'Accomplished Thief') e += 5; return e; })();
 
 /**
+ * The HUD's position filter.
+ *
+ * Pure and static, so it is testable here rather than only through a browser —
+ * which matters, because the two bugs it has had were both invisible in a
+ * screenshot. It smooths the projected screen point behind the beak prompt and
+ * the nest pointer, whose jitter measured six times their actual motion.
+ */
+console.log('\nHUD position filter');
+{
+  const { Hud } = await import('../src/ui/hud.js');
+  const at = { x: 100, y: 100 };
+
+  check('no previous position snaps', Hud._ease(null, 50, 60, 0.016).x === 50);
+  check('a zero dt snaps rather than dividing by nothing',
+    Hud._ease(at, 150, 100, 0).x === 150);
+
+  const near = Hud._ease(at, 110, 100, 0.016);
+  check('a small move is eased, not taken whole',
+    near.x > 100 && near.x < 110, `(got ${near.x.toFixed(2)})`);
+  check('and it moves toward the target', near.x > at.x);
+
+  // Crossing behind the camera flips the projection through the origin, which
+  // is a jump between two unrelated places rather than motion.
+  const far = Hud._ease(at, 1200, 700, 0.016);
+  check('a jump across the screen is taken whole', far.x === 1200 && far.y === 700);
+
+  /**
+   * NaN must snap, not ease.
+   *
+   * `Math.hypot(NaN, NaN) > T` is false, so a naive `>` sent NaN into the
+   * filter — and once the stored position held NaN, every later frame stayed
+   * NaN, because NaN never exceeds a threshold either. The element then froze
+   * for the rest of the run, since `translate3d(NaNpx, …)` is silently ignored.
+   */
+  const nan = Hud._ease(at, NaN, NaN, 0.016);
+  check('a NaN position snaps instead of poisoning the filter',
+    Number.isNaN(nan.x) && !Number.isFinite(nan.x));
+  const recovered = Hud._ease(nan, 300, 300, 0.016);
+  check('and the very next good frame recovers',
+    recovered.x === 300 && recovered.y === 300,
+    `(got ${recovered.x})`);
+
+  // Repeated easing converges rather than overshooting or oscillating.
+  let p = { x: 0, y: 0 };
+  for (let i = 0; i < 40; i++) p = Hud._ease(p, 100, 100, 0.016);
+  check('easing converges on the target', Math.abs(p.x - 100) < 0.5, `(got ${p.x.toFixed(2)})`);
+}
+
+/**
  * Saved progress.
  *
  * Every case here is a way a save file can be wrong rather than a way it can be
@@ -331,6 +380,28 @@ function auditLights(level, world) {
   const pools = night.items.filter((i) => i.pool);
 
   /**
+   * A pool is built hidden — asserted *here*, before anything drives the ramp.
+   *
+   * This has to run before the first `night.update` of the block and it is the
+   * whole point of the check. `transparent: true` puts a mesh in the
+   * transparent pass whatever its opacity, so a pool at zero is still
+   * rasterised and blended across its whole disc; the daylight half of a run
+   * happens before `update` ever crosses a level, so **build-time visibility is
+   * the entire saving**.
+   *
+   * The first version of this check sat further down the file, after the ramp
+   * had already been driven up and wound back. That runs the toggle path in
+   * `update`, which sets `visible = false` on its own — so the assertion was
+   * reading a value `update` had written and would have passed with
+   * `addPool`'s line deleted and 2.5-4 screens of overdraw back in the frame.
+   * A check that runs after the thing it checks for has been overwritten by
+   * something else passes for free.
+   */
+  check(say('a pool is built hidden, before the ramp ever runs'),
+    pools.every((i) => i.mesh && i.mesh.visible === false),
+    `(${pools.filter((i) => !i.mesh || i.mesh.visible).length} of ${pools.length} drawn at build)`);
+
+  /**
    * The sunset has to actually happen inside a session someone will play.
    *
    * At 18 minutes it did not: the light held steady until 10m48s and the lamps
@@ -460,11 +531,10 @@ function auditLights(level, world) {
    * `shoot` are the second guard on that.
    */
   check(say('every pool has a mesh to hide'), pools.every((i) => !!i.mesh));
-  night.since = 0;
-  night.update(0, 0.016);
-  check(say('no pool is drawn in daylight'),
-    pools.every((i) => i.mesh.visible === false),
-    `(${pools.filter((i) => i.mesh.visible).length} drawn)`);
+  // "Hidden in daylight" is asserted at build time, further up — down here the
+  // ramp has already been driven, so `update`'s own toggle would have set it
+  // and the check would pass with the constructor's line deleted. What is worth
+  // testing here is the *toggle*, in both directions.
   night.since = 0;
   for (let s = 0; s < 24; s += 0.1) night.update(1, 0.1);
   check(say('every pool is drawn once it is lit'),
