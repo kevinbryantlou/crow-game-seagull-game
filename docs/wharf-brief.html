@@ -256,7 +256,7 @@
 
 <header class="band">
   <div class="band-inner">
-    <div class="eyebrow">Level Design Brief &nbsp;·&nbsp; The Wharf &nbsp;·&nbsp; Proposed, and being built while you read it</div>
+    <div class="eyebrow">Level Design Brief &nbsp;·&nbsp; The Wharf &nbsp;·&nbsp; Built and verified &mdash; not yet played</div>
     <h1 class="title">The<br>Wharf<span class="thin">The Landing</span></h1>
     <p class="deck">A working fish dock at sunset, and the first block in this game whose ground
       is not continuous. Four blocks have taught you where to go. This is the one that charges
@@ -276,10 +276,18 @@
   <section id="status">
     <h2><span class="sec">§0</span> Where this stands</h2>
     <div class="col">
-      <p><strong>Proposed, and under construction.</strong> This document was written before any
+      <p><strong>Built, verified, and waiting on you.</strong> This document was written before any
       geometry existed, which is the same order the last three briefs were written in and the
       reason they were worth anything — the argument has to exist first so the build can be checked
-      against something rather than described afterwards.</p>
+      against something rather than described afterwards. It has since been built and checked:
+      <span class="mono">smoke</span> runs every level-design rule against it and
+      <span class="mono">shoot</span> drives it in real WebGL, photographs ten frames of it and
+      measures six dusk samples. Both pass.</p>
+
+      <p><strong>Nothing here has survived a playtest.</strong> Every other block needed at least
+      one revision round off one — the lobby needed three — so treat every claim below as
+      unconfirmed by the only test that matters. <a href="#caught">§12</a> is what the harnesses
+      caught, and the first item in it is a level bug that no existing check could have found.</p>
 
       <p>It is written to be vetoed. <a href="#veto">§10</a> is the short list of decisions
       worth stopping, ranked, with the cost of reversing each one. Two of them touch shared code
@@ -292,6 +300,11 @@
         whole of; this one does not, so every route across it is priced in wingbeats and every
         mistake is priced in a swim.
       </div>
+
+      <p>Two things in the plan below are now out of date and are left standing because the
+      correction is the interesting part: the gallery is <strong>5.2 m, not 3.6</strong>, and the
+      quay timber is a pale <span class="mono">PAL.dock</span> set rather than the bark browns.
+      Both are <a href="#caught">§12</a>.</p>
     </div>
   </section>
 
@@ -928,11 +941,122 @@
     </div>
   </section>
 
+  <section id="caught">
+    <h2><span class="sec">§12</span> What the harnesses caught</h2>
+    <div class="col">
+      <p>Six corrections. Three are properties of a picture, two are bugs in the checks themselves,
+      and one is a level bug that <strong>no check in this project could have found</strong> — which
+      makes it the most useful thing in this document.</p>
+
+      <h3>1. The nest could not be reached from below</h3>
+      <p>The beacon's crown was 3.2 m across and its gallery 3.6 m. That leaves a ring of 0.2 m
+      against a crow's 0.24 m support radius, so <em>every</em> point on the gallery was inside the
+      crown's footprint — and a crown's underside is a ceiling. A crow standing on the gallery and
+      flying up bonked its head at 5.84 m and fell back. Forever. The only way onto the nest was to
+      arrive already above it.</p>
+
+      <p>Nothing caught it, and the reason is worth keeping. <em>"Nothing overlaps the nest"</em>
+      passes, because the crown is <em>below</em> the twigs. The crown-landing check passes, because
+      it drops a crow from over the top — which is the one approach that works. It took flying the
+      intended route, leg by leg, to find.</p>
+
+      <div class="note">
+        <span class="lbl">The rule this block adds</span>
+        <strong>Arriving from underneath is a different question from arriving from above</strong>,
+        and a nest on a stalk has to answer both. A platform wider than the deck under it is a lid,
+        not a landing. The gallery is 5.2 m now — a 1.0 m ring, which is also what a lighthouse
+        gallery actually looks like.
+      </div>
+
+      <h3>2. The dark thing was the timber, not the water</h3>
+      <p>The harbour dusk samples came in at 5th percentile <strong>13 / 13 / 7</strong> against a
+      floor of 24, and the obvious reading — the block's huge new water surface is too dark — was
+      wrong. The water's own median sat at <strong>92 against a floor of 48</strong> the entire time.
+      What pinned the 5th percentile was the pier, the floats and the dinghy, painted in the
+      <span class="mono">bark</span> browns every other block uses. The pier is the biggest thing
+      standing over the water; it is a light-rig decision before it is a colour one.</p>
+
+      <p>A pale <span class="mono">PAL.dock</span> set took it to <strong>24 / 30 / 27</strong>. Two
+      further things came out of the same pass: the plank lines had been drawn by alternating
+      <span class="mono">bark</span> with <span class="mono">barkShade</span>, which laid thirteen
+      dark grooves across that surface — a board line only has to be a <em>step</em> in value at this
+      distance — and the floats, the dinghy and the boat deck are horizontal surfaces standing
+      0.5–1.2 m <em>over</em> the water, so the pools laid at the waterline lit none of them. A pool
+      goes at the height of the thing it is meant to light.</p>
+
+      <h3>3. The water photographed as a field</h3>
+      <p>At <span class="mono">0x8fb8c6</span> the harbour read sage-olive under the afternoon key —
+      an olive plane beside a tan quay, which is the lobby runner's bug outdoors. The green came
+      down. Nothing reads blue under a 2.6-intensity warm key, so what the correction buys is
+      cool-grey at noon instead of green, and unmistakably violet at dusk: blue now beats red by
+      <strong>21</strong> at t = 0.98, which is better than the lobby shipped with and is the debt
+      §7 said this block should be repaying rather than spending.</p>
+
+      <h3>4. The opening frame was the ice house</h3>
+      <p>The spawn was on the quay east of the market, and the building sat between the crow and the
+      camera with the harbour reduced to a sliver along the top edge. One screenshot; no number would
+      have shown it. It is at <span class="mono">[0, 0, 5.0]</span> now — the coping just up-frame,
+      the kid dead centre on her crate, the pier and the boats behind her.</p>
+
+      <h3>5. And two bugs in the checks</h3>
+      <p>A test that writes a world direction into <span class="mono">input.move</span> is wrong by
+      the camera's 25&deg; yaw, because the crow moves in camera space — and the sign of z is easy to
+      invert on top of that, which sends the bird away from its target. <strong>Every water test in
+      this repo had the yaw error since level 1</strong> and none of them could notice: from inside a
+      circle, any outward-ish heading reaches the rim. A rectangle has a wrong way out. The other was
+      mine and cheaper: <span class="mono">landed</span> was defined by height alone, and this
+      block's coping is 0.62 all the way round the harbour, so standing on the quay counted as
+      reaching the pier head eighteen metres away.</p>
+
+      <h3>What the plan got right</h3>
+      <p>The economy needed no tuning: $64.20 on the block, $12.50 unguarded and dry, $8.50 of that
+      out over the water. The decks needed none — the tallest unbroken climb to the nest measures
+      <strong>3.1 m</strong> against a 9 m rule, and all six legs of the intended route now fly on a
+      <em>half-empty</em> bar. And the rectangular basin needed no new collider shape at all: the
+      coping is four ordinary boxes and the crow's existing box logic was already right at both ends
+      of them, which was the single biggest risk in §6 and evaporated on reading the collision code.</p>
+    </div>
+  </section>
+
+  <section id="numbers">
+    <h2><span class="sec">§13</span> The numbers, as shipped</h2>
+    <div class="col">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Sample</th><th>5th pct</th><th>Median</th><th>Floor</th></tr></thead>
+          <tbody>
+            <tr><td>quay, t=0.20</td><td class="num">41</td><td class="num">115</td><td class="num">24 / 48</td></tr>
+            <tr><td>quay, t=0.45</td><td class="num">40</td><td class="num">97</td><td class="num">24 / 48</td></tr>
+            <tr><td>quay, t=0.98</td><td class="num">29</td><td class="num">57</td><td class="num">24 / 48</td></tr>
+            <tr><td>water, t=0.20</td><td class="num">24</td><td class="num">83</td><td class="num">24 / 48</td></tr>
+            <tr><td>water, t=0.45</td><td class="num">30</td><td class="num">101</td><td class="num">24 / 48</td></tr>
+            <tr><td>water, t=0.98</td><td class="num">27</td><td class="num">73</td><td class="num">24 / 48</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="exhibit-cap">Dusk, measured from the rendered frame with the HUD hidden. The
+        floors were not touched.</div>
+
+      <p><strong>One thin margin, declared rather than hidden.</strong> <span class="mono">water,
+      t=0.20</span> sits at 24 against a floor of 24 — it passes, and it is one rounding change from
+      not passing. I stopped the breakwater casting a shadow (a 36 m wall at the back of the map
+      laying a band of shade across the one surface no fixture can reach; removing a shadow can only
+      add light, and every dusk rule is a floor) and lightened the harbour bed, which moved every
+      other sample and left this one where it was. Whatever pins it is not the breakwater, and
+      chasing it further would have been guessing. <strong>If a later edit reports 23 here, the block
+      needs another light pass — not a lower floor.</strong></p>
+
+      <p>Mesh count 392 against the lobby's 627 and the park's 464; 60 colliders; 9 ground decals and
+      14 light pools. Nothing shoves the crow more than 0.55 m in a frame despite five decks, two
+      boats and a beacon all being colliders with air underneath them.</p>
+    </div>
+  </section>
+
 </main>
 
 <footer>
   <span>Small Change · Level 5 · The Wharf</span>
-  <span>$40.00 · five decks · slot 5 · proposed</span>
+  <span>$40.00 · five decks · slot 5 · built &amp; verified, not played</span>
 </footer>
 
 </body>

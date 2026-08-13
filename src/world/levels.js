@@ -613,10 +613,15 @@ export const LEVELS = [
      * was the ice house — the building sat between the crow and the camera and
      * the water was a sliver along the top edge, which is the roofline's
      * "measure the sightline" lesson arriving as a framing problem rather than
-     * an occlusion one. From x = 1 the sightline clears the ice house's z range
+     * an occlusion one. From x = 0 the sightline clears the ice house's z range
      * entirely before it reaches its x range.
+     *
+     * The z came in from 8.5 to 5.0 on a second look at the same frame: at 8.5
+     * the water was a band across the top third and the bottom 40% was empty
+     * quay and kerb. Four metres forward puts the coping just up-frame, the kid
+     * dead centre on her crate, and the pier and the boats behind her.
      */
-    spawn: [1, 0, 8.5],
+    spawn: [0, 0, 5.0],
 
     tasks: [
       { id: 'dive', text: 'Dive the harbor', when: (g) => g.crow.inWater },

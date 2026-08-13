@@ -52,7 +52,8 @@ the game had never been looked at. Both harnesses exist to close that gap.
   `30`–`39` and `l3-dusk-*` are the roofline, `50`–`59` and `l4-dusk-*` are the
   lobby (not `40`–`49`: `40` was already the touch pause control, and two
   sections writing one filename is a screenshot that silently stops being the
-  thing it is named after), `14` is the ending screen's
+  thing it is named after), `60`–`69` and `l5-dusk-*` are the wharf,
+  `14` is the ending screen's
   next-level button, and `15`–`20` are the menu — title card new and returning,
   pause, the Levels screen, the forfeit, and the touch pause control. It also
   swaps levels eight times **through the menu** and asserts the GPU gets its
@@ -83,6 +84,7 @@ src/
   world/level2.js      LEVEL 3 — The Hotel (Outside): forecourt, balconies, terrace, roof
                        (built second, slotted third — filenames are not slot numbers)
   world/lobby.js       LEVEL 4 — The Hotel (Inside): one room, a gallery, a chandelier
+  world/wharf.js       LEVEL 5 — The Wharf: a quay, one pier, and things that float
   world/levels.js      the registry: goal, tasks, teach copy, bait rules, endings, per level
   world/collide.js     the collider format, and going round things (pure, unit tested)
   world/pickups.js     the money
@@ -97,6 +99,7 @@ docs/                  design brief + style guide — the spec, written to be ch
                        level-2-brief.html — level 3, the roofline (filename predates the slot)
                        menu-brief.html    — progress, level select and pause: PROPOSED, not built
                        lobby-brief.html   — level 4, the lobby: built, played, revised once
+                       wharf-brief.html   — level 5, the wharf: built and verified, not yet played
 ```
 
 Pure logic goes in its own module so `smoke.mjs` can test it without a DOM.
@@ -599,7 +602,53 @@ once per entry in `LEVELS`:
   eyeballed.
 - **Nothing is standing in the edge kerb.**
 
-## Four levels
+- **A platform wider than the deck under it is a lid, not a landing.** The
+  wharf's beacon had a 3.2m crown over a 3.6m gallery, which leaves a ring of
+  0.2m against the crow's 0.24m support radius — so *every* point on the gallery
+  was inside the crown's footprint, and a crown's underside is a ceiling. A crow
+  standing on the gallery and flying up bonked its head at 5.84 and fell back,
+  forever; the nest could only be reached by arriving already above it. **No
+  check caught it**: "nothing overlaps the nest" passes because the crown is
+  *below* the twigs, and the crown-landing test drops a crow from over the top,
+  which is the one approach that works. **Arriving from underneath is a different
+  question from arriving from above**, and any nest on a stalk has to answer
+  both. The gallery is 5.2m now — a 1.0m ring, which is also what a lighthouse
+  gallery actually looks like.
+- **The water's shape describes the basin, not the waterline.** A circular pool's
+  `r` sits 0.6 *outside* the stone's inner face, which is the whole reason a crow
+  pressed against that face still reads as being in the water and can therefore
+  still scramble out of it. The wharf's rectangle first used the waterline, which
+  put the same 0.7 inset 0.7m *inside* the wall: the crow lost its float height
+  while still in the water and could not climb a coping it was touching. That is
+  the fountain-as-lobster-pot bug for the third time, from a third direction.
+  `WATER_EDGE_PAD` in `collide.js` is what keeps the two shapes saying the same
+  thing.
+- **A test that writes a world direction into `input.move` is wrong by the
+  camera's yaw.** The crow moves in camera space (`wish = right * move.x +
+  forward * -move.y`), so a world vector is off by 25° — and the sign of z is
+  easy to get backwards on top of that, which sends the bird away from the
+  target. Every water test in the repo had the yaw error since level 1 and none
+  could notice, because from inside a *circle* any outward-ish heading reaches
+  the rim. A rectangle has a wrong way out. Invert the real `stage.basis()`
+  rather than hardcoding an angle.
+- **A pool laid on the waterline does not light a deck standing above it.** The
+  wharf's floats, dinghy and boat deck are horizontal surfaces 0.5–1.2m over the
+  water, and their pools were at the water's `y` — so they rendered as unlit
+  dark slabs and pinned the dusk 5th percentile while the harbour's own median
+  sat at 92 against a floor of 48. **The dark thing was the timber, not the
+  water.** Pools go at the height of the surface they are meant to light.
+- **An autopilot that steers at a target from the start flies into whatever the
+  target stands on.** Reachability tests have to climb clear first and then
+  cross, which is what a player does — and they have to define "landed" as *here
+  and at this height*, not height alone. The wharf's coping is 0.62 all the way
+  round, so a height-only check reported standing on the quay as reaching the
+  pier head eighteen metres away.
+- **`.entries()` over an array of pairs destructures the pair.** `for (const [i,
+  z] of [[0, -3], [1, 2]].entries())` binds `z` to `[0, -3]`, not a number, and
+  `something + z` becomes string concatenation and then `NaN`. It surfaced as
+  every light pool on the pier landing at `y: NaN`.
+
+## Five levels
 
 `world/levels.js` is the registry. A level descriptor holds everything about a
 block that is not geometry: `goal`, `sessionSeconds`, `dayStart`, `spawn`, the
@@ -608,12 +657,18 @@ task list (with `when` predicates for the ones that complete by observation),
 smoke, and the ending copy. If another block would need a different one, it is
 level data; if they all need the same one, it is in `world/rules.js`.
 
-The ladder is **$20 / $25 / $30 / $35** and **one deck / two decks / four decks
-/ three decks inside one room**. Four equal dollar steps, one rung per block.
+The ladder is **$20 / $25 / $30 / $35 / $40** and **one deck / two decks / four
+decks / three decks inside one room / five decks with water between them**. Five
+equal dollar steps, one rung per block.
 The lobby was built at $40 on an argument about the fiction — the last block is
 the inside of a building whose outside asked $30 — and came down to $35 on a
 playtest note about the run. The fiction argument is still true; it was just not
-worth a run that grinds.
+worth a run that grinds. The wharf then took the $40 the lobby gave up, on the
+argument that the lobby's $40 failed for a reason the wharf does not share: one
+room with nowhere else to work means a hot desk is a wait, and waiting at $40
+grinds. The wharf has four pitches and $8.50 nobody guards. **That is a bet on a
+number Kevin has overruled once, so it is the first thing to reverse if the run
+drags** — one line in `levels.js`, and the geometry does not care.
 
 - **Level 1 — the block** (`level.js`). Flat, $20, starts at `dayStart: 0`.
 - **Level 2 — The Park** (`park.js`). Two decks (0 / 3.4, nest at 4.75), $25,
@@ -670,6 +725,25 @@ worth a run that grinds.
   luggage in the open — which weakens the rule from "nothing else sits" to
   "nothing else sits in the open". If a playtest is ever confused about who
   trades, the pianist goes and the kid stays.
+
+- **Level 5 — The Wharf** (`wharf.js`). Five decks (0 / 0.62 / 1.15 / 2.4 / 3.4,
+  nest at 6.5), $40, ±30 wide, starting at `dayStart: 0.58` so the lamps catch at
+  2m40s. `docs/wharf-brief.html` is the spec.
+
+  The first block whose **ground is not continuous**, and what it spends is
+  **footing**. Every other level has a floor you can walk the whole of; this one
+  is a quay, one pier, and a scatter of things that float. Water is not a wall
+  and not a fail state — it is a cost: 45% speed, three seconds of wet, and a
+  wingbeat you had not planned. The nest is a harbour light standing in open
+  water with no walking route to it, so every bank is a flight out and back over
+  nothing, which is the lobby's flight *up* through the middle of the room turned
+  on its side. Built and verified; **not yet played**, so nothing here has
+  survived a playtest.
+
+  It is also the block that pays off the joke the project is named for: the pier
+  belongs to **gulls**, there are more of them than there are people, and none of
+  them guards anything. The seagull option from the original "would you rather"
+  turns up as the setting of the last block.
 
 **Finishing a block hands you the next one.** The ending screen carries a brass
 button naming where it goes (`The park →`) with `Again!` beside it in outline;
