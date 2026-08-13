@@ -305,7 +305,7 @@ export function buildLevel() {
     }
     for (const px of [-14, -4, 6, 14]) {
       night.addPool(root, px, -9.4, 5.0,
-        { profile: 'stall', peak: 0.5, warm: 2.4, delay: 0.6, y: DECK.mezzanine });
+        { profile: 'stall', peak: 0.34, warm: 2.4, delay: 0.6, y: DECK.mezzanine });
     }
 
     /**
@@ -474,11 +474,19 @@ export function buildLevel() {
     sconce.position.set(cx + 0.2, 3.0, cz + 0.55);
     root.add(sconce);
     night.add(sconce, PAL.goldLit, { peak: 0.85, warm: 2.2, delay: 0.5 });
-    night.addPool(root, cx, cz + 0.6, 5.0, { profile: 'stall', peak: 0.5, warm: 2.2, delay: 0.5 });
+    night.addPool(root, cx, cz + 0.6, 5.0, { profile: 'stall', peak: 0.32, warm: 2.2, delay: 0.5 });
   }
 
   /**
    * Wall washers under the gallery, and there are eight of them now.
+   *
+   * Every pool peak on this block was retuned once, downward, and the reason is
+   * worth recording: they were set while roughly half of the pool *area* was
+   * being clipped away by the decal stack — see NightLights.POOL_LIFT. Tuning
+   * brightness against a bug means the numbers are wrong the moment it is
+   * fixed, and they were: the floor went to near-white cream. **Do not tune a
+   * value against a frame you have not checked is drawing what you think it
+   * is.**
    *
    * A forty-metre soffit casts a forty-metre shadow across the back of the
    * floor, and the answer is light on the ground rather than another pendant —
@@ -494,7 +502,7 @@ export function buildLevel() {
     w.position.set(wx, 3.5, -7.05);
     root.add(w);
     night.add(w, PAL.goldLit, { peak: 0.85, warm: 2.6, delay: 0.9 });
-    night.addPool(root, wx, -5.6, 6.4, { profile: 'stall', peak: 0.7, warm: 2.6, delay: 0.9 });
+    night.addPool(root, wx, -5.6, 5.8, { profile: 'stall', peak: 0.44, warm: 2.6, delay: 0.9 });
   }
 
   // Uplights at the foot of every column, which is the cheapest light in the
@@ -504,7 +512,7 @@ export function buildLevel() {
     u.position.set(ux, 0.035, uz + 0.7);
     root.add(u);
     night.add(u, PAL.goldLit, { peak: 0.7, warm: 3.0, delay: 1.2 });
-    night.addPool(root, ux, uz + 0.9, 4.6, { profile: 'stall', peak: 0.5, warm: 3.0, delay: 1.2 });
+    night.addPool(root, ux, uz + 0.9, 4.6, { profile: 'stall', peak: 0.3, warm: 3.0, delay: 1.2 });
   }
 
   // ── the grand stair, against the west wall ────────────────────────────────
@@ -578,7 +586,7 @@ export function buildLevel() {
   perch(POOL_SPEC.x + POOL_SPEC.r + 0.1, FOUNTAIN.rim, POOL_SPEC.z);
   night.add(POOL.water, PAL.water, { peak: 0.18, warm: 5.0, delay: 1.8 });
   night.addPool(root, POOL_SPEC.x, POOL_SPEC.z, 7.0,
-    { profile: 'stall', peak: 0.42, warm: 5.0, delay: 1.8 });
+    { profile: 'stall', peak: 0.26, warm: 5.0, delay: 1.8 });
 
   // ══════════════════════════════════════════════════════════════════════════
   // THE LOBBY CLOCK — a landmark that stands on the floor, and the nest on it
@@ -725,8 +733,8 @@ export function buildLevel() {
     // Centred between the clock and the fountain rather than on the clock, so
     // the pool covers the open floor everybody has to cross rather than the one
     // object nobody stands next to.
-    night.addPool(root, CLOCK.x, CLOCK.z + 4.4, 13.5,
-      { profile: 'stall', peak: 0.9, warm: 2.0, delay: 0.15 });
+    night.addPool(root, CLOCK.x, CLOCK.z + 4.4, 12.0,
+      { profile: 'stall', peak: 0.5, warm: 2.0, delay: 0.15 });
 
     const nest = makeNest();
     nest.position.y = DECK.crown + 0.04;
@@ -806,8 +814,8 @@ export function buildLevel() {
       root.add(shade);
       night.add(shade, PAL.goldLit, { peak: 0.95, warm: 1.8, delay: 0.7 });
     }
-    night.addPool(root, DESK.x, DESK.z + 1.2, 9.0,
-      { profile: 'stall', peak: 0.82, warm: 1.8, delay: 0.7 });
+    night.addPool(root, DESK.x, DESK.z + 1.2, 8.4,
+      { profile: 'stall', peak: 0.52, warm: 1.8, delay: 0.7 });
 
     // The open cash drawer, on the west counter. A tray with a 5 cm lip, so the
     // bill in it is unmistakably *in* something and nothing is standing between
@@ -876,8 +884,8 @@ export function buildLevel() {
     back.position.set(BAR.x, 0, -7.4);
     root.add(back);
     solid(BAR.x, -7.4, 8, 0.5, 2.4);
-    night.addPool(root, BAR.x, BAR.z + 1.2, 7.6,
-      { profile: 'stall', peak: 0.78, warm: 2.8, delay: 1.1 });
+    night.addPool(root, BAR.x, BAR.z + 1.2, 7.2,
+      { profile: 'stall', peak: 0.5, warm: 2.8, delay: 1.1 });
 
     // Three pendants over the counter. They hang from nothing, and at 2.6 m
     // that is fine — the eye reads a lamp on a short drop as hung off something
@@ -994,7 +1002,7 @@ export function buildLevel() {
       root.add(l);
       solid(lx, lz, 0.5, 0.5, 1.6);
       night.add(shade, PAL.goldLit, { peak: 0.95, warm: 2.2, delay: 0.35 });
-      night.addPool(root, lx, lz, 7.4, { profile: 'stall', peak: 0.82, warm: 2.2, delay: 0.35 });
+      night.addPool(root, lx, lz, 7.0, { profile: 'stall', peak: 0.52, warm: 2.2, delay: 0.35 });
     }
 
     // The near-side occluder. Every block has one thing whose job is to be in
@@ -1068,8 +1076,24 @@ export function buildLevel() {
     root.add(post);
     solid(DOOR.x + 4.4, DOOR.z - 0.6, 0.7, 0.7, 2.8);
     night.add(lantern, PAL.goldLit, { peak: 1.0, warm: 1.6, delay: 0, flicker: true });
-    night.addPool(root, DOOR.x + 1.4, DOOR.z - 0.6, 8.0,
-      { profile: 'stall', peak: 0.78, warm: 1.6, delay: 0, flicker: true });
+    night.addPool(root, DOOR.x + 1.4, DOOR.z - 0.6, 7.4,
+      { profile: 'stall', peak: 0.5, warm: 1.6, delay: 0, flicker: true });
+  }
+
+  /**
+   * A pair of sconces on the west wall, over the stair and the bell cart.
+   *
+   * They existed, and then they did not: the entrance rewrite replaced a span
+   * of this file that happened to have them in the middle of it, and nothing
+   * noticed for two rounds because a missing light is not a failing check — it
+   * is three points of 5th percentile spread over a quarter of the room.
+   */
+  for (const sz of [-1.0, 6.0]) {
+    const sc = box(0.16, 0.5, 0.34, PAL.goldLit, { shadow: false });
+    sc.position.set(-21.7, 3.1, sz);
+    root.add(sc);
+    night.add(sc, PAL.goldLit, { peak: 0.85, warm: 2.4, delay: 0.8 });
+    night.addPool(root, -20.4, sz, 5.8, { profile: 'stall', peak: 0.4, warm: 2.4, delay: 0.8 });
   }
 
   // The luggage cart, and the change dish on it.

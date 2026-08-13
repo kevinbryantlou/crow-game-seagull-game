@@ -223,6 +223,28 @@ That's why `words.js`, `rank.js` and `save.js` are separate from the DOM code.
   sat in. Look at the frame and find the biggest dark thing before adding a lamp
   — and never lower `duskMedianFloor`/`duskShadowFloor` to make a new block pass.
 
+- **A light pool sits 0.14m over its floor, and that number is load-bearing.**
+  It was 0.05, which works until a block has more than nine ground decals:
+  `addDecal` stacks them 4mm apart, so the tenth sits at 0.048 and the
+  thirteenth at 0.060 — above the pool. A decal writes depth and a pool does
+  not, so from there **the pool is clipped by the floor it is lit on**, drawing
+  over the early decals and vanishing on the late ones with hard straight edges
+  exactly where one paving patch meets the next. Reported from a playtest as the
+  ground looking shiny in some camera positions; it is a light pool with a bite
+  out of it. The park had it too, at 21 decals, and nobody had noticed. Now
+  `NightLights.POOL_LIFT` clears 32 decals and `audit-level.mjs` asserts the
+  relationship rather than the headroom, because the block that breaks it will
+  not be the block anybody edited.
+- **Do not tune a value against a frame you have not checked is drawing what you
+  think it is.** Every pool peak in the lobby was set while roughly half the
+  pool *area* was invisible, so the numbers were wrong the moment the clipping
+  was fixed and the floor went to near-white cream. They all came down about a
+  third. Fix the bug, then tune.
+- **A rewrite that replaces a *span* silently eats whatever was in the middle of
+  it.** The lobby's entrance was rewritten three times by replacing everything
+  between two comments, and the second pass swallowed the west wall's sconces —
+  which nothing caught for two rounds, because a missing light is not a failing
+  check, it is three points of 5th percentile spread over a quarter of a room.
 - **The backdrop skyline used to cast shadows, and it should never have.** A
   thirty-metre tower sixteen metres behind a block, lit by a sun whose elevation
   drops to 0.06, throws a shadow the length of the map — and the shadow camera

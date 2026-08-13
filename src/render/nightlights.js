@@ -155,6 +155,25 @@ export class NightLights {
    * light on the terrace, not on the yard six metres below it, and the 0.05
    * clearance over the paving is the same clearance over any other floor.
    */
+  /**
+   * How far a pool floats over the floor it lights.
+   *
+   * It was 0.05, which is a number that works right up until a block has more
+   * than nine ground decals on it. `kit.addDecal` stacks them four millimetres
+   * apart in add order — that spacing is itself a fix, for two coplanar patches
+   * fighting over depth — so the tenth decal sits at 0.048 and the thirteenth at
+   * 0.060, above the pool. A decal writes depth and a pool does not, so from
+   * there the pool is *clipped by the floor it is lit on*: it draws over the
+   * early decals and vanishes on the late ones, with hard straight edges
+   * exactly where one paving patch meets the next.
+   *
+   * That is what a playtest reported as the ground going shiny in some camera
+   * positions — not a specular highlight, a light pool with a bite taken out of
+   * it. 0.14 clears 32 decals, and `audit-level.mjs` asserts the relationship
+   * rather than trusting the headroom, because the next block will have more.
+   */
+  static POOL_LIFT = 0.14;
+
   addPool(parent, x, z, radius, opts = {}) {
     const material = new THREE.MeshBasicMaterial({
       map: poolTexture(opts.profile ?? 'lamp'),
@@ -166,7 +185,7 @@ export class NightLights {
     });
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(radius * 2, radius * 2), material);
     mesh.rotation.x = -Math.PI / 2;
-    mesh.position.set(x, (opts.y ?? 0) + 0.05, z);
+    mesh.position.set(x, (opts.y ?? 0) + NightLights.POOL_LIFT, z);
     mesh.renderOrder = 2;
     parent.add(mesh);
 

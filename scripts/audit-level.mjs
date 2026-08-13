@@ -640,6 +640,42 @@ export function auditLevel({ level, world, check, deps }) {
     }
     check(say('no two ground decals overlap at the same height'),
       coplanar.length === 0, `(${[...new Set(coplanar)].join('; ')})`);
+
+    /**
+     * And every light pool floats above every decal it lands on.
+     *
+     * A pool writes no depth and a decal does, so a decal sitting higher than a
+     * pool *clips* it — the pool draws on the paving and disappears on the
+     * apron, with a hard straight edge where one patch meets the next. It looks
+     * like the floor has gone glossy in patches, which is how it was reported.
+     *
+     * The trap is that it depends on the decal *count*: `addDecal` stacks them
+     * 4 mm apart, so a block is fine at nine decals and broken at thirteen, and
+     * the block that breaks is not the one anybody changed. Hence a rule rather
+     * than headroom.
+     */
+    const pools = [];
+    world.root.traverse((o) => {
+      if (!o.isMesh || o.geometry.type !== 'PlaneGeometry') return;
+      const m = Array.isArray(o.material) ? o.material[0] : o.material;
+      if (!m || m.depthWrite !== false) return;
+      o.getWorldPosition(v);
+      o.geometry.computeBoundingBox();
+      const size = o.geometry.boundingBox.getSize(new THREE.Vector3());
+      pools.push({ y: v.y, x: v.x, z: v.z, w: size.x, d: size.z });
+    });
+    const clipped = [];
+    for (const pool of pools) {
+      for (const d of decals) {
+        if (d.y <= pool.y) continue;
+        if (Math.abs(d.x - pool.x) * 2 >= d.w + pool.w) continue;
+        if (Math.abs(d.z - pool.z) * 2 >= d.d + pool.d) continue;
+        clipped.push(`a pool at y ${pool.y.toFixed(3)} under a decal at ${d.y.toFixed(3)}`);
+      }
+    }
+    check(say('every light pool floats above the decals it lands on'),
+      clipped.length === 0, `(${[...new Set(clipped)].join('; ')})`);
+    console.log(`       ${decals.length} ground decals, ${pools.length} light pools`);
   }
 
   /**
