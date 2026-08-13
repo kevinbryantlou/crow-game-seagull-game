@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import { PAL } from '../render/palette.js';
 import { box, cyl, cone, ico, at, group, mat } from '../render/shapes.js';
-import { overlaps } from './collide.js';
+import { overlaps, inWaterXZ } from './collide.js';
 
 export const KIND_LABEL = {
   penny: 'PENNY', nickel: 'NICKEL', dime: 'DIME', quarter: 'QUARTER',
@@ -346,7 +346,7 @@ export class Pickup {
       // Same lower bound as the crow's: a pool that is not at ground level would
       // otherwise catch anything dropped anywhere in the column beneath it.
       const f = world.fountain;
-      if (Math.hypot(this.pos.x - f.x, this.pos.z - f.z) < f.r - 0.7
+      if (inWaterXZ(f, this.pos.x, this.pos.z)
         && this.pos.y > f.floor - 0.6 && f.floor > floor) floor = f.floor;
 
       if (this.pos.y <= floor) {

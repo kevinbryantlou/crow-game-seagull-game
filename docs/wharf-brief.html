@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<title>Small Change — The Wharf</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  html { -webkit-text-size-adjust: 100%; }
+  :root {
+    --paper:      #E9E5DA;
+    --paper-2:    #DFDACB;
+    --ink:        #141C18;
+    --ink-soft:   #3E4A44;
+    --nickel:     #8B948F;
+    --rule:       #C3BFB1;
+    --enamel:     #1F4D3D;
+    --enamel-2:   #17392E;
+    --brass:      #A87C22;
+    --brass-lit:  #C79A34;
+    --sheen:      #4B4B7A;
+    --band-text:  #EDEAE0;
+    --band-dim:   #9FB5AB;
+    --chip-bg:    #D7D2C2;
+    --shadow:     rgba(20,28,24,.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:     #131815;
+      --paper-2:   #1A211D;
+      --ink:       #E4E2D7;
+      --ink-soft:  #A3ADA6;
+      --nickel:    #7C857F;
+      --rule:      #2C3630;
+      --enamel:    #16332A;
+      --enamel-2:  #102520;
+      --brass:     #D2A644;
+      --brass-lit: #E0B85C;
+      --sheen:     #8A8AC4;
+      --band-text: #E4E2D7;
+      --band-dim:  #7E9A8D;
+      --chip-bg:   #212925;
+      --shadow:    rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:     #131815;
+    --paper-2:   #1A211D;
+    --ink:       #E4E2D7;
+    --ink-soft:  #A3ADA6;
+    --nickel:    #7C857F;
+    --rule:      #2C3630;
+    --enamel:    #16332A;
+    --enamel-2:  #102520;
+    --brass:     #D2A644;
+    --brass-lit: #E0B85C;
+    --sheen:     #8A8AC4;
+    --band-text: #E4E2D7;
+    --band-dim:  #7E9A8D;
+    --chip-bg:   #212925;
+    --shadow:    rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .display {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold",
+                 "Arial Narrow", "Helvetica Neue", sans-serif;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-wrap: balance;
+  }
+  .mono {
+    font-family: Menlo, ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: .82em;
+    letter-spacing: .01em;
+  }
+
+  /* ---- sign band ---- */
+  .band {
+    background: var(--enamel);
+    color: var(--band-text);
+    padding: 3.2rem 1.5rem 2.4rem;
+    border-bottom: 6px solid var(--brass);
+  }
+  .band-inner { max-width: 62rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1.1rem; }
+  .band .eyebrow {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .72rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--band-dim);
+  }
+  h1.title {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: clamp(3rem, 11vw, 6.5rem);
+    line-height: .86;
+    letter-spacing: .005em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  h1.title .thin { display: block; color: var(--brass-lit); }
+  .band .deck {
+    font-size: 1.12rem; max-width: 34rem; color: var(--band-text);
+    opacity: .88; margin: 0;
+  }
+  .facts {
+    display: flex; flex-wrap: wrap; gap: 0 2.2rem;
+    border-top: 1px solid rgba(159,181,171,.28);
+    padding-top: 1rem; margin-top: .4rem;
+  }
+  .facts div { display: flex; flex-direction: column; gap: .1rem; }
+  .facts dt {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .18em; text-transform: uppercase; color: var(--band-dim);
+  }
+  .facts dd { margin: 0; font-size: .95rem; }
+
+  /* ---- document body ---- */
+  main { max-width: 62rem; margin: 0 auto; padding: 0 1.5rem 6rem; }
+  .col { max-width: 38rem; }
+
+  section { padding-top: 3.4rem; }
+  section > * + * { margin-top: 1rem; }
+
+  h2 {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase;
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+    line-height: 1.05; letter-spacing: .015em;
+    margin: 0 0 .2rem; padding-bottom: .55rem;
+    border-bottom: 2px solid var(--ink);
+    display: flex; align-items: baseline; gap: .7rem;
+  }
+  h2 .sec {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .7rem; font-weight: 400; letter-spacing: .12em;
+    color: var(--brass); flex: none;
+  }
+  h3 {
+    font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    font-size: .95rem; margin: 1.8rem 0 .3rem; color: var(--ink);
+  }
+  p { margin: 0; }
+  section p + p { margin-top: .85rem; }
+  a { color: var(--brass); }
+
+  ul, ol { margin: .2rem 0; padding-left: 1.15rem; }
+  li { margin: .3rem 0; }
+  li::marker { color: var(--nickel); }
+
+  strong { font-weight: 700; }
+  em.term { font-style: normal; font-weight: 700; color: var(--sheen); }
+
+  /* ---- exhibits (break the column) ---- */
+  .exhibit { margin: 2rem 0 0; }
+  .exhibit-cap {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--nickel); margin-top: .6rem;
+  }
+  .plate {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    padding: 1.2rem;
+    overflow-x: auto;
+  }
+  .plate svg { display: block; width: 100%; height: auto; min-width: 30rem; }
+
+  /* ---- tables ---- */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--rule); background: var(--paper-2); }
+  table { border-collapse: collapse; width: 100%; min-width: 34rem; font-size: .92rem; }
+  th, td { text-align: left; padding: .6rem .85rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); background: var(--chip-bg); border-bottom: 2px solid var(--ink);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num { font-family: Menlo, ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.val { font-family: Menlo, ui-monospace, monospace; font-variant-numeric: tabular-nums; color: var(--brass); white-space: nowrap; }
+
+  /* ---- key caps ---- */
+  kbd {
+    font-family: Menlo, ui-monospace, monospace; font-size: .74rem;
+    background: var(--chip-bg); border: 1px solid var(--rule);
+    border-bottom-width: 2px; border-radius: 3px;
+    padding: .1rem .38rem; color: var(--ink); white-space: nowrap;
+  }
+
+  /* ---- callout ---- */
+  .note {
+    border-left: 4px solid var(--brass);
+    background: var(--paper-2);
+    padding: .9rem 1.1rem;
+    font-size: .95rem;
+  }
+  .note .lbl {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--brass); display: block; margin-bottom: .25rem;
+  }
+
+  /* ---- scope columns ---- */
+  .scope { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0; border: 1px solid var(--rule); }
+  .scope > div { padding: 1rem 1.15rem; border-right: 1px solid var(--rule); }
+  .scope > div:last-child { border-right: 0; }
+  .scope h4 {
+    font-family: Menlo, ui-monospace, monospace; font-weight: 400;
+    font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+    margin: 0 0 .5rem; color: var(--ink-soft);
+  }
+  .scope ul { padding-left: 1rem; font-size: .9rem; }
+  .scope.in  > div:first-child { background: var(--paper-2); }
+
+  /* ---- milestones ---- */
+  .miles { border-top: 2px solid var(--ink); }
+  .mile {
+    display: grid; grid-template-columns: 5.5rem 1fr; gap: 1.2rem;
+    padding: .85rem 0; border-bottom: 1px solid var(--rule); align-items: baseline;
+  }
+  .mile .m-id {
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; color: var(--brass); padding-top: .15rem;
+  }
+  .mile .m-body strong { display: block; font-family: "Avenir Next Condensed","Arial Narrow",sans-serif; text-transform: uppercase; letter-spacing: .04em; font-size: 1rem; }
+  .mile .m-body span { font-size: .9rem; color: var(--ink-soft); }
+
+  footer {
+    border-top: 2px solid var(--ink); margin-top: 4rem; padding-top: 1rem;
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--nickel);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+  }
+
+  @media (max-width: 40rem) {
+    body { font-size: 16px; }
+    .mile { grid-template-columns: 1fr; gap: .1rem; }
+    .plate svg { min-width: 26rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="band">
+  <div class="band-inner">
+    <div class="eyebrow">Level Design Brief &nbsp;·&nbsp; The Wharf &nbsp;·&nbsp; Proposed, and being built while you read it</div>
+    <h1 class="title">The<br>Wharf<span class="thin">The Landing</span></h1>
+    <p class="deck">A working fish dock at sunset, and the first block in this game whose ground
+      is not continuous. Four blocks have taught you where to go. This is the one that charges
+      you for getting there.</p>
+    <dl class="facts">
+      <div><dt>Setting</dt><dd>The Landing, a fishing wharf</dd></div>
+      <div><dt>Goal</dt><dd>$40.00</dd></div>
+      <div><dt>Decks</dt><dd>Five — 0 / 0.62 / 1.15 / 2.4 / 3.4 m, nest 6.5</dd></div>
+      <div><dt>Session</dt><dd>8 min, starting at t=0.58</dd></div>
+      <div><dt>Slot</dt><dd>Level 5 — after the lobby</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main>
+
+  <section id="status">
+    <h2><span class="sec">§0</span> Where this stands</h2>
+    <div class="col">
+      <p><strong>Proposed, and under construction.</strong> This document was written before any
+      geometry existed, which is the same order the last three briefs were written in and the
+      reason they were worth anything — the argument has to exist first so the build can be checked
+      against something rather than described afterwards.</p>
+
+      <p>It is written to be vetoed. <a href="#veto">§10</a> is the short list of decisions
+      worth stopping, ranked, with the cost of reversing each one. Two of them touch shared code
+      and one of them changes a rule that has been true since level 1, so they are the ones to read
+      first if you read nothing else.</p>
+
+      <div class="note">
+        <span class="lbl">In one sentence</span>
+        <strong>Level 5 spends footing.</strong> Every block so far has a floor you can walk the
+        whole of; this one does not, so every route across it is priced in wingbeats and every
+        mistake is priced in a swim.
+      </div>
+    </div>
+  </section>
+
+  <section id="fifth">
+    <h2><span class="sec">§1</span> What a fifth block is for</h2>
+    <div class="col">
+      <p>Four blocks exist and each spends a different currency. The block spends
+      <em class="term">nothing</em> — it is the tutorial with a sunset on it. The park spends
+      <em class="term">social pressure</em>. The roofline spends <em class="term">altitude</em>.
+      The lobby spends <em class="term">enclosure</em>: one room, no district next door, and safety
+      only ever upward.</p>
+
+      <p>Those four cover a lot, and between them they cover everything about <em>who is looking at
+      you</em> and <em>how far up you have to go</em>. What none of them has touched is the ground
+      itself. On all four blocks the floor is a continuous surface: you can put the stick in any
+      direction and walk there. Flight is a shortcut and an escape hatch, and it is never the only
+      way to get somewhere.</p>
+
+      <p>So the wharf breaks the floor. The walkable world is a quay along the near edge, one pier
+      running out into the water, and then a scatter of things that float — two docks, two boats, a
+      dinghy, a row of pilings, and a harbor light with the nest on it. Between them is water.</p>
+
+      <div class="note">
+        <span class="lbl">The trade this block makes</span>
+        Water is not a wall and it is not death — this game has no fail state and is not getting
+        one. It is a <strong>cost</strong>. In the water you move at 45% speed, you are soaked for
+        three seconds after you get out, and getting out is a beat of the wings you did not plan to
+        spend. Missing a landing costs you eight seconds, never a run.
+      </div>
+
+      <h3>Why a wharf, specifically</h3>
+
+      <p>Two reasons, and the second one is the one I would defend if only one survived.</p>
+
+      <p>The first is that a fishing dock is the only ordinary place where discontinuous ground is
+      not a contrivance. A construction site or a fire escape would give the same geometry and would
+      have to <em>explain itself</em>; a harbor is a place everyone has already been to where the
+      floor is genuinely a set of islands, and nothing about it needs a reason.</p>
+
+      <p>The second is that this game exists because of a choice between two jokes. The Instagram
+      "would you rather" offered a crow with twenty dollars and a seagull with forty fries, and this
+      is the crow one — chosen because $20 is a value ladder and 40 fries is 40 identical pickups.
+      Four blocks in, the fifth is a pier that <strong>belongs to gulls</strong>. They are on the
+      pilings, on the shed ridge, on the beacon rail, and there are more of them than there are
+      people. You are a crow working a dock that is already somebody's.</p>
+
+      <p>That is a callback rather than a mechanic, and it costs nothing: gulls already exist as
+      entities, level 3 already mobs them with food, and the only new noun on this block is the
+      fish. But it makes the fifth block mean something in a way that a fifth new district would
+      not, and it does it without a word of copy explaining the joke.</p>
+
+      <div class="note">
+        <span class="lbl">No new verbs</span>
+        Fly, take one thing, bank it, shove the weight off a bill, bait a guard with food, trade a
+        shiny with a kid. All six are level 1's. The only new noun is
+        <strong>a mackerel</strong>, a fifth member of <span class="mono">BAIT_KINDS</span> —
+        which the audit reads as a vocabulary rather than a list, so nothing else has to notice.
+      </div>
+    </div>
+  </section>
+
+  <section id="plan">
+    <h2><span class="sec">§2</span> The plan</h2>
+    <div class="col">
+      <p>Read it as a letter U turned on its side. The quay wraps the water on three sides — along
+      the bottom of the frame, up the west end and up the east end — and the water fills the middle
+      and the top. One pier runs out from the quay into it. Everything the level asks you to do
+      happens either on the quay or out on the water, and the whole design is about the seam
+      between those two.</p>
+
+      <p>Putting the water at the <em>back</em> is not decoration. The camera looks up-screen at
+      38&deg;, so a sightline from anything on the map leaves toward +x and +z — which means
+      anything standing out in the basin has nothing but open water between it and the lens. Money
+      over water is <strong>unhideable by construction</strong>, which is the only reason it is
+      safe to put a five on a piling nine metres from anywhere.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate">
+        <svg viewBox="0 0 900 460" role="img" aria-label="Plan of the wharf">
+          <defs>
+            <pattern id="wv" width="18" height="10" patternUnits="userSpaceOnUse">
+              <path d="M0 5 q4.5 -4 9 0 t9 0" fill="none" stroke="#4e9bb0" stroke-opacity=".35" stroke-width="1.2"/>
+            </pattern>
+          </defs>
+
+          <!-- land -->
+          <rect x="0" y="0" width="900" height="460" fill="#c9bda8" fill-opacity=".30"/>
+          <!-- water basin  x -18..14  z -12.5..0.4 -->
+          <rect x="180" y="37" width="480" height="194" fill="#4e9bb0" fill-opacity=".26"/>
+          <rect x="180" y="37" width="480" height="194" fill="url(#wv)"/>
+          <rect x="180" y="37" width="480" height="194" fill="none" stroke="#8a8f98" stroke-width="2"/>
+          <text x="300" y="66" font-family="Menlo,monospace" font-size="11" fill="#3E4A44" letter-spacing="2">THE BASIN — water 0.42 · coping 0.62</text>
+
+          <!-- breakwater -->
+          <rect x="120" y="10" width="600" height="24" fill="#8a8f98" fill-opacity=".45" stroke="#6e7480"/>
+          <text x="360" y="26" font-family="Menlo,monospace" font-size="10" fill="#3E4A44" letter-spacing="2">BREAKWATER · the city across the water</text>
+
+          <!-- pier finger  x -7.5..-3.5  z -9.5..0.4 -->
+          <rect x="337" y="82" width="60" height="149" fill="#8c6e4a" fill-opacity=".55" stroke="#6b5136" stroke-width="1.5"/>
+          <text x="367" y="150" font-family="Menlo,monospace" font-size="10" fill="#141C18" letter-spacing="1"
+                transform="rotate(-90 367 150)" text-anchor="middle">THE PIER  0.62</text>
+
+          <!-- floats -->
+          <rect x="195" y="117" width="90" height="36" fill="#c9bda8" stroke="#6e7480" stroke-width="1.5"/>
+          <text x="240" y="139" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">WEST FLOAT 0.55</text>
+          <rect x="502" y="156" width="75" height="33" fill="#c9bda8" stroke="#6e7480" stroke-width="1.5"/>
+          <text x="539" y="176" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">EAST FLOAT</text>
+
+          <!-- charter boat -->
+          <rect x="397" y="129" width="105" height="42" rx="14" fill="#e4dacb" stroke="#6e7480" stroke-width="1.5"/>
+          <rect x="425" y="138" width="34" height="24" fill="#8a8f98" stroke="#6e7480"/>
+          <text x="450" y="185" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">THE CHARTER BOAT · deck 1.15 · roof 2.4 · the skipper</text>
+
+          <!-- dinghy -->
+          <ellipse cx="217" cy="207" rx="26" ry="12" fill="#e4dacb" stroke="#6e7480" stroke-width="1.5"/>
+          <text x="217" y="228" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">DINGHY</text>
+
+          <!-- beacon -->
+          <circle cx="517" cy="90" r="22" fill="#e4dacb" stroke="#A87C22" stroke-width="2.5"/>
+          <circle cx="517" cy="90" r="9" fill="#e0b348"/>
+          <text x="517" y="58" font-family="Menlo,monospace" font-size="10" fill="#A87C22" text-anchor="middle" letter-spacing="1">THE BEACON</text>
+          <text x="517" y="46" font-family="Menlo,monospace" font-size="9" fill="#A87C22" text-anchor="middle">NEST 6.5 · gallery 3.4</text>
+
+          <!-- pilings -->
+          <g fill="#6b5136">
+            <circle cx="300" cy="196" r="5"/><circle cx="318" cy="205" r="5"/>
+            <circle cx="612" cy="120" r="5"/><circle cx="628" cy="132" r="5"/><circle cx="606" cy="138" r="5"/>
+            <circle cx="240" cy="76" r="5"/><circle cx="258" cy="84" r="5"/>
+          </g>
+          <text x="640" y="112" font-family="Menlo,monospace" font-size="9" fill="#141C18">PILINGS · the five</text>
+
+          <!-- market shed -->
+          <rect x="165" y="270" width="150" height="90" fill="#b4643c" fill-opacity=".55" stroke="#6e7480" stroke-width="1.5"/>
+          <text x="240" y="303" font-family="Menlo,monospace" font-size="11" fill="#141C18" text-anchor="middle" letter-spacing="1">THE FISH MARKET</text>
+          <text x="240" y="320" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">$29.00 · the counter, the</text>
+          <text x="240" y="333" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">cutting table · the bait target</text>
+
+          <!-- ice house -->
+          <rect x="525" y="285" width="90" height="67" fill="#c9bda8" stroke="#6e7480" stroke-width="1.5"/>
+          <text x="570" y="315" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">ICE HOUSE</text>
+          <text x="570" y="328" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">honesty box</text>
+
+          <!-- harbormaster -->
+          <rect x="705" y="255" width="90" height="60" fill="#c9bda8" stroke="#6e7480" stroke-width="1.5"/>
+          <text x="750" y="282" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">HARBORMASTER</text>
+          <text x="750" y="295" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">the window ledge</text>
+
+          <!-- crane -->
+          <rect x="78" y="248" width="26" height="26" fill="#6e7480"/>
+          <text x="91" y="290" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">HOIST</text>
+
+          <!-- kid -->
+          <circle cx="420" cy="261" r="7" fill="#A87C22"/>
+          <text x="420" y="282" font-family="Menlo,monospace" font-size="10" fill="#A87C22" text-anchor="middle">THE KID · sits on a crate · trades</text>
+
+          <!-- occluder -->
+          <rect x="672" y="382" width="60" height="42" fill="#4e6b3e" fill-opacity=".5" stroke="#6e7480"/>
+          <text x="702" y="440" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">CRAB POTS &amp; NET FRAME (occluder)</text>
+
+          <!-- spawn -->
+          <circle cx="540" cy="375" r="6" fill="none" stroke="#141C18" stroke-width="2"/>
+          <text x="540" y="396" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">SPAWN</text>
+
+          <!-- camera -->
+          <path d="M840 452 l-16 -26 h32 z" fill="#141C18"/>
+          <text x="840" y="446" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">CAMERA (fixed, 38°)</text>
+
+          <text x="20" y="440" font-family="Menlo,monospace" font-size="10" fill="#3E4A44">THE QUAY — 0 m — wraps the water on three sides</text>
+        </svg>
+      </div>
+      <div class="exhibit-cap">Exhibit A — the wharf in plan. The camera is fixed at bottom
+        right, looking up-screen. Roughly 15 px to the metre. The block is x &minus;30…30,
+        z &minus;15…15.</div>
+    </div>
+
+    <div class="col">
+      <h3>The five decks, and how you climb them</h3>
+      <p>The vertical story is not a staircase of buildings like the roofline's. It is a
+      staircase of <em>boats</em>, and it only exists out over the water:</p>
+      <ul>
+        <li><strong>0</strong> — the quay. Everybody in the cast except one, and every building.</li>
+        <li><strong>0.62</strong> — the pier, level with the coping, reached from the quay by two
+          0.31 m steps at its root. Under the crow's 0.34 scramble, so you can walk out; under a
+          walker's 0.45 step, so the deckhand can too.</li>
+        <li><strong>1.15</strong> — the charter boat's deck. The skipper stands on it and cannot
+          leave it, which is a guard on an island.</li>
+        <li><strong>2.4</strong> — the wheelhouse roof.</li>
+        <li><strong>3.4</strong> — the beacon's gallery, and <strong>6.5</strong> the crown with
+          the nest in it.</li>
+      </ul>
+      <p>The tallest unbroken climb to the nest is <strong>3.1 m</strong> against a 9 m rule, which
+      is deliberately generous — the difficulty on this block is not vertical. What the route
+      actually costs is the horizontal gap between the pier and the beacon, crossed with nothing
+      underneath you, on whatever bar you have left after flying away from somebody.</p>
+
+      <div class="note">
+        <span class="lbl">The nest is a lighthouse, and that is the level's thesis in one object</span>
+        It stands in the water with no walking route to it at all. Every trip to bank anything is a
+        flight out over open water and back — which is the same shape as the lobby's flight up
+        through the middle of the room, rotated ninety degrees. It is also the block's one lit
+        thing after dark, the way the chandelier was the lobby's, and a harbor light is the only
+        object in this game whose <em>job</em> is to come on at dusk.
+      </div>
+    </div>
+  </section>
+
+  <section id="ladder">
+    <h2><span class="sec">§3</span> The value ladder</h2>
+    <div class="col">
+      <p>$62.20 against a $40 goal, so you have to land <strong>64%</strong> of everything on the
+      block — looser than the park's 76%, a little tighter than the lobby's 61%. The new thing in
+      this table is the fourth column: this is the first block with money that
+      <strong>nobody owns and you still cannot simply walk up to</strong>.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Where</th><th>What</th><th>Value</th><th>Guarded by</th><th>Costs you</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Quay and pier</td><td>10 pennies, 5 nickels, 4 dimes, 3 quarters</td><td class="val">$1.50</td><td>—</td><td>Walking</td></tr>
+            <tr><td>Rail post, bench, crab pots</td><td>Two heaps and a dollar bill</td><td class="val">$2.50</td><td>—</td><td>Noticing furniture</td></tr>
+            <tr><td>The basin floor</td><td>Six quarters</td><td class="val">$1.50</td><td>The water</td><td>Getting wet</td></tr>
+            <tr><td>The far pilings</td><td>A five on a piling cap</td><td class="val">$5.00</td><td><strong>Nothing but water</strong></td><td>A flight with no landing under it</td></tr>
+            <tr><td>The west float</td><td>Loose change</td><td class="val">$1.25</td><td><strong>Nothing but water</strong></td><td>The same, shorter</td></tr>
+            <tr><td>The dinghy</td><td>A dollar in the bilge</td><td class="val">$1.00</td><td><strong>Nothing but water</strong></td><td>A landing in a boat that is 1.9 m wide</td></tr>
+            <tr><td>The beacon gallery</td><td>Loose change on the rail</td><td class="val">$1.25</td><td><strong>Nothing but water</strong></td><td>Free, once — you are going there anyway</td></tr>
+            <tr><td>Ice house</td><td>The honesty box</td><td class="val">$3.60</td><td>the deckhand</td><td>Timing a patrol</td></tr>
+            <tr><td>Harbormaster's window</td><td>A five and the change beside it</td><td class="val">$6.20</td><td>the harbormaster</td><td>A reach over a ledge, in the open</td></tr>
+            <tr><td>The charter boat</td><td>The fare box, and change on the transom</td><td class="val">$9.40</td><td>the skipper</td><td>Boarding a boat with him on it</td></tr>
+            <tr><td>Fish market</td><td>The tip jar</td><td class="val">$4.00</td><td>the fishmonger</td><td>His counter, at arm's length</td></tr>
+            <tr><td>Fish market</td><td>A five under the tackle box</td><td class="val">$5.00</td><td>the fishmonger</td><td>A <span class="mono">SHOVE</span> first</td></tr>
+            <tr><td>Fish market</td><td>The day's take, in the open cash box</td><td class="val">$20.00</td><td>the fishmonger</td><td>The mackerel, or nothing</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="exhibit-cap">Exhibit B — where the money is. Unguarded and dry:
+        <strong>$12.50</strong>, of which $8.50 is out over water. Owned by somebody:
+        <strong>$48.20</strong>. In the water: $1.50.</div>
+    </div>
+
+    <div class="col">
+      <h3>The kid's ladder</h3>
+      <p><span class="mono">tradeValues: [2.00, 3.00, 4.50, 5.50]</span> — $15.00 across four
+      shinies, a rung above the lobby's. She is the easiest kid in the game to <em>reach</em>: she
+      is on a crate at the water's edge in the middle of the quay, and nobody owns the ground
+      around her. What she costs is that <strong>two of the four shinies are out over the
+      water</strong> — one on the east float, one on the wheelhouse roof — so half her ladder is
+      paid for in the same currency as everything else here.</p>
+
+      <p>Bounded by the rule rather than by taste: unguarded money plus every trade she will ever
+      make is $27.50 against $40, so trading can soften this block by more than half and can never
+      finish it. <span class="mono">smoke</span> asserts that, not me.</p>
+
+      <h3>$40, and the case for $35</h3>
+      <p>The ladder is $20 / $25 / $30 / $35 and the honest fifth term is $40. That is not much of
+      an argument on its own — the lobby was built at $40 on a fiction argument and came down to
+      $35 on a playtest note about the run, and the run won. So here is both sides, because you
+      overruled this exact number once already.</p>
+
+      <p><strong>For $40.</strong> The reason $40 failed on the lobby was that the lobby is one room
+      with nowhere else to work: when the desk is hot you wait, and waiting at $40 is a grind. The
+      wharf is the opposite shape. It has four separate pitches — the market, the ice house, the
+      harbormaster's window, the boat — plus $8.50 sitting out on the water that
+      <em>nobody</em> guards. There is always something else to be doing, which is the property
+      the lobby lacked and the exact property that makes a bigger number survivable.</p>
+
+      <p><strong>For $35.</strong> Two blocks in a row that both raise the ask <em>and</em> add a
+      new cost is two lessons at once, which is the mistake the park was written to correct. And
+      the new cost here is specifically <em>time</em>: a round trip to the beacon is longer than a
+      climb to a chandelier, and you pay it on every single bank. If $40 grinds, it will grind for
+      exactly the reason the lobby did, arriving by a different road.</p>
+
+      <p>I am building $40 because the block has districts and the lobby did not. It is one line in
+      <span class="mono">levels.js</span> and the geometry does not care — see <a href="#veto">§10</a>.</p>
+    </div>
+  </section>
+
+  <section id="market">
+    <h2><span class="sec">§4</span> The fish market</h2>
+    <div class="col">
+      <p>Every block has one set piece the level is arranged around: the hot dog cart, the picnic
+      cooler, the restaurant terrace, the front desk. Here it is the market shed — <strong>$29.00
+      across one counter</strong>, with the fishmonger standing at the open end of it where the
+      camera can see him. That last part is the park's lesson and the lobby's: a guard whose
+      leaving is the puzzle has to be unmistakably visible both before and after he leaves.</p>
+
+      <p>Three problems in one place, solved in different orders by different players:</p>
+      <ul>
+        <li><strong>The tip jar ($4.00)</strong> is a reach over the counter at the far end from
+          him. Cheap, and it teaches the counter's geometry for free.</li>
+        <li><strong>The five under the tackle box ($5.00)</strong> needs a
+          <span class="mono">SHOVE</span> first — this block's saltshaker, its paperback, its
+          candle lantern, its brass bell. Two beats, on the cutting table, in front of him.</li>
+        <li><strong>The day's take ($20.00)</strong> is in an open cash box on the counter, and he
+          does not move for anything except birds on his floor.</li>
+      </ul>
+
+      <p>Which is the mackerel. Drop it on the quay more than 8 m from the counter and every gull on
+      the wharf goes for it, and he leaves the box to drive them off. Drop it out on the water and
+      nothing happens — the gulls eat, and he does not care, because the water is already theirs
+      and it is not his floor. That is the roofline's <em>birds do not use stairs</em> rule wearing
+      the only hat this block could give it, and this block is late enough to be allowed to assume
+      the lesson rather than teach it.</p>
+
+      <div class="note">
+        <span class="lbl">Why the mackerel and not more fries</span>
+        A cone of fries is level 3's bait and its toast already reads
+        <em>"Chips. Gulls like chips."</em> — which is a British word in player-facing copy and
+        is on the list of things you have told me not to do. See <a href="#open">§11</a>: I found it
+        while writing this and it is a two-word fix on a shipped block, so it is yours to call
+        rather than mine to slip in.
+      </div>
+    </div>
+  </section>
+
+  <section id="silhouette">
+    <h2><span class="sec">§5</span> The silhouette, and the debt I am not spending</h2>
+    <div class="col">
+      <p>The kid is identified by her silhouette: she sits, and until level 4 nothing else in the
+      game sat. The roofline invented that, the park defended it against being mostly benches, and
+      the lobby <strong>spent</strong> it — the pianist sits, so the rule is now the weaker
+      "nothing else sits <em>in the open</em>".</p>
+
+      <p>I inherit the weaker rule and I am not weakening it further. <strong>Nobody on this block
+      sits down except the kid.</strong> That takes defending, because a fishing dock is full of
+      people sitting on bollards with a line in the water — so:</p>
+      <ul>
+        <li>The two people fishing off the east quay <strong>stand</strong> at the rail.</li>
+        <li>The deckhand walks, the fishmonger stands at his counter, the harbormaster stands at
+          his window, the skipper stands on his boat.</li>
+        <li>There are two benches on the quay and both are empty, exactly as the park's four are.</li>
+      </ul>
+
+      <p>She sits on an upturned <strong>crate</strong> at the edge of the quay — a shape nothing
+      else on the block has, low and hard and nowhere near the furniture — and she is placed by the
+      park's rule rather than the roofline's: on the camera side of the water, so the water is
+      <em>behind</em> her. A small figure against teal is a small figure you can see. And she is
+      nowhere near the crab pots, which are this block's deliberate near-side occluder: an occluder
+      only fades on the one ray between camera and crow, and trading is core loop.</p>
+
+      <div class="note">
+        <span class="lbl">If a playtest is ever confused about who trades</span>
+        The lobby's brief says the pianist is what goes. That is still the right answer and this
+        block does not change it — but it is worth writing down that after two blocks of paying it
+        down, the margin is one seated easter egg wide.
+      </div>
+    </div>
+  </section>
+
+  <section id="water">
+    <h2><span class="sec">§6</span> The water, and what the engine actually allows</h2>
+    <div class="col">
+      <p>This is the part of the proposal most likely to be wrong, so it is the part with the
+      arithmetic in it. I went looking for what a big body of water would cost <em>before</em>
+      designing around one, and the answer changed the design twice.</p>
+
+      <h3>The water in this game has always been a circle</h3>
+      <p><span class="mono">world.fountain</span> is <span class="mono">{ x, z, r, rim, floor }</span>
+      and every test of it is <span class="mono">hypot(x&minus;f.x, z&minus;f.z) &lt; f.r &minus; 0.7</span>.
+      There are exactly <strong>three</strong> such tests in the shipped game: two in
+      <span class="mono">crow.js</span> (is the bird swimming, and where is the basin floor under
+      it) and one in <span class="mono">pickups.js</span> (does a dropped coin land on the basin
+      floor). A harbor is not a circle, and four circular ponds in five blocks is the same object
+      five times.</p>
+
+      <p>So the spec gains a <span class="mono">shape</span>, the predicate moves into
+      <span class="mono">world/collide.js</span> as a pure function beside
+      <span class="mono">overlaps()</span>, and the three call sites read it instead of doing the
+      maths inline. Levels 1–4 pass no shape, take the circle branch, and are bit-for-bit
+      unchanged — which is the same shape of change as the <span class="mono">floor</span>
+      parameter the roofline added to every walker function.</p>
+
+      <div class="note">
+        <span class="lbl">What this does <em>not</em> need</span>
+        A new collider shape. The ring exists because a circular wall has no axis to slide along;
+        a rectangular basin's coping is <strong>four ordinary boxes</strong>, and the crow's
+        existing box logic already does the right thing at both ends. That was the single biggest
+        risk in this design and it evaporated on reading the collision code.
+      </div>
+
+      <h3>The vertical geometry is not a choice</h3>
+      <p>Two assertions in <span class="mono">audit-level.mjs</span> hold hands, and between them
+      they fix every height in a water body to within a couple of centimetres:</p>
+      <ul>
+        <li><em>"the rim is a wall at every heading — you go in over the top, not through"</em>,
+          which walks a crow at the water from 180 directions and fails if any of them gets in.</li>
+        <li><em>"a crow in the water can simply walk out, no flapping at all"</em>, which walks a
+          crow at the rim from 24 directions <em>inside</em> and fails if any of them is trapped.</li>
+      </ul>
+      <p>The crow scrambles onto anything within <span class="mono">STEP_UP</span> = 0.34 m of its
+      feet, and afloat its feet are at the water surface rather than wherever the bob has it. So
+      the coping has to stand <strong>more than 0.34 above the land</strong> (or you fall in by
+      walking) and <strong>less than 0.34 above the water</strong> (or you are in a lobster pot).
+      The shipped numbers — coping 0.62, surface 0.20 below it — are the only pair that satisfies
+      both, and that is why the fountain, the plunge pool, the duck pond and the lobby basin are
+      all the same object with different radii.</p>
+
+      <p><strong>The consequence for a harbor is that the water sits 0.42 m above the quay.</strong>
+      I want to be straightforward that this is a compromise rather than a happy accident. What
+      saves it is the camera: at 38&deg; from thirty metres you see a quay, a low stone lip, and
+      water beyond it, and the park's pond is that exact object and has never been remarked on. It
+      also happens to be what a harbor looks like at full tide, when the water is lapping the top
+      of the quay wall — so the block is set at high tide and everything that floats sits high.</p>
+
+      <p>The alternative was to make the drop from quay to water a real one and let the crow walk
+      off the edge, which reads better and breaks the first of those two assertions on purpose. I
+      am not doing that. It is a rule that has been true since level 1, the block does not need it
+      to work, and "we weakened a safety assertion so the water would look better" is how the
+      fountain became a lobster pot twice.</p>
+
+      <h3>Things standing in the water, which is the one rule I am changing</h3>
+      <p>The audit currently says <strong>nothing is built inside the water</strong>, full stop. It
+      is a good rule and its reason is right — don't put obstacles in a volume the player swims
+      through. But a wharf without pilings under it is not a wharf, and the pier, both floats, two
+      boats and the beacon all stand in the basin by definition.</p>
+
+      <p>So the binary rule becomes a declared one, in the same style as
+      <span class="mono">hung: true</span> on the roofline's pickup: a collider may carry
+      <span class="mono">inWater: true</span>, which is a thing somebody has to type into the level
+      source and which the audit prints back by name. And in exchange the escape test gets
+      <em>stronger</em>, because a declared exemption is only safe if the thing it protects is
+      measured:</p>
+      <ul>
+        <li>Today the escape test samples the middle of the basin and two radii out from it —
+          8 headings &times; 3 radii, which is 24 points in a circle.</li>
+        <li>It will sample a <strong>grid across the whole basin</strong>, skip the cells that are
+          inside a declared solid, and require every remaining cell to get the crow out — holding
+          flap, tapping flap, full bar and empty bar, all four, as now.</li>
+      </ul>
+      <p>That is strictly more coverage than levels 1–4 get today, and it runs on all five blocks.
+      A rule that can quietly end up with nothing to check is not a rule, so it also asserts it
+      found open water to check.</p>
+    </div>
+  </section>
+
+  <section id="light">
+    <h2><span class="sec">§7</span> The light, and the debt I am inheriting</h2>
+    <div class="col">
+      <p>The block starts at <span class="mono">dayStart: 0.58</span>, so
+      <span class="mono">RULES.lampsOnAt</span> (0.72) arrives at <strong>2 m 40 s</strong> of the
+      eight-minute day, against the lobby's 3 m 01 s, the roofline's 4 m 08 s and the block's
+      5 m 46 s. One more rung, and a small one: there is not much afternoon left to spend, and the
+      point of the ladder is that it is felt rather than measured.</p>
+
+      <p>The inherited number that worries me is not luminance. It is hue. The lobby ships with
+      <strong>blue beating red by 10 and 17 at t = 0.98</strong>, down from 18 and 34, because warm
+      additive light eats the violet the whole style guide is built on — and the dusk
+      <em>floors</em> will keep passing long after the frame stops looking right, because they only
+      measure brightness.</p>
+
+      <div class="note">
+        <span class="lbl">The one place this block is lucky</span>
+        Its biggest surface is water, and water is the only large surface in this game that is cool
+        by nature. If it is painted right, the wharf should <strong>pay some of that debt back</strong>
+        rather than spend more of it — a big cool plane under a warm sky is exactly what the violet
+        needs to read against.
+      </div>
+
+      <p>Painted wrong it does the opposite, and the trap is well documented: the park's lawn is
+      the biggest surface in the game and took three attempts, failing dusk at a saturated green
+      and going to a beach at a pale one. A saturated teal would swallow the violet the same way a
+      saturated green did. So the water gets its own palette entry — pale, cool, high value, well
+      clear of the 5th-percentile floor — and it gets <strong>measured at t = 0 and t = 0.98,
+      never one or the other</strong>.</p>
+
+      <p>Fixtures: a wharf is lit by pole lights on the quay, the market's strip lighting, the ice
+      house door, and the beacon. The beacon is the event. Everything else follows the rule that has
+      now been stated four times — <strong>light the ground, not the lamp count</strong> — so the
+      quay decals go pale before a single extra pole goes in, and the pool areas stay small and
+      bright rather than large and dim, because a pool's cost is its area and its brightness is
+      nearly free.</p>
+    </div>
+  </section>
+
+  <section id="outside">
+    <h2><span class="sec">§8</span> What changes outside this level</h2>
+    <div class="col">
+      <ul>
+        <li><span class="mono">world/wharf.js</span> — new. Named for the place, like
+          <span class="mono">park.js</span> and <span class="mono">lobby.js</span>. Slot numbers are
+          a registry question, not a filename one, and no existing level file gets renamed.</li>
+        <li><span class="mono">world/levels.js</span> — a fifth descriptor, and level 4's
+          <span class="mono">next</span> goes from <span class="mono">null</span> to
+          <span class="mono">5</span>. That one edit is the entire unlock: the ending screen grows a
+          brass <em>The wharf &rarr;</em> button, the Levels screen grows a fifth chip, and
+          <span class="mono">save.js</span> opens the door.</li>
+        <li><span class="mono">world/collide.js</span> — the water predicate, as a pure function.
+          <span class="mono">entities/crow.js</span> and <span class="mono">world/pickups.js</span>
+          — three call sites, now reading it.</li>
+        <li><span class="mono">scripts/audit-level.mjs</span> — the water rules generalised, and
+          the escape grid. Runs on all five blocks.</li>
+        <li><span class="mono">scripts/shoot.mjs</span> — a level 5 section at
+          <strong>60–69</strong> and <span class="mono">l5-dusk-*</span>. Not 40–49: 40 is the touch
+          pause control, and two sections writing one filename is a screenshot that quietly stops
+          being the thing it is named after.</li>
+        <li><span class="mono">render/palette.js</span> — the harbor water, plus the matching
+          swatches in <span class="mono">docs/style-guide.html</span>. The doc is the spec, so they
+          change together.</li>
+        <li><span class="mono">world/pickups.js</span> — the mackerel mesh and label, and
+          <span class="mono">fish</span> added to <span class="mono">BAIT_KINDS</span>. The audit
+          reads that set rather than naming kinds, so nothing else has to notice.</li>
+      </ul>
+
+      <p><strong>What is not being changed:</strong> the lobby's ending copy. It was written as the
+      game's last ending and it closes rather than points — but it never names a next place, and the
+      button under it does the pointing, which is the same reasoning that left the roofline's ending
+      alone when the lobby arrived. If you would rather it pointed, that is a copy call and a small
+      one. Flagged, not done.</p>
+    </div>
+  </section>
+
+  <section id="words">
+    <h2><span class="sec">§9</span> The words</h2>
+    <div class="col">
+      <h3>Tasks</h3>
+      <ul>
+        <li>Dive the harbor</li>
+        <li>Get the five off the far pilings</li>
+        <li>Trade something shiny</li>
+        <li>Get the fishmonger away from his counter</li>
+        <li>Get the twenty</li>
+      </ul>
+      <p>The second one is the block's teaching line and it is doing the most work: it names a
+      <em>place</em> you can see from the quay, and the only way to obey it is to fly out over
+      water. That is the level in one sentence, delivered as a chore.</p>
+
+      <h3>Toasts</h3>
+      <ul>
+        <li><span class="mono">money</span> — Take it to your nest</li>
+        <li><span class="mono">shiny</span> — The kid on the crate will trade for that</li>
+        <li><span class="mono">bait</span> — A mackerel. Every gull on this pier is already looking at you.</li>
+        <li><span class="mono">pin</span> — The five is loose</li>
+        <li><span class="mono">bait dropped</span> — Every gull on the wharf has seen it</li>
+        <li><span class="mono">too close</span> — Too near the counter</li>
+        <li><span class="mono">wrong deck</span> — Not from out on the water</li>
+      </ul>
+      <p>All plain American English. No <em>quay</em> in anything a player reads — it is in this
+      document and in the source because it is the right word for a thing, and it is
+      <em>the dock</em> everywhere it has to send somebody.</p>
+
+      <h3>The ending</h3>
+      <p>Losing headline: <strong>The Tide Turns</strong>. Winning: you come back standing on a
+      harbor light in the middle of open water with no way down that a person could take, and the
+      gulls are still there, and one of them is looking at you the way it has been looking at you
+      all afternoon — because it was always going to be one of you two, and you got the coin.</p>
+    </div>
+  </section>
+
+  <section id="veto">
+    <h2><span class="sec">§10</span> Decisions worth vetoing</h2>
+    <div class="col">
+      <p>Ranked by what it costs to reverse, cheapest last.</p>
+
+      <div class="miles">
+        <div class="mile">
+          <div class="m-id">VETO 1</div>
+          <div class="m-body"><strong>The setting</strong>
+          <span>A fishing wharf, because it is the one ordinary place where broken ground needs no
+          explanation, and because a pier full of gulls is the joke this game did not pick. If this
+          is wrong it is wrong now — the geometry is the expensive part and none of it exists yet.</span></div>
+        </div>
+        <div class="mile">
+          <div class="m-id">VETO 2</div>
+          <div class="m-body"><strong>Relaxing "nothing is built inside the water" to a declared exemption</strong>
+          <span>This changes a rule that has been true since level 1, on all five blocks. I think it
+          is a net strengthening because the escape test goes from 24 sampled points to a grid — but
+          it is the change I would most want a second opinion on, and the fallback is a wharf with
+          no pilings, which is worse geometry and no rule change.</span></div>
+        </div>
+        <div class="mile">
+          <div class="m-id">VETO 3</div>
+          <div class="m-body"><strong>$40</strong>
+          <span>Both arguments are in <a href="#ladder">§3</a>. You overruled this number once, on a
+          block that had nowhere else to work; this one has four pitches and $8.50 nobody guards.
+          One line in <span class="mono">levels.js</span> either way, and the geometry does not
+          care.</span></div>
+        </div>
+        <div class="mile">
+          <div class="m-id">VETO 4</div>
+          <div class="m-body"><strong>Five decks after the lobby's three</strong>
+          <span>It reads like a step back toward the roofline and it is not — the tallest unbroken
+          climb is 3.1 m against the roofline's much longer ones. The decks are close together
+          because they are <em>boats</em>, and what is hard about them is the water between, not the
+          height. If it plays as a climbing block I have built the wrong thing.</span></div>
+        </div>
+        <div class="mile">
+          <div class="m-id">VETO 5</div>
+          <div class="m-body"><strong>dayStart 0.58</strong>
+          <span>Lamps at 2 m 40 s. One rung past the lobby. A knob, and the least consequential
+          thing here.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="open">
+    <h2><span class="sec">§11</span> Questions, and three I am inheriting</h2>
+    <div class="col">
+      <h3>Open on this block</h3>
+      <ul>
+        <li><strong>Whether water reads as a cost or as a punishment.</strong> The whole design
+          rests on a swim being eight annoying seconds rather than a lost run. Nothing in a harness
+          can tell me which one it is.</li>
+        <li><strong>Whether a guard on a boat is interesting or just unreachable.</strong> The
+          skipper cannot leave his deck, so he guards $9.40 that you have to land next to him for.
+          That is either the best guard in the game or a man shouting at you from a pot.</li>
+        <li><strong>Whether the beacon is far enough out.</strong> Too near and the water is
+          decoration; too far and every bank is a chore. This is a number I will move after playing
+          it, and the first number is a guess.</li>
+      </ul>
+
+      <h3>Inherited from the lobby, and what I am doing with them</h3>
+      <ul>
+        <li><strong>Two gulls on the gallery — interesting or annoying?</strong> Answered by taking
+          the other side: the wharf's gulls are everywhere and none of them guards anything. They
+          are the block's weather and its bait mob, and if the lobby's two read as punishing, these
+          are the argument for what gulls are actually for.</li>
+        <li><strong>A 7 m clock on the centre line — landmark or obstacle?</strong> Inherited
+          directly. The beacon is the same bet, moved into water where nothing has to walk past it.</li>
+        <li><strong>Eight people in a 44 m room — watched or crowded?</strong> Sidestepped. Seven
+          people spread over 60 m, which is the park's density, on a block whose pressure comes from
+          the floor rather than from the cast.</li>
+      </ul>
+
+      <h3>And one bug I found in shipped copy</h3>
+      <p>Level 3's bait toast reads <em>"Chips. Gulls like chips."</em> and its pickup label is
+      <span class="mono">A CONE OF CHIPS</span>. That is the British word for fries in copy an
+      American player reads, and it is specifically on the list of things not to do. It is two
+      strings on a shipped block, so it is yours to call — I have not touched it.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>Small Change · Level 5 · The Wharf</span>
+  <span>$40.00 · five decks · slot 5 · proposed</span>
+</footer>
+
+</body>
+</html>

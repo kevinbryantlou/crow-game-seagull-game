@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import { PAL } from '../render/palette.js';
 import { box, cyl, cone, ico, at, group, mat } from '../render/shapes.js';
-import { overlaps } from '../world/collide.js';
+import { overlaps, inWaterXZ } from '../world/collide.js';
 
 const GRAVITY = 19.0;
 const WALK_SPEED = 3.4;
@@ -269,7 +269,7 @@ export class Crow {
     // block, a plunge pool on the roof terrace. The name is the field the crow
     // and the pickups both read; the fiction is the level's business.
     const f = world.fountain;
-    const inRing = Math.hypot(this.pos.x - f.x, this.pos.z - f.z) < f.r - 0.7;
+    const inRing = inWaterXZ(f, this.pos.x, this.pos.z);
     // Bounded below as well as above. The upper test alone says "anywhere under
     // the surface", which is true of the whole column of air beneath a pool that
     // is not at ground level — a crow in the yard would have been swimming in a
@@ -487,7 +487,7 @@ export class Crow {
     // The fountain floor is below its rim — but only for a crow that is actually
     // in the basin, not for one directly under a raised one.
     const f = world.fountain;
-    if (Math.hypot(p.x - f.x, p.z - f.z) < f.r - 0.7 && p.y < f.floor && p.y > f.floor - 0.6) {
+    if (inWaterXZ(f, p.x, p.z) && p.y < f.floor && p.y > f.floor - 0.6) {
       p.y = f.floor;
       if (this.vel.y < 0) this.vel.y = 0;
       this.grounded = true;

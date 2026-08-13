@@ -26,7 +26,7 @@ const finite = (v) => Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isF
  */
 export function auditLevel({ level, world, check, deps }) {
   const {
-    RULES, overlaps, blocksWalker, deckAt, WALKER_RADIUS,
+    RULES, overlaps, blocksWalker, deckAt, WALKER_RADIUS, inWaterXZ, waterExtent,
     Crow, CROW, Human, Pigeon, Gull, Pickup, BAIT_KINDS, prepareOccluders,
   } = deps;
 
@@ -92,17 +92,59 @@ export function auditLevel({ level, world, check, deps }) {
   // ── the water ─────────────────────────────────────────────────────────────
   const F = world.fountain;
   const DECK = world.waterDeck ?? 0;
-  const inWater = world.colliders.filter((c) => {
+  const WX = waterExtent(F);
+
+  /**
+   * Is (x, z) within `pad` of the water's *outer* edge — would a body of that
+   * radius standing here be in it? The inverse of `inWaterXZ`, which measures
+   * inward from the edge; this one measures outward, and both shapes need it.
+   */
+  const touchesWater = (x, z, pad = 0) => (F.shape === 'box'
+    ? x > WX.minX - pad && x < WX.maxX + pad && z > WX.minZ - pad && z < WX.maxZ + pad
+    : Math.hypot(x - F.x, z - F.z) < F.r + pad);
+  /** Clear of the basin altogether — standing on the coping counts as out. */
+  const beyondWater = (x, z) => !touchesWater(x, z, 0);
+
+  /** Does this collider's footprint reach into the basin proper? */
+  const reachesWater = (c) => {
+    if (F.shape === 'box') {
+      return c.maxX > WX.minX + 0.8 && c.minX < WX.maxX - 0.8
+        && c.maxZ > WX.minZ + 0.8 && c.minZ < WX.maxZ - 0.8;
+    }
+    const cx = Math.max(c.minX, Math.min(F.x, c.maxX));
+    const cz = Math.max(c.minZ, Math.min(F.z, c.maxZ));
+    return Math.hypot(cx - F.x, cz - F.z) < F.r - 0.8;
+  };
+
+  /**
+   * "Nothing is built inside the water" used to be absolute, and it was right
+   * for four blocks whose water is an ornamental basin in the middle of a floor.
+   * The wharf's water is a working harbour: the pier, both floats, two boats and
+   * the beacon all stand in it by definition, and a harbour with nothing in it
+   * is not the thing being modelled.
+   *
+   * So it is a *declared* exemption now, in the same style as `hung: true` on
+   * the roofline's one hanging pickup — somebody has to type `inWater: true`
+   * into the level source, and the audit prints back what it was told. The rule
+   * that actually protects the player is not this one anyway; it is the escape
+   * grid below, which got stronger in the same edit precisely because this one
+   * got weaker.
+   */
+  const inBasin = world.colliders.filter((c) => {
     if (c.shape === 'ring') return false;
     // Only things at the water's own height count. A terrace pool sits on top of
     // a fifty-metre building, and the building is not "inside" it.
     if (c.top <= DECK + 0.02 || c.bottom >= F.rim) return false;
-    const cx = Math.max(c.minX, Math.min(F.x, c.maxX));
-    const cz = Math.max(c.minZ, Math.min(F.z, c.maxZ));
-    return Math.hypot(cx - F.x, cz - F.z) < F.r - 0.8;
+    return reachesWater(c);
   });
-  check(say('nothing is built inside the water'), inWater.length === 0,
-    `(${inWater.length} collider(s) overlap the basin)`);
+  const undeclared = inBasin.filter((c) => !c.inWater);
+  check(say('nothing undeclared is built inside the water'), undeclared.length === 0,
+    `(${undeclared.length} collider(s) overlap the basin: `
+    + `${undeclared.slice(0, 4).map((c) => c.tag || 'untagged').join(', ')})`);
+  if (inBasin.length) {
+    console.log(`       ${inBasin.length} declared structure(s) standing in the water: `
+      + `${[...new Set(inBasin.map((c) => c.tag || 'untagged'))].join(', ')}`);
+  }
 
   check(say(`nest landing surface is at least ${RULES.nestPlatformRatio}x the nest`),
     world.nestPlatform >= world.nestFootprint * RULES.nestPlatformRatio,
@@ -393,18 +435,67 @@ export function auditLevel({ level, world, check, deps }) {
     // Far enough out to build up speed, near enough to still be on the deck the
     // pool sits on. On the block that is eight metres of open plaza; on the
     // terrace it is however much roof there is round a three-metre pool.
-    const approach = Math.min(8, F.r + 2.3);
+    const approach = Math.min(8, F.shape === 'box' ? 3.2 : F.r + 2.3);
+    /** Somewhere a crow could actually be standing before it walks at the rim. */
+    const standable = (x, z) => !world.colliders.some(
+      (c) => blocksWalker(c, 0.7, 0.05, DECK) && overlaps(c, x, z, 0.34));
+
+    /**
+     * Where to walk at the water from, and which way.
+     *
+     * A circle has one answer — outward from the middle, every two degrees. A
+     * rectangle has four sides, so it is sampled along each of them with the
+     * approach run laid perpendicular to that side. Starts that land inside
+     * something get dropped rather than counted, because a crow cannot walk at
+     * the harbour from inside the ice house; the count is asserted afterwards so
+     * that dropping them all can never read as a pass.
+     */
+    const rimRuns = [];
+    if (F.shape === 'box') {
+      const sides = [
+        { nx: 0, nz: 1, along: 'x', at: WX.maxZ },   // the near edge
+        { nx: 0, nz: -1, along: 'x', at: WX.minZ },
+        { nx: 1, nz: 0, along: 'z', at: WX.maxX },
+        { nx: -1, nz: 0, along: 'z', at: WX.minX },
+      ];
+      for (const s of sides) {
+        const lo = s.along === 'x' ? WX.minX : WX.minZ;
+        const hi = s.along === 'x' ? WX.maxX : WX.maxZ;
+        for (let t = lo + 1.2; t <= hi - 1.2; t += 1.5) {
+          const ex = s.along === 'x' ? t : s.at;
+          const ez = s.along === 'x' ? s.at : t;
+          rimRuns.push({
+            x: ex + s.nx * approach, z: ez + s.nz * approach,
+            dx: -s.nx, dz: -s.nz, label: `(${ex.toFixed(0)}, ${ez.toFixed(0)})`,
+          });
+        }
+      }
+    } else {
+      for (let deg = 0; deg < 360; deg += 2) {
+        const a = (deg * Math.PI) / 180;
+        rimRuns.push({
+          x: F.x + Math.cos(a) * approach, z: F.z + Math.sin(a) * approach,
+          dx: -Math.cos(a), dz: -Math.sin(a), label: `${deg}°`,
+        });
+      }
+    }
+
     const leaks = [];
-    for (let deg = 0; deg < 360; deg += 2) {
-      const a = (deg * Math.PI) / 180;
+    let rimRan = 0;
+    for (const run of rimRuns) {
+      if (!standable(run.x, run.z)) continue;
+      rimRan++;
       const c = new Crow(stage);
-      c.pos.set(F.x + Math.cos(a) * approach, DECK, F.z + Math.sin(a) * approach);
-      dry.move.x = -Math.cos(a); dry.move.y = Math.sin(a);   // straight at the middle
+      c.pos.set(run.x, DECK, run.z);
+      // `move.y` is the -z axis of the input basis, hence the sign.
+      dry.move.x = run.dx; dry.move.y = -run.dz;
       for (let i = 0; i < 60 * 8 && !c.inWater; i++) c.update(1 / 60, dry, world, audio);
-      if (c.inWater) leaks.push(deg);
+      if (c.inWater) leaks.push(run.label);
     }
     check(say('the rim is a wall at every heading — you go in over the top, not through'),
-      leaks.length === 0, `(walked straight in at ${leaks.length} heading(s): ${leaks.slice(0, 8).join(', ')})`);
+      leaks.length === 0, `(walked straight in at ${leaks.length}: ${leaks.slice(0, 8).join(', ')})`);
+    check(say('the rim test had somewhere to walk at the water from'), rimRan >= 24,
+      `(${rimRan} of ${rimRuns.length} approaches were on standable ground)`);
 
     /**
      * The ratio that was the actual bug. A flap only lifts the crow if it
@@ -421,24 +512,47 @@ export function auditLevel({ level, world, check, deps }) {
      * because that is the state a player is actually in by the time they decide
      * the water is broken.
      */
-    const radii = [0, F.r * 0.45, F.r * 0.78];
+    /**
+     * Every square of open water, rather than three radii out from the middle.
+     *
+     * The old sampling — 8 headings × 3 radii — is complete for an empty
+     * circular basin and says nothing at all about a harbour with a pier, two
+     * boats and a beacon standing in it. Now that a level may *declare*
+     * structures inside the water, the escape test is the thing standing between
+     * that permission and a lobster pot, so it walks a grid, drops the cells
+     * that are inside a declared solid, and requires every one that is left.
+     *
+     * The exact centre is always sampled whatever the grid lands on, because
+     * that is where the lobby's fountain-centrepiece trap was caught.
+     */
+    const blocked = (x, z) => world.colliders.some(
+      (c) => c.top > F.floor + 0.05 && c.bottom < F.rim + 0.1 && overlaps(c, x, z, 0.34));
+    const step = F.shape === 'box' ? 3.0 : Math.max(1.2, F.r * 0.42);
+    const openCells = [];
+    for (let x = WX.minX + step / 2; x < WX.maxX; x += step) {
+      for (let z = WX.minZ + step / 2; z < WX.maxZ; z += step) {
+        if (!inWaterXZ(F, x, z) || blocked(x, z)) continue;
+        openCells.push({ x, z });
+      }
+    }
+    if (!blocked(F.x, F.z) && inWaterXZ(F, F.x, F.z)) openCells.push({ x: F.x, z: F.z });
+    check(say('the escape test found open water to check'), openCells.length >= 4,
+      `(${openCells.length} cell(s))`);
+
     const escape = (startStamina, mode) => {
       const stuck = [];
-      for (let deg = 0; deg < 360; deg += 45) {
-        for (const r of radii) {
-          const a = (deg * Math.PI) / 180;
-          const c = new Crow(stage);
-          c.pos.set(F.x + Math.cos(a) * r, F.floor, F.z + Math.sin(a) * r);
-          c.stamina = startStamina;
-          let out = false;
-          for (let i = 0; i < 60 * 12; i++) {
-            // 5 frames down, 7 up — roughly a 90 ms tap at 5 per second.
-            const flap = mode === 'hold' ? true : (i % 12) < 5;
-            c.update(1 / 60, { move: { x: 0, y: 0 }, flap }, world, audio);
-            if (c.pos.y > F.rim + 0.25) { out = true; break; }
-          }
-          if (!out) stuck.push(`${deg}° r${r.toFixed(1)}`);
+      for (const cell of openCells) {
+        const c = new Crow(stage);
+        c.pos.set(cell.x, F.floor, cell.z);
+        c.stamina = startStamina;
+        let out = false;
+        for (let i = 0; i < 60 * 12; i++) {
+          // 5 frames down, 7 up — roughly a 90 ms tap at 5 per second.
+          const flap = mode === 'hold' ? true : (i % 12) < 5;
+          c.update(1 / 60, { move: { x: 0, y: 0 }, flap }, world, audio);
+          if (c.pos.y > F.rim + 0.25) { out = true; break; }
         }
+        if (!out) stuck.push(`(${cell.x.toFixed(1)}, ${cell.z.toFixed(1)})`);
       }
       return stuck;
     };
@@ -454,19 +568,44 @@ export function auditLevel({ level, world, check, deps }) {
         stuck.length === 0, `(stuck at ${stuck.join(', ')})`);
     }
 
-    // And the third way out, which needs no technique at all: walk at the wall.
+    /**
+     * And the third way out, which needs no technique at all: walk at the wall.
+     *
+     * From every open cell, headed at the nearest edge. "Out" is standing on the
+     * coping or past it — height alone will not do, because the land outside a
+     * basin is *below* its rim, so a crow that has genuinely walked out onto the
+     * quay is lower than the wall it climbed.
+     */
+    const escaped = (c) => !c.inWater
+      && (c.pos.y >= F.rim - 0.02 || beyondWater(c.pos.x, c.pos.z));
+    const nearestEdge = (x, z) => {
+      if (F.shape !== 'box') {
+        const d = Math.hypot(x - F.x, z - F.z);
+        // Dead centre has no outward direction, and asking for one gives (0, 0)
+        // — a crow told to walk nowhere, which reads as a trapped crow. Any
+        // heading is the right answer from the middle of a circle.
+        if (d < 1e-6) return { x: 1, z: 0 };
+        return { x: (x - F.x) / d, z: (z - F.z) / d };
+      }
+      const d = [
+        { x: -1, z: 0, gap: x - WX.minX }, { x: 1, z: 0, gap: WX.maxX - x },
+        { x: 0, z: -1, gap: z - WX.minZ }, { x: 0, z: 1, gap: WX.maxZ - z },
+      ].sort((a, b) => a.gap - b.gap)[0];
+      return { x: d.x, z: d.z };
+    };
+
     const walkOut = [];
-    for (let deg = 0; deg < 360; deg += 15) {
-      const a = (deg * Math.PI) / 180;
+    for (const cell of openCells) {
       const c = new Crow(stage);
-      c.pos.set(F.x + Math.cos(a) * (F.r * 0.5), F.floor, F.z + Math.sin(a) * (F.r * 0.5));
-      const move = { x: Math.cos(a), y: -Math.sin(a) };   // straight at the rim
+      c.pos.set(cell.x, F.floor, cell.z);
+      const n = nearestEdge(cell.x, cell.z);
+      const move = { x: n.x, y: -n.z };   // straight at the nearest rim
       let out = false;
       for (let i = 0; i < 60 * 12; i++) {
         c.update(1 / 60, { move, flap: false }, world, audio);
-        if (!c.inWater && Math.hypot(c.pos.x - F.x, c.pos.z - F.z) > F.r) { out = true; break; }
+        if (escaped(c)) { out = true; break; }
       }
-      if (!out) walkOut.push(`${deg}°`);
+      if (!out) walkOut.push(`(${cell.x.toFixed(1)}, ${cell.z.toFixed(1)})`);
     }
     check(say('a crow in the water can simply walk out, no flapping at all'),
       walkOut.length === 0, `(stuck at ${walkOut.join(', ')})`);
@@ -756,8 +895,9 @@ export function auditLevel({ level, world, check, deps }) {
       const [ax, az] = h.patrol[i];
       const [bx, bz] = h.patrol[(i + 1) % h.patrol.length];
       for (let t = 0; t <= 1; t += 0.004) {
-        const d = Math.hypot(ax + (bx - ax) * t - F.x, az + (bz - az) * t - F.z);
-        if (d < F.r + WALKER_RADIUS) { wading.push(`${h.id} leg ${i}`); break; }
+        if (touchesWater(ax + (bx - ax) * t, az + (bz - az) * t, WALKER_RADIUS)) {
+          wading.push(`${h.id} leg ${i}`); break;
+        }
       }
     }
   }
@@ -874,7 +1014,7 @@ export function auditLevel({ level, world, check, deps }) {
     `(${humans.filter((h) => h.patrol).map((h) => `${h.id} ${reached.get(h.id) || 0}`).join(', ')})`);
 
   const paddling = [...pigeons, ...gulls]
-    .filter((p) => Math.abs(p.floorY - DECK) < 0.5 && Math.hypot(p.pos.x - F.x, p.pos.z - F.z) < F.r);
+    .filter((p) => Math.abs(p.floorY - DECK) < 0.5 && touchesWater(p.pos.x, p.pos.z));
   check(say('no bird is standing in the water'), paddling.length === 0, `(${paddling.length})`);
 
   // A gull is a hazard marker, so it has to stay where it was put — a gull that

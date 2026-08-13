@@ -23,6 +23,40 @@ export const PIGEON_RADIUS = 0.16;
 export const PIGEON_HEIGHT = 0.35;
 export const PIGEON_STEP_OVER = 0.1;
 
+/**
+ * Is (x, z) inside the level's water body, `inset` metres in from its edge?
+ *
+ * The water was a circle for four blocks, and the test for it was written out
+ * by hand in three places — twice in `crow.js` (am I swimming, and where is the
+ * basin floor under me) and once in `pickups.js` (does a dropped coin land on
+ * that floor). The wharf's harbour is a rectangle, so the maths moved here and
+ * the three call sites read it instead.
+ *
+ * The `inset` is not decoration: it keeps a crow standing *on* the coping from
+ * reading as being in the water, and it is the reason the number 0.7 appears in
+ * every one of those call sites. Passing it explicitly rather than baking it in
+ * is what lets the audit ask a slightly stricter question (0.8) about what may
+ * be built in the basin.
+ *
+ * A level that names no shape gets the circle, so levels 1–4 take exactly the
+ * expression they took before this function existed.
+ */
+export function inWaterXZ(f, x, z, inset = 0.7) {
+  if (f.shape === 'box') {
+    return x > f.minX + inset && x < f.maxX - inset
+      && z > f.minZ + inset && z < f.maxZ - inset;
+  }
+  return Math.hypot(x - f.x, z - f.z) < f.r - inset;
+}
+
+/** The water body's bounding rectangle, whichever shape it is. */
+export function waterExtent(f) {
+  if (f.shape === 'box') {
+    return { minX: f.minX, maxX: f.maxX, minZ: f.minZ, maxZ: f.maxZ };
+  }
+  return { minX: f.x - f.r, maxX: f.x + f.r, minZ: f.z - f.r, maxZ: f.z + f.r };
+}
+
 /** Does a disc of radius `r` at (x, z) overlap this collider's footprint? */
 export function overlaps(c, x, z, r = 0) {
   if (c.shape === 'ring') {
