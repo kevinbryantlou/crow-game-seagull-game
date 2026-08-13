@@ -40,7 +40,21 @@ export const PIGEON_STEP_OVER = 0.1;
  *
  * A level that names no shape gets the circle, so levels 1–4 take exactly the
  * expression they took before this function existed.
+ *
+ * **The shape describes the basin, not the waterline**, and getting that wrong
+ * cost a round. On a circular pool `f.r` is the coping's centre and the stone's
+ * inner face is 0.6 further in, so a 0.7 inset lands a tenth of a metre past
+ * the wall — which is what keeps a crow pressed against that wall still reading
+ * as *in the water*, and therefore still able to scramble out of it. A
+ * rectangle whose min/max were the waterline instead put the same inset 0.7 m
+ * inside the wall: a crow walking at the edge stopped being in the water while
+ * it was still in the water, lost its float height, and could no longer climb
+ * a coping it was touching. It is the lobster pot again, from a third
+ * direction. `WATER_EDGE_PAD` is the number that keeps the two shapes saying
+ * the same thing.
  */
+export const WATER_EDGE_PAD = 0.6;
+
 export function inWaterXZ(f, x, z, inset = 0.7) {
   if (f.shape === 'box') {
     return x > f.minX + inset && x < f.maxX - inset

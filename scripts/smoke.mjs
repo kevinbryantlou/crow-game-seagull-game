@@ -446,6 +446,37 @@ function auditLights(level, world) {
     pools.every((i) => i.materials[0].blending === THREE.AdditiveBlending
       && i.materials[0].depthWrite === false && i.materials[0].fog === false));
 
+  /**
+   * A pool at zero is not drawn at all.
+   *
+   * `transparent: true` puts a mesh in the transparent pass and three.js draws
+   * it whatever its opacity is, so every pool used to be rasterised and blended
+   * across its whole disc for the daylight half of a run, adding nothing to any
+   * pixel — 16% of the lobby's frame at midday for eighteen invisible quads.
+   *
+   * Asserted in both directions, because the failure that matters is not "a
+   * pool was drawn while dark" (wasteful) but "a pool never came back" (a block
+   * that goes dark at dusk and stays dark). The dusk luminance floors in
+   * `shoot` are the second guard on that.
+   */
+  check(say('every pool has a mesh to hide'), pools.every((i) => !!i.mesh));
+  night.since = 0;
+  night.update(0, 0.016);
+  check(say('no pool is drawn in daylight'),
+    pools.every((i) => i.mesh.visible === false),
+    `(${pools.filter((i) => i.mesh.visible).length} drawn)`);
+  night.since = 0;
+  for (let s = 0; s < 24; s += 0.1) night.update(1, 0.1);
+  check(say('every pool is drawn once it is lit'),
+    pools.every((i) => i.mesh.visible === true),
+    `(${pools.filter((i) => !i.mesh.visible).length} still hidden)`);
+  // And winding the clock back puts them away again, which is what a level
+  // rebuild and a scrubbed test both do.
+  night.since = 0;
+  night.update(0, 0.016);
+  check(say('winding the clock back hides them again'),
+    pools.every((i) => i.mesh.visible === false));
+
 }
 
 console.log('\nthe sky ramp');

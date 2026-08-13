@@ -77,6 +77,31 @@ export const PAL = {
   rug:         0xa7c2d2,
   rugMid:      0x8fadc0,
 
+  /**
+   * The harbour, and the bed under it — the wharf's biggest surface, and the
+   * third time a block's biggest surface has needed its own entry.
+   *
+   * The lawn took three attempts and the lobby's runner took two, both for the
+   * same reason: a large saturated surface either swallows the violet sky fill
+   * at dusk or goes to tan under the afternoon key. `water` is the fountain
+   * colour and it is far too saturated to cover a third of the frame with — a
+   * teal that reads as a jewel in a five-metre basin reads at thirty metres as
+   * a hole in the block.
+   *
+   * So this is pale and barely blue, at almost exactly `lawn`'s value, which
+   * puts it well clear of the 5th-percentile floor. It also does something none
+   * of the other big surfaces can: blue beats red here by 55, and the lobby
+   * shipped with that margin down to 10 at t = 0.98 because warm additive light
+   * eats the violet everything is built on. A big cool plane is the one thing
+   * that pays that back rather than spending more of it.
+   *
+   * `harbourBed` shows through at 0.66 opacity, so it is part of the colour
+   * rather than under it — kept close in value on purpose, because the coins on
+   * the bottom have to read through the surface and a dark bed hides them.
+   */
+  harbour:     0x8fb8c6,
+  harbourBed:  0x7fa8b4,
+
   // planting & water
   canopy:      0x7fa05c,
   canopyLit:   0x8fb06a,

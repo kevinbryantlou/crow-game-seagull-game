@@ -1198,7 +1198,7 @@ class Game {
    * demonstrably learned. Deliberately not a glint: that signal means "you can
    * take this", and the nest is where you put things.
    */
-  _updateNestPointer() {
+  _updateNestPointer(dt = 0) {
     const carrying = this.crow.carried;
     const show = this.running && this.banked === 0 && carrying && carrying.value > 0;
     if (!show) { this.hud.setNestPointer(null); return; }
@@ -1242,7 +1242,7 @@ class Game {
       angle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
     }
 
-    this.hud.setNestPointer({ x, y, angle });
+    this.hud.setNestPointer({ x, y, angle }, dt);
   }
 
   _frame = (now) => {
@@ -1305,12 +1305,12 @@ class Game {
     this.hud.setTime(t, this.elapsed);
     this.hud.setCarry(this.crow.carried ? this.crow.carried.label : null);
     this.hud.setStamina(this.crow.stamina, !this.crow.grounded || this.crow.stamina < 0.98);
-    this._updateNestPointer();
+    this._updateNestPointer(dt);
 
     if (this.running) {
       const a = this._bestAction();
       this.stage.project(this.crow.beakWorld, this._screen);
-      this.hud.setPrompt(a, this._screen, !this.input.hasTouch);
+      this.hud.setPrompt(a, this._screen, !this.input.hasTouch, dt);
     } else {
       this.hud.setPrompt(null, null);
     }

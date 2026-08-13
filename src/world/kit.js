@@ -30,6 +30,19 @@ export function makeKit(ctx) {
       minZ: z - d / 2, maxZ: z + d / 2,
       top, bottom, perch: opts.perch !== false,
       tag: opts.tag || null,
+      /**
+       * Declares that this thing is allowed to stand in the water.
+       *
+       * Only the wharf sets it. The audit's rule used to be "nothing is built
+       * inside the water" full stop, which is right for an ornamental basin and
+       * impossible for a harbour with a pier in it — so the exemption has to be
+       * typed out per collider and gets printed back by name. It has to be
+       * copied through here, which is the bit that was missed first time: the
+       * level said `inWater: true` thirteen times and `solid()` quietly dropped
+       * every one of them, so the audit reported thirteen undeclared structures
+       * standing in water that had all been declared.
+       */
+      inWater: opts.inWater === true,
     });
   };
 

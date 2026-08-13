@@ -99,6 +99,12 @@ export class Stage {
     this.target = new THREE.Vector3();
     this._smoothed = new THREE.Vector3(0, 0, 0);
     this._camPos = new THREE.Vector3();
+    // Scratch for the sky ramp, which runs every frame — see setTimeOfDay.
+    this._scratchHigh = new THREE.Color();
+    this._scratchLow = new THREE.Color();
+    this._scratchKey = new THREE.Color();
+    this._scratchFill = new THREE.Color();
+    this._scratchB = new THREE.Color();
     this._occluders = [];
     this._ray = new THREE.Raycaster();
 
@@ -230,20 +236,28 @@ export class Stage {
         break;
       }
     }
-    const lerpC = (x, y) => new THREE.Color(x).lerp(new THREE.Color(y), f);
+    /**
+     * Into scratch colours, not new ones.
+     *
+     * This runs every rendered frame for the whole session and used to allocate
+     * ten `THREE.Color` objects a frame — two per call, five calls — every one
+     * of them garbage by the end of the line. Nothing here needs to outlive the
+     * statement it is used in.
+     */
+    const lerpC = (out, x, y) => out.set(x).lerp(this._scratchB.set(y), f);
 
-    const high = lerpC(a.high, b.high);
-    const low = lerpC(a.low, b.low);
+    const high = lerpC(this._scratchHigh, a.high, b.high);
+    const low = lerpC(this._scratchLow, a.low, b.low);
     this.sky.material.uniforms.top.value.copy(high);
     this.sky.material.uniforms.bottom.value.copy(low);
     this.scene.fog.color.copy(low);
     this.scene.background.copy(low);
 
-    this.key.color.copy(lerpC(a.key, b.key));
+    this.key.color.copy(lerpC(this._scratchKey, a.key, b.key));
     this.key.intensity = THREE.MathUtils.lerp(a.keyI, b.keyI, f);
     this.fill.intensity = THREE.MathUtils.lerp(a.amb, b.amb, f);
     // The colour of shade. Deliberately not `low` — see the note on SKY_RAMP.
-    this.fill.color.copy(lerpC(a.fill, b.fill));
+    this.fill.color.copy(lerpC(this._scratchFill, a.fill, b.fill));
 
     // Sun swings ~20° across the block and drops toward the horizon.
     const elev = THREE.MathUtils.lerp(a.elev, b.elev, f);

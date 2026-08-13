@@ -432,6 +432,29 @@ export function auditLevel({ level, world, check, deps }) {
   const audio = new Proxy({}, { get: () => () => {} });
   {
     const dry = { move: { x: 0, y: 0 }, flap: false };
+
+    /**
+     * A world direction, expressed as the stick input that produces it.
+     *
+     * The crow moves in *camera space* — `wish = right * move.x + forward *
+     * -move.y` — and the camera is yawed 25°, so writing a world direction
+     * straight into `move` is off by 25°. Every water test in this file did
+     * exactly that, and none of them could notice: from inside a circle, any
+     * outward-ish heading reaches the rim, so a direction that is a quarter of
+     * a right angle wrong still passes. A rectangle has a wrong way out, and
+     * the wharf failed 22 of its walk-out cells until this was inverted
+     * properly.
+     *
+     * Solved against the real basis rather than a hardcoded 25°, so it stays
+     * true if the camera ever moves.
+     */
+    const { forward, right } = stage.basis();
+    const det = right.x * forward.z - forward.x * right.z;
+    const toMove = (wx, wz) => {
+      const a = (wx * forward.z - forward.x * wz) / det;
+      const b = (right.x * wz - wx * right.z) / det;
+      return { x: a, y: -b };
+    };
     // Far enough out to build up speed, near enough to still be on the deck the
     // pool sits on. On the block that is eight metres of open plaza; on the
     // terrace it is however much roof there is round a three-metre pool.
@@ -487,14 +510,35 @@ export function auditLevel({ level, world, check, deps }) {
       rimRan++;
       const c = new Crow(stage);
       c.pos.set(run.x, DECK, run.z);
-      // `move.y` is the -z axis of the input basis, hence the sign.
-      dry.move.x = run.dx; dry.move.y = -run.dz;
-      for (let i = 0; i < 60 * 8 && !c.inWater; i++) c.update(1 / 60, dry, world, audio);
+      const m = toMove(run.dx, run.dz);
+      dry.move.x = m.x; dry.move.y = m.y;
+      /**
+       * Bounded by distance travelled, not just by time.
+       *
+       * The question is "is the edge right here a wall", and an eight-second
+       * run answers a different one. The wharf has a pier: walk at the harbour
+       * where the steps are and you go up them, along ten metres of decking,
+       * and off the far end — which is a walkway behaving exactly as a walkway
+       * should, reported as a hole in the rim. Nothing on a circular basin
+       * could travel far enough to notice.
+       */
+      const cap = approach + 2.5;
+      for (let i = 0; i < 60 * 8 && !c.inWater; i++) {
+        c.update(1 / 60, dry, world, audio);
+        if (Math.hypot(c.pos.x - run.x, c.pos.z - run.z) > cap) break;
+      }
       if (c.inWater) leaks.push(run.label);
     }
     check(say('the rim is a wall at every heading — you go in over the top, not through'),
       leaks.length === 0, `(walked straight in at ${leaks.length}: ${leaks.slice(0, 8).join(', ')})`);
-    check(say('the rim test had somewhere to walk at the water from'), rimRan >= 24,
+    /**
+     * A vacuity guard, not a coverage target. Approaches that start inside a
+     * building are dropped, and a harbour's seaward edge has no land to stand
+     * on at all — the wharf legitimately tests three sides out of four. What
+     * this catches is the case where *everything* got dropped and a green tick
+     * means nothing was tried.
+     */
+    check(say('the rim test had somewhere to walk at the water from'), rimRan >= 12,
       `(${rimRan} of ${rimRuns.length} approaches were on standable ground)`);
 
     /**
@@ -578,32 +622,44 @@ export function auditLevel({ level, world, check, deps }) {
      */
     const escaped = (c) => !c.inWater
       && (c.pos.y >= F.rim - 0.02 || beyondWater(c.pos.x, c.pos.z));
-    const nearestEdge = (x, z) => {
+    /**
+     * Which way to swim, nearest edge first.
+     *
+     * A circle gets one answer and it is always right. A rectangle gets four,
+     * and the claim being made is "there is a way out on foot", not "the
+     * shortest way out is unobstructed" — a crow that meets a piling walks
+     * round it, and requiring the single nearest heading to be clear would fail
+     * a harbour for having anything moored in it. All four are tried and one
+     * has to work, which still fails an actual pocket and is what the circular
+     * version has always effectively asserted.
+     */
+    const edgeHeadings = (x, z) => {
       if (F.shape !== 'box') {
         const d = Math.hypot(x - F.x, z - F.z);
         // Dead centre has no outward direction, and asking for one gives (0, 0)
         // — a crow told to walk nowhere, which reads as a trapped crow. Any
         // heading is the right answer from the middle of a circle.
-        if (d < 1e-6) return { x: 1, z: 0 };
-        return { x: (x - F.x) / d, z: (z - F.z) / d };
+        if (d < 1e-6) return [{ x: 1, z: 0 }];
+        return [{ x: (x - F.x) / d, z: (z - F.z) / d }];
       }
-      const d = [
+      return [
         { x: -1, z: 0, gap: x - WX.minX }, { x: 1, z: 0, gap: WX.maxX - x },
         { x: 0, z: -1, gap: z - WX.minZ }, { x: 0, z: 1, gap: WX.maxZ - z },
-      ].sort((a, b) => a.gap - b.gap)[0];
-      return { x: d.x, z: d.z };
+      ].sort((a, b) => a.gap - b.gap);
     };
 
     const walkOut = [];
     for (const cell of openCells) {
-      const c = new Crow(stage);
-      c.pos.set(cell.x, F.floor, cell.z);
-      const n = nearestEdge(cell.x, cell.z);
-      const move = { x: n.x, y: -n.z };   // straight at the nearest rim
       let out = false;
-      for (let i = 0; i < 60 * 12; i++) {
-        c.update(1 / 60, { move, flap: false }, world, audio);
-        if (escaped(c)) { out = true; break; }
+      for (const n of edgeHeadings(cell.x, cell.z)) {
+        const c = new Crow(stage);
+        c.pos.set(cell.x, F.floor, cell.z);
+        const move = toMove(n.x, n.z);    // straight at a rim
+        for (let i = 0; i < 60 * 12; i++) {
+          c.update(1 / 60, { move, flap: false }, world, audio);
+          if (escaped(c)) { out = true; break; }
+        }
+        if (out) break;
       }
       if (!out) walkOut.push(`(${cell.x.toFixed(1)}, ${cell.z.toFixed(1)})`);
     }

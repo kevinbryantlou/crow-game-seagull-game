@@ -24,6 +24,7 @@ import { buildLevel as buildBlock } from './level.js';
 import { buildLevel as buildPark } from './park.js';
 import { buildLevel as buildRoofline } from './level2.js';
 import { buildLevel as buildLobby } from './lobby.js';
+import { buildLevel as buildWharf } from './wharf.js';
 import { RULES } from './rules.js';
 
 export const LEVELS = [
@@ -409,8 +410,17 @@ export const LEVELS = [
     build: buildLobby,
     title: 'The Hotel (Inside)',
     district: 'The Atrium',
-    /** The last block there is. The ending screen offers only a replay. */
-    next: null,
+    /**
+     * The wharf. This one field is the whole unlock, as it was for the lobby:
+     * the ending screen grows a brass button, the Levels screen grows a fifth
+     * chip, and save.js opens the door.
+     *
+     * The winning copy below was written as the game's last ending and it still
+     * reads as one — it closes on the room looking back rather than pointing
+     * anywhere, and the button under it does the pointing. That is the same
+     * reasoning that left the roofline's ending alone when this block arrived.
+     */
+    next: 5,
     shortName: 'the lobby',
     /**
      * $35.
@@ -551,6 +561,164 @@ export const LEVELS = [
         + 'Still a crow. But nobody in a hotel lobby ever looks up for long, and there '
         + 'is a nest full of other people\'s change twenty-three feet over the check-in '
         + 'line.',
+    },
+  },
+  {
+    id: 5,
+    slug: 'the-wharf',
+    build: buildWharf,
+    title: 'The Wharf',
+    district: 'The Landing',
+    /** The last block there is. The ending screen offers only a replay. */
+    next: null,
+    shortName: 'the wharf',
+    /**
+     * $40, and the ladder's honest fifth term.
+     *
+     * The lobby was built at $40 and came down to $35 on a playtest note about
+     * the run, so this number needs an argument rather than a pattern. The
+     * argument is that the lobby's $40 failed for a reason this block does not
+     * have: one room with nowhere else to work, so a hot desk means waiting,
+     * and waiting at $40 grinds. The wharf has four separate pitches — the
+     * market, the ice house, the office window, the boat — plus $8.50 out on
+     * the water that nobody guards at all. There is always something else to be
+     * doing, which is the property that makes a bigger number survivable.
+     *
+     * $64.20 exists here, so $40 is 62% of it: looser than the park's 76%, a
+     * shade tighter than the block's and the lobby's 61%. If it grinds, it will
+     * grind because a round trip to the beacon is longer than a climb to a
+     * chandelier and you pay it on every bank — which is the counter-argument,
+     * and it is one line to reverse.
+     */
+    goal: 40.00,
+    sessionSeconds: RULES.sessionSeconds,
+    /**
+     * The latest start of any block, so the lamps catch at 2m40s against the
+     * lobby's 3m01s and the roofline's 4m08s. One more rung and a small one:
+     * there is not much afternoon left to spend.
+     *
+     * It is also the only block where the light that comes on is a thing you
+     * stand on. The street lamps are level 1's event and the chandelier was the
+     * lobby's; here it is the harbour light, which is the one object in this
+     * game whose actual job is to catch at dusk.
+     */
+    dayStart: 0.58,
+    /**
+     * On the quay east of the market, looking out over the water.
+     *
+     * The opening frame has to carry the block in one picture, and this one
+     * does: the harbour, the boats on it, the beacon with the nest standing in
+     * open water, the kid on her crate at the water's edge, and the market off
+     * to the west with a twenty on the counter. What it does not show is any
+     * way to walk to the middle of it, which is the point.
+     */
+    spawn: [6, 0, 10],
+
+    tasks: [
+      { id: 'dive', text: 'Dive the harbor', when: (g) => g.crow.inWater },
+      /**
+       * The block's teaching line, and it is doing the most work of any task
+       * text in the game. It names a place you can see from the spawn, and the
+       * only way to obey it is to fly out over water — so the level's whole
+       * thesis arrives as a chore rather than as a toast.
+       *
+       * Observed rather than banked, like the park's cooler and the lobby's
+       * bell: the risk is in the getting there. Whether you make it back to the
+       * beacon carrying it is a separate problem and the level is happy to let
+       * you find that out.
+       */
+      { id: 'piling', text: 'Get the five off the far pilings', when: (g) => !!g.crow.carried?.onPiling },
+      { id: 'trade', text: 'Trade something shiny' },
+      { id: 'counter', text: 'Get the fishmonger away from his counter' },
+      { id: 'twenty', text: 'Get the twenty' },
+    ],
+    bankTicks: { bill20: 'twenty' },
+
+    teach: {
+      money: 'Take it to your nest',
+      // Plain words for a place. "Crate" is a shape you can pick out of a
+      // frame; "quay" is a word that sends an American player to a dictionary,
+      // which is why it appears in the source and in no line a player reads.
+      shiny: 'The kid on the crate will trade for that',
+      bait: 'A mackerel. Every gull on this pier is already looking at you.',
+    },
+
+    /**
+     * A rung above the lobby's.
+     *
+     * She is easy to reach — she is on a crate in the middle of an open quay
+     * and nobody owns the ground around her. What she costs is that two of the
+     * four shinies are out over the water, on the east float and the wheelhouse
+     * roof, so half her ladder is paid for in this block's own currency.
+     *
+     * Bounded by the rule rather than by taste: unguarded money plus every
+     * trade she will ever make is $27.50 against $40, so trading can soften
+     * this block by more than half and can never finish it.
+     */
+    tradeValues: [2.00, 3.00, 4.50, 5.50],
+
+    bait: {
+      task: 'counter',
+      guard: 'monger',
+      seconds: 12,
+      mobFor: 13,
+      anchor: (world) => world.cart,
+      minDist: 8,
+      tooClose: 'Too near the counter',
+      onDrop: 'Every gull on the wharf has seen it',
+      /**
+       * The quay, and out on the water is the wrong answer.
+       *
+       * The roofline teaches "birds do not use stairs" with a failure rather
+       * than a toast, and this block is late enough to assume the lesson. The
+       * reading here is the only one the fiction allows: the water is already
+       * the gulls', so a fish dropped out there is lunch and nobody's problem.
+       * It has to land on his floor before he has to deal with it.
+       */
+      deck: 0,
+      wrongDeck: 'Not from out on the water',
+    },
+
+    pinToast: 'The five is loose',
+
+    /**
+     * Four decks' worth. The two that matter are the last two: a skipper on a
+     * seven-metre deck and a crow on a three-metre gallery are both standing on
+     * islands, and a guard who cannot get round his own wheelhouse is scenery.
+     */
+    chaseProbes: (w) => [
+      ['the quay, end to end', 0, [-27, 6.5], [27, 6.5]],
+      ['the market, round the counter', 0, [-20, 10.5], [-8, 10.5]],
+      ['the market, past the cutting table', 0, [-19, 5.0], [-9.5, 6.6]],
+      ['the ice house, round the back', 0, [4, 10.0], [12, 3.0]],
+      ['the office, round the corner', 0, [16, 8.5], [24, 2.0]],
+      ['the hoist and the west end', 0, [-28, 9.5], [-22, 1.5]],
+      ['the crab pots, along the kerb', 0, [12, 13.0], [21, 12.5]],
+      ['the boat, round the wheelhouse', 1.15, [-3.0, -5.0], [3.0, -5.0]],
+    ],
+
+    ending: {
+      lostTitle: 'The Tide<span>Turns</span>',
+      /**
+       * The game's last ending, so it closes rather than points — and the thing
+       * it closes on is the joke the whole project is built out of. This game
+       * exists because a "would you rather" offered a crow with twenty dollars
+       * or a seagull with forty fries, and the crow was chosen because $20 is a
+       * value ladder and 40 fries is 40 identical pickups. Five blocks later
+       * you are standing on a harbour light on a dock that belongs to gulls.
+       */
+      won: () =>
+        'The last bill goes into the nest and the lamp comes on under your feet, once, '
+        + 'and then again, and the whole harbour turns amber and back.<br><br>'
+        + 'You come back six metres over open water with no way down that a person can '
+        + 'take, and every boat in the basin between you and the dock. On the rail below '
+        + 'you a gull has not moved in an hour. It has been watching you all afternoon the '
+        + 'way you would watch somebody who took the other option, and got away with it.',
+      lost: (total) =>
+        `You got to $${total.toFixed(2)}. The market has hosed down its boards and the `
+        + 'water has gone the colour of a bruise all the way to the breakwater.<br><br>'
+        + 'Still a crow. But the lamp out there runs all night whether anybody is watching '
+        + 'or not, and there is a five on a post that nobody has come back for since June.',
     },
   },
 ];

@@ -16,7 +16,7 @@ export const KIND_LABEL = {
   coins: 'LOOSE CHANGE', bill1: 'DOLLAR BILL', bill5: 'FIVE', bill10: 'TEN',
   bill20: 'TWENTY',
   shiny: 'SOMETHING SHINY', hotdog: 'HOT DOG', chips: 'A CONE OF CHIPS',
-  pretzel: 'A SOFT PRETZEL', croissant: 'A CROISSANT',
+  pretzel: 'A SOFT PRETZEL', croissant: 'A CROISSANT', fish: 'A MACKEREL',
 };
 
 const SHINY_LABEL = {
@@ -30,9 +30,11 @@ const SHINY_LABEL = {
  * are takeable, none of them is money, and each exists so the crow can move a
  * guard by moving a smell. Named here rather than in any level so the game's one
  * bait rule reads off the pickup vocabulary — and so a block that invents a
- * fourth gets the audit's bait checks for free, which is exactly what happened.
+ * fifth gets the audit's bait checks for free, which is exactly what happened
+ * twice. The wharf's mackerel is the first one that is not baked goods, and it
+ * needed no rule anywhere to notice.
  */
-export const BAIT_KINDS = new Set(['hotdog', 'chips', 'pretzel', 'croissant']);
+export const BAIT_KINDS = new Set(['hotdog', 'chips', 'pretzel', 'croissant', 'fish']);
 
 /**
  * The glint texture: a soft radial falloff with a faint four-point star.
@@ -230,6 +232,34 @@ function buildMesh(spec) {
       for (const [sx, sz] of [[0.05, 0.05], [-0.06, 0.03], [0.02, -0.07]]) {
         g.add(at(box(0.016, 0.016, 0.016, PAL.stone, { shadow: false }), sx, 0.04, sz));
       }
+      return g;
+    }
+    case 'fish': {
+      /**
+       * Level 5's bait: a mackerel off the market counter.
+       *
+       * The bait vocabulary is now a box, a knot, a cone, a crescent and a
+       * *spindle* — five silhouettes, no two alike, which is the only thing
+       * that matters at this camera. It is an icosahedron squashed on two axes
+       * with a tail on the back, and the squash is what does the work: nothing
+       * else in the game is longer than it is tall.
+       */
+      const g = new THREE.Group();
+      const body = ico(0.10, 1, PAL.steel, { up: PAL.silver, down: PAL.shade });
+      body.scale.set(1.9, 0.62, 0.78);
+      g.add(body);
+      // The stripes a mackerel is recognised by, in the darker steel.
+      for (const dx of [-0.06, 0.0, 0.06]) {
+        g.add(at(box(0.016, 0.055, 0.075, PAL.steelDark, { shadow: false }), dx, 0.028, 0));
+      }
+      // The tail: two small wedges, so the far end is not a blunt egg.
+      for (const s of [-1, 1]) {
+        const fin = box(0.05, 0.055, 0.02, PAL.steelDark, { up: PAL.steel, down: PAL.shade });
+        fin.position.set(-0.20, 0.02 + s * 0.03, 0);
+        fin.rotation.z = s * 0.6;
+        g.add(fin);
+      }
+      g.add(at(ico(0.014, 0, PAL.feather, { shadow: false }), 0.135, 0.03, 0.035));
       return g;
     }
     case 'chips': {
