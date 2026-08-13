@@ -125,6 +125,67 @@ export const PAL = {
    * green still beats the blue, so it cannot be mistaken for the stone coping it
    * runs out from.
    */
+  /**
+   * Deep water, beyond the breakwater — opaque, and a step down from `harbour`.
+   *
+   * The basin is translucent over its own bed because the coins on the bottom
+   * have to read through it. The open sea has no bed and no coins, so it is a
+   * flat opaque plane, and it is darker because deep water *is* darker. Kept
+   * within 20 points of the basin so the harbour mouth is a change of depth
+   * rather than a hard line across the frame.
+   */
+  harbourDeep: 0x7ba6c2,
+
+  /**
+   * The wharf's ground, and the reason it is not `paving`.
+   *
+   * `paving` is the tan pavement every other block stands on, and on a block
+   * whose props are timber, terracotta and stone it made the whole frame beige —
+   * which is the note this level came back with. A working dock is *concrete*,
+   * not pavement: cooler, greyer, and almost exactly `paving`'s luminance, so it
+   * costs nothing at either end of the light ramp. What it buys is somewhere for
+   * a saturated colour to sit. A red container on tan paving is two browns; on
+   * grey concrete it is a red container.
+   */
+  concrete:    0xd0c9be,
+  concreteMid: 0xb8b1a6,
+
+  /**
+   * Shipping containers — the cheapest saturated colour in the game.
+   *
+   * Every other block buys its accents from `cloth`, which is a set of clothes
+   * and therefore small: a cushion, an awning, somebody's coat. A container
+   * stack is architecture-sized colour that needs no justification at all, which
+   * makes it the one place this palette can get loud without lying. Four hues,
+   * none of them brown, all kept at or above the mown lawn's value so a stack in
+   * shadow never becomes the darkest thing in the frame.
+   *
+   * They are **lighter and less saturated than the first attempt**, and finding
+   * out why cost a measurement. At full saturation — 0xc4553f, 0x3d7fa8 — they
+   * passed every luminance check on paper and then failed the dusk 5th-percentile
+   * floor on all six samples. The reason is that *a saturated hue has two low
+   * channels*: in shade a deep red renders as rgb(60,0,0), which is near-black,
+   * where a desaturated colour of the same luminance stays a mid grey. Bucketing
+   * the darkest 5% of the frame by colour showed the accents were themselves the
+   * dark pixels. That is the park's lawn a third time — a saturated colour
+   * swallows the fill it is lit by — and the answer is the same: back off the
+   * saturation, keep the hue. **Colour on a small object is still a light-rig
+   * decision.**
+   */
+  container:    [0xd07a63, 0x6f9fc0, 0x7fb392, 0xdfb662],
+  containerLit: [0xe2937c, 0x8ab5d2, 0x97c7a7, 0xefcb83],
+
+  /**
+   * Harbour orange — buoys, floats, the crane gantries, the hi-vis on a hoist.
+   *
+   * The one colour in the game with no natural competitor: nothing else on any
+   * block is this hue, so it reads as "harbour" from the first frame. It is also
+   * the warmest thing here, which is what stops a block full of blue water and
+   * grey concrete going cold.
+   */
+  buoy:      0xe88f5f,
+  buoyLit:   0xf5a878,
+
   dock:        0xb59872,
   dockLit:     0xc9ae88,
   dockMid:     0xa89070,

@@ -593,16 +593,25 @@ export const LEVELS = [
     goal: 40.00,
     sessionSeconds: RULES.sessionSeconds,
     /**
-     * The latest start of any block, so the lamps catch at 2m40s against the
-     * lobby's 3m01s and the roofline's 4m08s. One more rung and a small one:
-     * there is not much afternoon left to spend.
+     * 0.26 — and this is the one number on this block that was chosen twice,
+     * because the first choice was the whole reason the level looked wrong.
      *
-     * It is also the only block where the light that comes on is a thing you
-     * stand on. The street lamps are level 1's event and the chandelier was the
-     * lobby's; here it is the harbour light, which is the one object in this
-     * game whose actual job is to catch at dusk.
+     * It was 0.58, on a tidy argument: every block starts later than the last,
+     * so the lamps caught at 2m40s against the lobby's 3m01s. The playtest note
+     * was that the palette had gone "boring and flat… browns and beiges", and
+     * the cause turned out not to be the palette at all. **At t=0.58 the key
+     * light is (255,154,90), which multiplies blue by 0.35** — so the harbour,
+     * the biggest surface on the block, rendered with blue 55 points *below*
+     * red. Brown water, by arithmetic. Nothing paintable survives that; the
+     * park looks fresh because it starts at 0.20 and its key is (255,196,135).
+     *
+     * So the ladder of increasing lateness goes, and it should: it was a pattern
+     * I liked rather than a property anyone plays. What it cost was the block's
+     * colour, which is the thing a player actually sees. At 0.26 the lamps catch
+     * at 4m59s — still inside an eight-minute day, so the harbour light is still
+     * the level's event and a fast run is still rewarded with daylight.
      */
-    dayStart: 0.58,
+    dayStart: 0.26,
     /**
      * On the quay by the kid, looking straight out over the water.
      *

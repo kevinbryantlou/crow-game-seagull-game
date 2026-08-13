@@ -1287,9 +1287,23 @@ class Game {
     // look the same on a full-length day and a 60-second test one.
     this.world.nightLights.update(t, dt);
 
-    // Fountain surface: a slow shimmer, no normal maps.
+    /**
+     * Water surface: a slow shimmer, no normal maps.
+     *
+     * The amplitude is shared and the *base* is the material's own, which is
+     * the wharf's doing. This used to read `0.80 + sin(...) * 0.05` — a literal
+     * that was right for four blocks with an ornamental basin in them and wrong
+     * for a harbour: the wharf builds its water at 0.66 so the coins on the bed
+     * read through it, and this line quietly drove it to 0.85 every frame. The
+     * level set a value, the frame loop overwrote it, and the only visible
+     * symptom was that the block's biggest surface was flatter and more opaque
+     * than the material said.
+     */
     const w = this.world.root.userData.fountainWater;
-    if (w) w.material.opacity = 0.80 + Math.sin(this.elapsed * 1.4) * 0.05;
+    if (w) {
+      w.material.opacity = w.userData.baseOpacity
+        + Math.sin(this.elapsed * 1.4) * 0.05;
+    }
 
     /**
      * The picture keeps moving while paused; the HUD's countdowns do not.

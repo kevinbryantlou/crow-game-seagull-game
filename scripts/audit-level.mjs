@@ -40,6 +40,22 @@ export function auditLevel({ level, world, check, deps }) {
     (c) => [c.minX, c.maxX, c.minZ, c.maxZ, c.top, c.bottom].every(Number.isFinite)));
   check(say('nest group exists'), !!world.root.userData.nestGroup);
   check(say('water surface exists'), !!world.root.userData.fountainWater);
+  /**
+   * And the level states the opacity its own water shimmers around.
+   *
+   * `main.js` oscillates the water surface every frame. That base used to be a
+   * literal 0.80 in the frame loop, which silently overwrote whatever the level
+   * had built — invisible on four blocks whose water *is* 0.80, and a real bug
+   * on the wharf, which builds at 0.66 so the coins on the bed read through it.
+   * A value a level sets and the renderer ignores is worse than no value.
+   */
+  {
+    const w = world.root.userData.fountainWater;
+    const base = w?.userData?.baseOpacity;
+    check(say('the water declares the opacity it shimmers around'),
+      typeof base === 'number' && base > 0.2 && base <= 1,
+      `(${base})`);
+  }
 
   // A mesh whose material has vertexColors on but whose geometry carries no
   // `color` attribute renders pure black. This is invisible to any test that

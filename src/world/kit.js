@@ -330,6 +330,15 @@ export function makeKit(ctx) {
         color: PAL.water, transparent: true, opacity: 0.62, flatShading: true,
       }),
     );
+    /**
+     * What the per-frame shimmer in main.js oscillates *around*.
+     *
+     * It used to be a literal 0.80 in the frame loop, which was fine while every
+     * block's water was an ornamental basin and wrong the moment one of them was
+     * a harbour built at a different opacity: the level set a value and the frame
+     * loop overwrote it every frame. Stated per water body now.
+     */
+    water.userData.baseOpacity = 0.80;
     water.position.y = rimH - 0.20;
     g.add(water);
 

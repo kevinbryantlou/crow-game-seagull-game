@@ -602,6 +602,49 @@ once per entry in `LEVELS`:
   eyeballed.
 - **Nothing is standing in the edge kerb.**
 
+- **A saturated colour is a light-rig decision even on a small object.** The
+  wharf's first container palette was properly saturated — `0xc4553f`,
+  `0x3d7fa8` — and it failed the dusk 5th-percentile floor on all six samples
+  while every large surface passed. A saturated hue has *two low channels*, so
+  in shade a deep red renders as `rgb(60,0,0)`, near-black, where a desaturated
+  colour of the same luminance stays a mid grey. Bucketing the darkest 5% of the
+  frame by colour is what found it: the accents were themselves the dark pixels.
+  This is the park's lawn a third time, on objects rather than on ground. Back
+  off the saturation and keep the hue.
+- **The backdrop is 23–32% of every block's meshes.** Measured: 115 of 376 on
+  level 1, 128/460 the park, 141/509 the roofline, 143/623 the lobby. It is the
+  single cheapest thing to cut if a block ever gets heavy, and it is per-level
+  data — each block calls `addSkyline` itself, nothing in `render/` or `main.js`
+  creates one. Deleting the call is one statement, but **keep the `solid(...)`
+  right after it**: that is the invisible wall stopping the crow leaving the map,
+  and it reads like part of the same block. The wharf replaced its skyline with
+  a container terminal at about half the mesh cost.
+- **A level's water opacity was being overwritten by the frame loop.** `main.js`
+  shimmered the surface with a hardcoded `0.80 + sin(...) * 0.05`, which is right
+  for four blocks whose water *is* 0.80 and wrong for a harbour built at 0.66 so
+  the coins on the bed read through it. The level set a value, the renderer
+  ignored it every frame, and the only symptom was a surface flatter than the
+  material said. Water bodies carry `userData.baseOpacity` now, and the audit
+  asserts every block declares one.
+- **Four of five blocks were photographing dusk before the lights came on.** The
+  night lights ramp over ~8s once the clock passes `RULES.lampsOnAt`, and
+  `since` resets whenever the day is wound back below the trigger. The dusk
+  samples run at t = 0.20 / 0.45 / 0.98 with a 9s settle on the *middle* one —
+  but whether that middle sample is past the trigger depends on the level's
+  `dayStart`, and on four blocks it is not. So the ramp's clock was still zero
+  when the final sample began, and its 700ms sleep photographed a block 700ms
+  into an eight-second fade. Only the lobby ever measured a lit block. It passed
+  for years because the other four are bright enough unlit; the wharf is not,
+  because its harbour is half the frame and no fixture reaches open water.
+  `settleLights()` waits for the condition — *a test that sleeps exactly as long
+  as the thing it measures will flake* — and correcting it can only add light
+  against rules that are all floors.
+- **Fix the measurement, then tune.** The wharf's water emissive was set to 0.72
+  against the broken measurement above; with it fixed, that rendered the harbour
+  as milky near-white and cost 14 points of blue-over-red. It is 0.30. This is
+  the light-pool-tuned-while-clipped lesson arriving from the harness side
+  instead of the renderer side.
+
 - **A platform wider than the deck under it is a lid, not a landing.** The
   wharf's beacon had a 3.2m crown over a 3.6m gallery, which leaves a ring of
   0.2m against the crow's 0.24m support radius — so *every* point on the gallery

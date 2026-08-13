@@ -32,6 +32,44 @@ const { LEVELS } = await import('../src/world/levels.js');
 const LAST = LEVELS[LEVELS.length - 1];
 
 /**
+ * Wait for the street lights to finish coming on, rather than sleeping and
+ * hoping. **This is a real bug this file had, on four blocks out of five.**
+ *
+ * The night lights ramp over about eight seconds once the clock passes
+ * `RULES.lampsOnAt`, and `since` — the ramp's own clock — resets to zero any
+ * time the day is wound back below the trigger. The dusk samples are taken in
+ * order at t = 0.20, 0.45 and 0.98 of a session, and the middle one gets a nine
+ * second settle precisely so the lamps have time to catch.
+ *
+ * But whether the middle sample is *past the trigger at all* depends on the
+ * level's `dayStart`, and on four blocks it is not: level 1's 0.45 is t=0.450,
+ * the park's is t=0.560, the roofline's t=0.681, the wharf's t=0.593 — all
+ * below 0.72. So the ramp's clock was still at zero when the final sample
+ * started, and that sample's 700 ms sleep photographed the block **700 ms into
+ * an eight second fade**. Only the lobby, whose `dayStart` is 0.55, ever
+ * measured a block with its lights actually on.
+ *
+ * It passed for years because four of the five blocks are bright enough to
+ * clear the floors unlit. The wharf is not: its harbour is more than half the
+ * frame and no fixture can reach open water, so the water's own emissive is
+ * what carries the median — and it was being measured before it arrived.
+ *
+ * Waiting on the condition is also the rule this project already wrote down
+ * after the mobile task-list flake: *a test that sleeps exactly as long as the
+ * thing it measures will flake.* Correcting it can only **add** light, and every
+ * dusk rule in the game is a floor, so no block can fail because of it — the
+ * same asymmetry that made switching off the skyline's shadow safe.
+ */
+const settleLights = async (page, ms = 11000) => {
+  await page.waitForFunction(() => {
+    const n = window.__game?.world?.nightLights;
+    if (!n) return true;
+    const lit = n.items.filter((i) => i.peak > 0);
+    return lit.length === 0 || lit.every((i) => i.level >= i.peak * 0.995);
+  }, { timeout: ms, polling: 100 }).catch(() => {});
+};
+
+/**
  * A pinned clock makes every dusk measurement in this file a lie.
  *
  * `TEST_TIME_OF_DAY` freezes the light rig so a block can be walked around
@@ -362,6 +400,8 @@ if (hasHandle) {
       g.elapsed = tt * g.sessionSeconds;
     }, t);
     await new Promise((r) => setTimeout(r, settle));
+    // The lamps take ~8s to come up and the sleep above does not know that.
+    await settleLights(page);
     const b64 = await page.screenshot({ type: 'png', encoding: 'base64' });
     return page.evaluate((url) => new Promise((res) => {
       const img = new Image();
@@ -744,6 +784,8 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
         g.crow.vel.set(0, 0, 0);
       }, [through, at]);
       await new Promise((r) => setTimeout(r, settle));
+      // The lamps take ~8s to come up and the sleep above does not know that.
+      await settleLights(p2);
       const b64 = await p2.screenshot({ type: 'png', encoding: 'base64' });
       return p2.evaluate((u) => new Promise((res) => {
         const img = new Image();
@@ -1069,6 +1111,8 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
         g.crow.vel.set(0, 0, 0);
       }, [through, at]);
       await new Promise((r) => setTimeout(r, settle));
+      // The lamps take ~8s to come up and the sleep above does not know that.
+      await settleLights(p3);
       const b64 = await p3.screenshot({ type: 'png', encoding: 'base64' });
       return p3.evaluate((u) => new Promise((res) => {
         const img = new Image();
@@ -1469,6 +1513,8 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
         g.crow.vel.set(0, 0, 0);
       }, [through, at]);
       await new Promise((r) => setTimeout(r, settle));
+      // The lamps take ~8s to come up and the sleep above does not know that.
+      await settleLights(p4);
       const b64 = await p4.screenshot({ type: 'png', encoding: 'base64' });
       return p4.evaluate((u) => new Promise((res) => {
         const img = new Image();
@@ -1796,6 +1842,8 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
         g.crow.vel.set(0, 0, 0);
       }, [through, at]);
       await new Promise((r) => setTimeout(r, settle));
+      // The lamps take ~8s to come up and the sleep above does not know that.
+      await settleLights(p5);
       const b64 = await p5.screenshot({ type: 'png', encoding: 'base64' });
       return p5.evaluate((u) => new Promise((res) => {
         const img = new Image();
