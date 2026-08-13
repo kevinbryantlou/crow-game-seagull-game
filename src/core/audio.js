@@ -230,6 +230,68 @@ export class Audio {
     });
   }
 
+  /**
+   * The lounge pianist's party piece, and the only piece of *music* in a game
+   * that is otherwise entirely foley.
+   *
+   * Everything else in this file is one gesture — a caw, a coin, a wingbeat.
+   * This is sixteen bars of ii–V–I in F, scheduled in one go against the audio
+   * clock rather than driven from the frame loop, which is the whole reason a
+   * fifteen-second cue costs nothing per frame: the Web Audio graph runs on its
+   * own thread and `_env` has already been given every note's start time before
+   * the first one sounds.
+   *
+   * The timbre is two detuned triangles and a sine an octave down, with a fast
+   * attack and a long decay. It is not a piano and is not trying to be; it is
+   * the same register and the same envelope, which at this volume through a
+   * laptop speaker is what "piano" means.
+   *
+   * @returns {number} how long the piece lasts, in seconds
+   */
+  piano() {
+    const BARS = [
+      // [semitone from F3, beat, duration] — ii, V, I, vi over four bars, twice,
+      // with the melody an octave up on the repeat.
+      [[0, 0, 1.4], [7, 0.5, 1.2], [12, 1.0, 1.6], [16, 1.5, 2.0]],
+      [[-2, 2.0, 1.4], [5, 2.5, 1.2], [9, 3.0, 1.6], [14, 3.5, 2.0]],
+      [[-4, 4.0, 1.6], [3, 4.5, 1.4], [7, 5.0, 1.8], [12, 5.5, 2.2]],
+      [[-5, 6.0, 2.0], [2, 6.5, 1.8], [7, 7.0, 2.2], [11, 7.5, 2.6]],
+    ];
+    const BEAT = 0.46;
+    if (!this.ctx || this.muted) return BARS.length * 2 * BEAT * 2 + 1.6;
+
+    const t0 = this.t + 0.15;
+    const F3 = 174.61;
+    const note = (semi, at, dur, gain) => {
+      const f = F3 * Math.pow(2, semi / 12);
+      for (const [type, mul, det, g] of [
+        ['triangle', 1, 0, gain], ['triangle', 1, 3.5, gain * 0.6], ['sine', 0.5, 0, gain * 0.5],
+      ]) {
+        const osc = this.ctx.createOscillator();
+        osc.type = type;
+        osc.frequency.value = f * mul;
+        osc.detune.value = det;
+        this._env(osc, at, 0.012, dur, g);
+        osc.start(at); osc.stop(at + dur + 0.2);
+      }
+    };
+
+    let end = t0;
+    for (let pass = 0; pass < 2; pass++) {
+      for (const bar of BARS) {
+        for (const [semi, beat, dur] of bar) {
+          const at = t0 + (pass * 8 + beat) * BEAT;
+          // The repeat goes up an octave and quieter, like somebody noodling.
+          note(semi + pass * 12, at, dur, pass ? 0.055 : 0.085);
+          end = Math.max(end, at + dur);
+        }
+      }
+    }
+    // A last chord, held.
+    for (const semi of [-5, 0, 4, 7]) note(semi, end + BEAT, 3.0, 0.05);
+    return (end + BEAT + 3.0) - this.t;
+  }
+
   /** The transformation. */
   transform() {
     if (!this.ctx || this.muted) return;

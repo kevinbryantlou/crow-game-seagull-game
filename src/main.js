@@ -263,6 +263,14 @@ class Game {
       return h;
     });
     this.kid = this.humans.find((h) => h.kid);
+    /**
+     * The pianist, if the block has one. Level data, not a class of person —
+     * a block names an id and this looks it up, so no other level pays for it.
+     */
+    this.pianist = this.world.pianist
+      ? this.humans.find((h) => h.id === this.world.pianist)
+      : null;
+    this.pianoUntil = 0;
     this.baitGuard = this.humans.find((h) => h.id === this.level.bait.guard);
 
     this.pigeons = (this.world.pigeons || []).map((s) => {
@@ -823,6 +831,22 @@ class Game {
           return { verb: 'GIVE', noun: 'to the kid', kind: 'trade' };
         }
       }
+      /**
+       * And the other thing you can do with money, on the one block that has
+       * somebody to do it with.
+       *
+       * Deliberately unadvertised — no toast, no task, nothing in `teach`. A
+       * player who has spent four blocks learning that money goes in the nest
+       * has to try the only other thing the beak offers, which is the entire
+       * joke. It costs exactly what you give her, because `total` only ever
+       * moves on `bank`.
+       */
+      if (this.pianist && this.crow.carried.value > 0) {
+        const q = this.pianist;
+        if (Math.hypot(this.crow.pos.x - q.pos.x, this.crow.pos.z - q.pos.z) < 2.2) {
+          return { verb: 'GIVE', noun: 'to the pianist', kind: 'tip' };
+        }
+      }
       return { verb: 'DROP', noun: this.crow.carried.label, kind: 'drop' };
     }
 
@@ -919,6 +943,21 @@ class Game {
         this.audio.ding();
         this.hud.toast(`She gives you $${v.toFixed(2)}`, 1.8);
         this._tick('trade');
+        break;
+      }
+      case 'tip': {
+        const p = this.crow.carried;
+        this.crow.carried = null;
+        p.taken = true;
+        p.root.visible = false;
+        // Re-tipping mid-piece restarts nothing: she is already playing, and
+        // two copies of the same cue scheduled a beat apart is not a duet.
+        if (this.elapsed >= this.pianoUntil) {
+          this.pianoUntil = this.elapsed + this.audio.piano();
+          this.hud.toast('She plays you something', 2.4);
+        } else {
+          this.hud.toast('She is already playing', 1.6);
+        }
         break;
       }
       case 'salt': {

@@ -223,6 +223,21 @@ That's why `words.js`, `rank.js` and `save.js` are separate from the DOM code.
   sat in. Look at the frame and find the biggest dark thing before adding a lamp
   — and never lower `duskMedianFloor`/`duskShadowFloor` to make a new block pass.
 
+- **A light pool's cost is its area; its brightness is nearly free.** Alpha is
+  one more term in a fragment shader that already runs; every extra square metre
+  of quad is fill that gets blended whether or not it lights anything. The lobby
+  reached thirty pools and was spending 38ms a frame on them against the
+  roofline's 6 — so the fix was not fewer lights but *smaller ones turned up*:
+  radii down ~15%, peaks up ~15%, and the seven that only doubled up on other
+  pools lost their quads while keeping their fixtures. Pools are also discs now
+  rather than squares, which drops 21.5% of the fragments in the whole game for
+  nothing — the falloff already reached zero at the inscribed circle.
+- **A check that filters on geometry type breaks when geometry changes.** The
+  pool-vs-decal rule below filtered on `PlaneGeometry`; changing pools to
+  `CircleGeometry` for the fill saving made it find *zero* pools and pass on all
+  four blocks. It identifies pools by what makes them pools — additive, no depth
+  write — and asserts it found some, because a rule that can quietly end up with
+  nothing to check is not a rule.
 - **A light pool sits 0.14m over its floor, and that number is load-bearing.**
   It was 0.05, which works until a block has more than nine ground decals:
   `addDecal` stacks them 4mm apart, so the tenth sits at 0.048 and the
@@ -640,6 +655,17 @@ worth a run that grinds.
   verified and **playtested once** — which removed the ceiling, the chandelier
   and the front door; the brief's §8 is the record. What is over the room now is
   a soffit across the back seven metres and open air everywhere anybody plays.
+
+  It also has the game's only **easter egg**: a pianist, seated, who takes any
+  coin and plays for thirteen seconds. Nothing advertises her. It cost one
+  action kind, one `case`, and a cue in `audio.js` — the money logic is
+  untouched, because `total` only moves on `bank`, so a coin given away costs
+  exactly what it was worth. What it *does* cost is the kid's silhouette: two
+  people now sit. Paid down by making the pianist full-size, seen from behind
+  and at an instrument, where the kid is small, facing you and on her own
+  luggage in the open — which weakens the rule from "nothing else sits" to
+  "nothing else sits in the open". If a playtest is ever confused about who
+  trades, the pianist goes and the kid stays.
 
 **Finishing a block hands you the next one.** The ending screen carries a brass
 button naming where it goes (`The park →`) with `Again!` beside it in outline;

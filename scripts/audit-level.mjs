@@ -654,11 +654,22 @@ export function auditLevel({ level, world, check, deps }) {
      * the block that breaks is not the one anybody changed. Hence a rule rather
      * than headroom.
      */
+    /**
+     * Pools are identified by what makes them pools — additive, no depth write —
+     * and *not* by their geometry type, which is the mistake this check made on
+     * the day it was written. It filtered on `PlaneGeometry`; a performance pass
+     * changed pools to `CircleGeometry` to stop shading four transparent
+     * corners, and the check went from asserting a real thing to finding zero
+     * pools and passing. It printed "0 light pools" on all four blocks and
+     * nobody would have read it.
+     *
+     * Hence the count assertion below as well: a rule that can quietly end up
+     * with nothing to check is not a rule.
+     */
     const pools = [];
     world.root.traverse((o) => {
-      if (!o.isMesh || o.geometry.type !== 'PlaneGeometry') return;
       const m = Array.isArray(o.material) ? o.material[0] : o.material;
-      if (!m || m.depthWrite !== false) return;
+      if (!o.isMesh || !m || m.depthWrite !== false || m.blending !== THREE.AdditiveBlending) return;
       o.getWorldPosition(v);
       o.geometry.computeBoundingBox();
       const size = o.geometry.boundingBox.getSize(new THREE.Vector3());
@@ -673,6 +684,8 @@ export function auditLevel({ level, world, check, deps }) {
         clipped.push(`a pool at y ${pool.y.toFixed(3)} under a decal at ${d.y.toFixed(3)}`);
       }
     }
+    check(say('the pool check actually found some pools'), pools.length > 0,
+      `(${pools.length})`);
     check(say('every light pool floats above the decals it lands on'),
       clipped.length === 0, `(${[...new Set(clipped)].join('; ')})`);
     console.log(`       ${decals.length} ground decals, ${pools.length} light pools`);

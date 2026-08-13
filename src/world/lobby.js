@@ -98,6 +98,25 @@ const KID = { x: 6.8, z: 6.6 };
  */
 const STAIR = { x: -19.9, w: 3.0, botZ: 2.6, topZ: -7.2, steps: 14 };
 
+/**
+ * The piano, its stool, and the one thing on this block that is not the point.
+ *
+ * The keyboard faces +z after the rotation, which is toward the camera — so the
+ * pianist sits on the near side with her back to it, playing into the
+ * instrument. That is the classic image and it is also the reason this is
+ * allowed to exist at all: the kid's silhouette is *sitting*, and the game has
+ * spent two blocks defending that. A second seated figure is a real cost, paid
+ * down three ways — this one is full-size where the kid is 0.72, she is seen
+ * from behind where the kid faces you, and she is at an instrument where the
+ * kid is on her own luggage in the middle of an empty floor. See
+ * docs/lobby-brief.html §12.
+ */
+const PIANO = { x: -6, z: 7, ry: 0.5 };
+const STOOL = {
+  x: PIANO.x + Math.sin(PIANO.ry) * 2.3,
+  z: PIANO.z + Math.cos(PIANO.ry) * 2.3,
+};
+
 export function buildLevel() {
   const root = new THREE.Group();
   const colliders = [];
@@ -303,9 +322,9 @@ export function buildLevel() {
       root.add(at(box(vw, 0.9, 2.2, PAL.steelDark, { up: PAL.steel, down: PAL.shade }), vx, ROOF + 0.75, -8.6));
       root.add(at(cyl(0.34, 0.34, 0.5, 8, PAL.steel, { up: PAL.silver, down: PAL.steelDark }), vx, ROOF + 1.4, -8.6));
     }
-    for (const px of [-14, -4, 6, 14]) {
-      night.addPool(root, px, -9.4, 5.0,
-        { profile: 'stall', peak: 0.34, warm: 2.4, delay: 0.6, y: DECK.mezzanine });
+    for (const px of [-12, 2]) {
+      night.addPool(root, px, -9.4, 5.4,
+        { profile: 'stall', peak: 0.44, warm: 2.4, delay: 0.6, y: DECK.mezzanine });
     }
 
     /**
@@ -474,11 +493,19 @@ export function buildLevel() {
     sconce.position.set(cx + 0.2, 3.0, cz + 0.55);
     root.add(sconce);
     night.add(sconce, PAL.goldLit, { peak: 0.85, warm: 2.2, delay: 0.5 });
-    night.addPool(root, cx, cz + 0.6, 5.0, { profile: 'stall', peak: 0.32, warm: 2.2, delay: 0.5 });
+    night.addPool(root, cx, cz + 0.6, 4.0, { profile: 'stall', peak: 0.4, warm: 2.2, delay: 0.5 });
   }
 
   /**
-   * Wall washers under the gallery, and there are eight of them now.
+   * Wall washers under the gallery — five of them, and they used to be eight.
+   *
+   * **A pool's cost is its area; its brightness is nearly free.** Alpha is one
+   * more term in a fragment shader that already runs, and every extra square
+   * metre of quad is fill that has to be blended whether or not anything is
+   * lit by it. So when this block turned out to be spending 38 ms a frame on
+   * pools against the roofline's 6, the fix was not "fewer lights" — it was
+   * smaller ones turned up. Radii came down about 15% and peaks went up about
+   * the same, which is the same picture for two thirds of the fragments.
    *
    * Every pool peak on this block was retuned once, downward, and the reason is
    * worth recording: they were set while roughly half of the pool *area* was
@@ -497,23 +524,35 @@ export function buildLevel() {
    * paying for it. An interior at six in the evening has its lights on; the
    * three blocks before this were lit by a sky.
    */
-  for (const wx of [-18, -13.5, -9, -4.5, 0, 4.5, 9, 15]) {
+  for (const wx of [-17, -10, -3, 4, 12]) {
     const w = box(0.5, 0.22, 0.3, PAL.goldLit, { shadow: false });
     w.position.set(wx, 3.5, -7.05);
     root.add(w);
     night.add(w, PAL.goldLit, { peak: 0.85, warm: 2.6, delay: 0.9 });
-    night.addPool(root, wx, -5.6, 5.8, { profile: 'stall', peak: 0.44, warm: 2.6, delay: 0.9 });
+    night.addPool(root, wx, -5.6, 5.6, { profile: 'stall', peak: 0.58, warm: 2.6, delay: 0.9 });
   }
 
-  // Uplights at the foot of every column, which is the cheapest light in the
-  // game: no fixture anybody can see, and it lands where the crow walks.
+  /**
+   * Uplights at the foot of the columns — the fixtures stayed, the pools went.
+   *
+   * There were seven, each with a 4.6 m pool, and together they were 590 square
+   * metres of additive quad in a room of 1080. A pool is pure fill and pools
+   * overlap, so the cost of light on this block scales with *area*, not with
+   * fixture count — and these seven were the worst ratio of the lot: they sat
+   * under the gallery washers, adding almost nothing a frame could show.
+   *
+   * The little brass discs are still there and still come on, because an
+   * emissive is a constant in a shader that already runs and costs nothing.
+   * What they no longer do is paint the floor twice.
+   */
+  const ups = [];
   for (const [ux, uz] of [[-16, -7.6], [-8, -7.6], [0, -7.6], [8, -7.6], [16, -7.6], [-9, 3], [9, 3]]) {
     const u = cyl(0.2, 0.24, 0.07, 8, PAL.goldLit, { shadow: false });
     u.position.set(ux, 0.035, uz + 0.7);
     root.add(u);
-    night.add(u, PAL.goldLit, { peak: 0.7, warm: 3.0, delay: 1.2 });
-    night.addPool(root, ux, uz + 0.9, 4.6, { profile: 'stall', peak: 0.3, warm: 3.0, delay: 1.2 });
+    ups.push(u);
   }
+  night.add(ups, PAL.goldLit, { peak: 0.7, warm: 3.0, delay: 1.2 });
 
   // ── the grand stair, against the west wall ────────────────────────────────
   /**
@@ -585,8 +624,8 @@ export function buildLevel() {
   root.userData.fountainWater = POOL.water;
   perch(POOL_SPEC.x + POOL_SPEC.r + 0.1, FOUNTAIN.rim, POOL_SPEC.z);
   night.add(POOL.water, PAL.water, { peak: 0.18, warm: 5.0, delay: 1.8 });
-  night.addPool(root, POOL_SPEC.x, POOL_SPEC.z, 7.0,
-    { profile: 'stall', peak: 0.26, warm: 5.0, delay: 1.8 });
+  night.addPool(root, POOL_SPEC.x, POOL_SPEC.z, 6.0,
+    { profile: 'stall', peak: 0.3, warm: 5.0, delay: 1.8 });
 
   // ══════════════════════════════════════════════════════════════════════════
   // THE LOBBY CLOCK — a landmark that stands on the floor, and the nest on it
@@ -733,8 +772,8 @@ export function buildLevel() {
     // Centred between the clock and the fountain rather than on the clock, so
     // the pool covers the open floor everybody has to cross rather than the one
     // object nobody stands next to.
-    night.addPool(root, CLOCK.x, CLOCK.z + 4.4, 12.0,
-      { profile: 'stall', peak: 0.5, warm: 2.0, delay: 0.15 });
+    night.addPool(root, CLOCK.x, CLOCK.z + 4.4, 8.6,
+      { profile: 'stall', peak: 0.58, warm: 2.0, delay: 0.15 });
 
     const nest = makeNest();
     nest.position.y = DECK.crown + 0.04;
@@ -814,8 +853,8 @@ export function buildLevel() {
       root.add(shade);
       night.add(shade, PAL.goldLit, { peak: 0.95, warm: 1.8, delay: 0.7 });
     }
-    night.addPool(root, DESK.x, DESK.z + 1.2, 8.4,
-      { profile: 'stall', peak: 0.52, warm: 1.8, delay: 0.7 });
+    night.addPool(root, DESK.x, DESK.z + 1.2, 7.0,
+      { profile: 'stall', peak: 0.6, warm: 1.8, delay: 0.7 });
 
     // The open cash drawer, on the west counter. A tray with a 5 cm lip, so the
     // bill in it is unmistakably *in* something and nothing is standing between
@@ -884,8 +923,8 @@ export function buildLevel() {
     back.position.set(BAR.x, 0, -7.4);
     root.add(back);
     solid(BAR.x, -7.4, 8, 0.5, 2.4);
-    night.addPool(root, BAR.x, BAR.z + 1.2, 7.2,
-      { profile: 'stall', peak: 0.5, warm: 2.8, delay: 1.1 });
+    night.addPool(root, BAR.x, BAR.z + 1.2, 6.2,
+      { profile: 'stall', peak: 0.58, warm: 2.8, delay: 1.1 });
 
     // Three pendants over the counter. They hang from nothing, and at 2.6 m
     // that is fine — the eye reads a lamp on a short drop as hung off something
@@ -1002,7 +1041,7 @@ export function buildLevel() {
       root.add(l);
       solid(lx, lz, 0.5, 0.5, 1.6);
       night.add(shade, PAL.goldLit, { peak: 0.95, warm: 2.2, delay: 0.35 });
-      night.addPool(root, lx, lz, 7.0, { profile: 'stall', peak: 0.52, warm: 2.2, delay: 0.35 });
+      night.addPool(root, lx, lz, 6.0, { profile: 'stall', peak: 0.6, warm: 2.2, delay: 0.35 });
     }
 
     // The near-side occluder. Every block has one thing whose job is to be in
@@ -1076,8 +1115,8 @@ export function buildLevel() {
     root.add(post);
     solid(DOOR.x + 4.4, DOOR.z - 0.6, 0.7, 0.7, 2.8);
     night.add(lantern, PAL.goldLit, { peak: 1.0, warm: 1.6, delay: 0, flicker: true });
-    night.addPool(root, DOOR.x + 1.4, DOOR.z - 0.6, 7.4,
-      { profile: 'stall', peak: 0.5, warm: 1.6, delay: 0, flicker: true });
+    night.addPool(root, DOOR.x + 1.4, DOOR.z - 0.6, 6.2,
+      { profile: 'stall', peak: 0.58, warm: 1.6, delay: 0, flicker: true });
   }
 
   /**
@@ -1093,7 +1132,7 @@ export function buildLevel() {
     sc.position.set(-21.7, 3.1, sz);
     root.add(sc);
     night.add(sc, PAL.goldLit, { peak: 0.85, warm: 2.4, delay: 0.8 });
-    night.addPool(root, -20.4, sz, 5.8, { profile: 'stall', peak: 0.4, warm: 2.4, delay: 0.8 });
+    night.addPool(root, -20.4, sz, 5.0, { profile: 'stall', peak: 0.48, warm: 2.4, delay: 0.8 });
   }
 
   // The luggage cart, and the change dish on it.
@@ -1168,11 +1207,24 @@ export function buildLevel() {
     // The keys, which is the only thing that says piano at this distance.
     g.add(at(box(1.2, 0.04, 0.22, PAL.shiny, { shadow: false }), 0, 1.02, 1.18));
     g.add(at(box(1.2, 0.03, 0.09, PAL.feather, { shadow: false }), 0, 1.05, 1.13));
-    g.position.set(-6, 0, 7);
-    g.rotation.y = 0.5;
+    g.position.set(PIANO.x, 0, PIANO.z);
+    g.rotation.y = PIANO.ry;
     root.add(g);
-    solid(-6, 7, 2.4, 2.6, 1.0);
-    perch(-6, 1.0, 7);
+    solid(PIANO.x, PIANO.z, 2.4, 2.6, 1.0);
+    perch(PIANO.x, 1.0, PIANO.z);
+
+    // The stool, on the keyboard side. It is what the pianist is sitting on,
+    // so it is also what the "everyone is standing on a deck that exists" rule
+    // measures her against — 0.5 is her `pos[1]`.
+    const st = new THREE.Group();
+    st.add(at(box(1.0, 0.1, 0.42, PAL.bark, { up: PAL.bark, down: PAL.barkShade }), 0, 0.45, 0));
+    for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+      st.add(at(cyl(0.04, 0.04, 0.45, 4, PAL.barkShade), sx * 0.42, 0.225, sz * 0.15));
+    }
+    st.position.set(STOOL.x, 0, STOOL.z);
+    st.rotation.y = PIANO.ry;
+    root.add(st);
+    solid(STOOL.x, STOOL.z, 1.0, 0.5, 0.5);
   }
 
   // ── the housekeeping cart, up on the gallery ──────────────────────────────
@@ -1205,6 +1257,8 @@ export function buildLevel() {
     bar: BAR,
     /** The weighted object pinning a bill. The game knows it as `pin`. */
     pin: bell,
+    /** Where the easter egg lives. `main.js` looks for a human with this id. */
+    pianist: 'pianist',
     pickups: pickupPlacements({ FOUNTAIN }),
     humans: humanPlacements(),
     gulls: gullPlacements(),
@@ -1382,6 +1436,24 @@ function humanPlacements() {
       patrol: [[-16, -8.4], [8, -8.4]],
       speed: 1.25, chaseSpeed: 3.8, viewDist: 8.5, viewCos: 0.3,
       guardRadius: 3.4, alertness: 1.05,
+    },
+    {
+      id: 'pianist', name: 'the pianist', cloth: 1, skin: 3, hair: 0,
+      /**
+       * Owns nothing, guards nothing, notices nothing, and is worth no money.
+       *
+       * She is the block's easter egg: bring her a coin instead of banking it
+       * and she plays for a quarter of a minute. Nothing advertises her — no
+       * teaching toast, no task — because the whole pleasure of the thing is
+       * that a player who has spent four blocks learning that money goes in the
+       * nest tries the one other thing you can do with it.
+       */
+      pos: [STOOL.x, 0.5, STOOL.z], home: [STOOL.x, 0.5, STOOL.z],
+      patrol: null, speed: 0, chaseSpeed: 0, viewDist: 0, viewCos: 1,
+      guardRadius: 0, alertness: 0,
+      sits: true, oblivious: true,
+      // Facing into the piano, which puts her back to the camera.
+      faces: [-Math.sin(PIANO.ry), -Math.cos(PIANO.ry)],
     },
     {
       id: 'kid', name: 'the kid on the suitcase', cloth: 2, skin: 1, hair: 2,

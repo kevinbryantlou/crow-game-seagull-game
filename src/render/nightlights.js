@@ -183,7 +183,17 @@ export class NightLights {
       blending: THREE.AdditiveBlending,
       fog: false,
     });
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(radius * 2, radius * 2), material);
+    /**
+     * A disc, not a square.
+     *
+     * The falloff reaches alpha 0 at the edge of the circle inscribed in the
+     * quad, so the four corners of a square pool are 21.5% of its fragments
+     * doing nothing but being blended. That is free on one lamp and it is not
+     * free on thirty: pools are pure fill, they overlap, and they are the one
+     * thing in this renderer whose cost scales with *area* rather than with
+     * object count.
+     */
+    const mesh = new THREE.Mesh(new THREE.CircleGeometry(radius, 24), material);
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.set(x, (opts.y ?? 0) + NightLights.POOL_LIFT, z);
     mesh.renderOrder = 2;

@@ -953,8 +953,57 @@
     </div>
   </section>
 
+  <section id="pianist">
+    <h2><span class="sec">§12</span> The pianist, and what she costs</h2>
+    <div class="col">
+      <p>There is a woman playing the piano in the west half of the lobby. Bring her money —
+      <em>any</em> money, a penny will do — and the beak offers <span class="mono">GIVE — to the
+      pianist</span> instead of the usual drop. She plays for thirteen seconds. The coin is gone.</p>
+
+      <p>Nothing advertises her. No teaching toast, no task, no glint, nothing in
+      <span class="mono">teach</span>. That is the whole design: a player arrives at the fourth
+      block having spent three of them learning that money goes in the nest, and the only way to
+      find this is to walk up to the one person in the room who isn't guarding anything and try the
+      other thing the beak can do.</p>
+
+      <h3>What it cost to build</h3>
+      <p>Almost nothing, which is why it exists. One new action kind in
+      <span class="mono">_bestAction</span>, one <span class="mono">case</span> in
+      <span class="mono">_doAction</span>, and a cue in <span class="mono">core/audio.js</span>.
+      <strong>The money logic was not touched at all</strong> — <span class="mono">total</span> only
+      ever moves on <span class="mono">bank</span>, so a coin given away costs the player exactly
+      what they gave and the economy rules never see it. The block is level data: a descriptor names
+      an id, <span class="mono">main.js</span> looks it up, and a block without one has no pianist
+      and no cost.</p>
+
+      <p>The cue is sixteen bars of ii–V–I scheduled against the audio clock in one go rather than
+      driven from the frame loop, so a thirteen-second piece costs nothing per frame. It is two
+      detuned triangles and a sine an octave down — not a piano and not trying to be, but the same
+      register and the same envelope, which at this volume is what "piano" means.</p>
+
+      <h3>What it costs the game</h3>
+      <div class="note">
+        <span class="lbl">A second person is now sitting down</span>
+        The kid is identified by her <strong>silhouette</strong>: she sits, and until now nothing
+        else in the game sat. The roofline invented that rule and the park had to defend it against
+        being mostly benches. This spends it.
+      </div>
+
+      <p>It is paid down three ways, and they are deliberate rather than lucky. The pianist is
+      <strong>full size</strong> where the kid is 0.72. She is seen <strong>from behind</strong> —
+      the keyboard faces the camera, so she plays into the instrument — where the kid faces you. And
+      she is <strong>at</strong> something, an object two metres wide with a lid up, where the kid
+      is <strong>on</strong> something in the middle of an otherwise empty floor.</p>
+
+      <p>That is a real argument and it is not a proof. The honest statement is that the rule has
+      been weakened from "nothing else sits" to "nothing else sits <em>in the open</em>", and a
+      fifth block now inherits the weaker one. If a playtest ever reports confusion about who
+      trades, the pianist is the thing that goes — she is an easter egg, and the kid is the loop.</p>
+    </div>
+  </section>
+
   <section id="open">
-    <h2><span class="sec">§11</span> Questions, open and closed</h2>
+    <h2><span class="sec">§13</span> Questions, open and closed</h2>
     <div class="col">
       <h3>Closed</h3>
       <ul>
