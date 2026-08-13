@@ -1531,8 +1531,351 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
   if (end4 && !/thirty-six dollars fifteen cents/i.test(end4.title)) {
     errors.push(`L4 ending headline wrong: "${end4.title}"`);
   }
-  if (end4 && end4.onward === false) errors.push('L4 is the last block but offered a next one');
+  // The lobby stopped being the last block when the wharf arrived, so this
+  // reads the registry rather than restating it — the same fix this file
+  // already made when "the last block is 3" became wrong.
+  if (end4 && end4.onward === (LEVELS.find((l) => l.id === 4).next != null)) {
+    errors.push(`L4's next button is ${end4.onward ? 'hidden' : 'shown'} and the registry disagrees`);
+  }
   if (end4) { await new Promise((r) => setTimeout(r, 1400)); await shoot4('59-l4-ending'); }
+}
+
+// ── level 5: the wharf (shots 60-69) ─────────────────────────────────────────
+/**
+ * The block whose ground is not continuous, and its risks are its own.
+ *
+ * Every other level can be checked by asking "can the camera see this" and "can
+ * a walker get round that". Here the question is whether a *bird* can get
+ * anywhere at all: the nest stands in open water with nothing walkable within
+ * nine metres of it, and the money that teaches the level is on a piling cap
+ * with no floor between it and the quay. So these frames photograph the water
+ * from both sides of it, and the functional checks are all about getting out of
+ * it and back onto things.
+ *
+ * The harbour is also the largest single surface in the game — bigger than the
+ * park's lawn — and it is the only large surface that no lamp can reach. Both
+ * dusk samples exist because of that.
+ */
+{
+  const url5 = URL + (URL.includes('?') ? '&' : '?') + 'level=5';
+  const p5 = await browser.newPage();
+  await p5.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
+  p5.on('console', (m) => { if (m.type() === 'error') errors.push(`L5 console: ${m.text()}`); });
+  p5.on('pageerror', (e) => errors.push(`L5 uncaught: ${e.message}`));
+  p5.on('requestfailed', (r) => errors.push(`L5 404/failed: ${r.url()}`));
+
+  console.log(`\nloading ${url5}`);
+  await p5.goto(url5, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  const booted5 = Date.now();
+  await p5.waitForFunction(
+    () => document.getElementById('loading')?.classList.contains('hidden')
+       || (document.getElementById('loading')?.textContent || '').startsWith('Could not start'),
+    { timeout: 30000 },
+  ).catch(() => errors.push('L5: still booting after 30s — no error thrown, just slow'));
+  const boot5Msg = await p5.$eval('#loading', (el) => (el.classList.contains('hidden') ? null : el.textContent))
+    .catch(() => null);
+  if (boot5Msg) errors.push(`L5 did not start: ${boot5Msg}`);
+  console.log(`  L5 booted in ${Date.now() - booted5} ms`);
+
+  const has5 = await p5.evaluate(() => !!window.__game);
+  await p5.click('#start');
+  await new Promise((r) => setTimeout(r, 1200));
+
+  const shoot5 = async (name) => {
+    writeFileSync(`${OUT}/${name}.png`, await p5.screenshot({ type: 'png' }));
+    console.log(`  wrote ${OUT}/${name}.png`);
+  };
+  const look5 = async (name, x, y, z) => {
+    if (!has5) return;
+    await p5.evaluate(([px, py, pz]) => {
+      window.__game.crow.pos.set(px, py, pz);
+      window.__game.crow.vel.set(0, 0, 0);
+    }, [x, y, z]);
+    await new Promise((r) => setTimeout(r, 900));
+    await shoot5(name);
+  };
+
+  await shoot5('60-l5-spawn');
+  await look5('61-l5-market', -12, 0, 10.5);
+  await look5('62-l5-cutting-table', -16, 0, 7.6);
+  await look5('63-l5-kid', -1, 0, 4.2);
+  await look5('64-l5-pier', -5.5, 0.62, -7.5);
+  await look5('65-l5-boat', 1.5, 1.15, -5);
+  await look5('66-l5-beacon', 4.5, 6.5, -8);
+  await look5('67-l5-pilings', 11, 1.36, -8);
+  await look5('68-l5-east', 14, 0, 7);
+
+  /**
+   * The harbour, which is the fourth body of water in the game and the first
+   * that is not a circle.
+   *
+   * Three of the first three had a lobster-pot bug in them at some point, from
+   * three unrelated directions, so this asks the real engine the same question
+   * the audit asks headless — and it asks it from a corner as well as from the
+   * middle, because a rectangle has corners and a circle does not.
+   */
+  const pool5 = !has5 ? null : await p5.evaluate(async () => {
+    const g = window.__game;
+    const f = g.world.fountain;
+    const frame = () => new Promise((r) => requestAnimationFrame(r));
+    const outside = (x, z) => x < f.minX || x > f.maxX || z < f.minZ || z > f.maxZ;
+    g.crow.pos.set(f.x, f.floor, f.z);
+    g.crow.vel.set(0, 0, 0);
+    await frame(); await frame();
+    const out = { shape: f.shape, wet: g.crow.inWater, from: {} };
+    for (const [spot, sx, sz] of [
+      ['middle', f.x, f.z],
+      ['far-west-corner', f.minX + 1.6, f.minZ + 1.6],
+      ['near-east-corner', f.maxX - 1.6, f.maxZ - 1.6],
+    ]) {
+      out.from[spot] = {};
+      for (const [nm, drive] of [
+        ['hold', () => ({ move: { x: 0, y: 0 }, flap: true })],
+        ['tap', (i) => ({ move: { x: 0, y: 0 }, flap: (i % 12) < 5 })],
+      ]) {
+        g.crow.pos.set(sx, f.floor, sz);
+        g.crow.vel.set(0, 0, 0);
+        g.crow.stamina = 0;
+        g.crow.inWater = true;
+        let escaped = false;
+        for (let i = 0; i < 720 && !escaped; i++) {
+          g.crow.update(1 / 60, drive(i), g.world, g.audio);
+          escaped = (!g.crow.inWater && g.crow.pos.y > f.rim)
+            || outside(g.crow.pos.x, g.crow.pos.z);
+        }
+        out.from[spot][nm] = escaped;
+      }
+    }
+    g.crow.pos.set(6, 0, 10);
+    g.crow.vel.set(0, 0, 0);
+    return out;
+  });
+  if (pool5) console.log('  water:', JSON.stringify(pool5));
+  if (pool5 && pool5.shape !== 'box') errors.push(`L5 water is ${pool5.shape}, expected box`);
+  if (pool5 && !pool5.wet) errors.push('L5: crow on the harbour floor is not in the water');
+  if (pool5) {
+    for (const [spot, modes] of Object.entries(pool5.from)) {
+      const failed = Object.entries(modes).filter(([, ok]) => !ok).map(([k]) => k);
+      if (failed.length) errors.push(`L5: cannot get out of the harbour from the ${spot} by: ${failed.join(', ')}`);
+    }
+  }
+
+  /**
+   * The beacon crown, and the same assertion the chandelier earned.
+   *
+   * It is a 3.2 m platform on a tower in open water and it is the only way to
+   * bank anything on this block — if an edge of it is not a floor, the money
+   * goes in the harbour. Dropped onto eight points round the rim with no input,
+   * which asserts the collision rather than a particular flight path.
+   */
+  const crown5 = !has5 ? null : await p5.evaluate(async () => {
+    const g = window.__game;
+    const n = g.world.nest;
+    const stuck = [];
+    for (let deg = 0; deg < 360; deg += 45) {
+      const a = (deg * Math.PI) / 180;
+      g.crow.pos.set(n.x + Math.cos(a) * 1.35, n.y + 1.2, n.z + Math.sin(a) * 1.35);
+      g.crow.vel.set(0, 0, 0);
+      let landed = false;
+      for (let i = 0; i < 240 && !landed; i++) {
+        g.crow.update(1 / 60, { move: { x: 0, y: 0 }, flap: false }, g.world, g.audio);
+        landed = g.crow.grounded && Math.abs(g.crow.pos.y - n.y) < 0.3;
+      }
+      if (!landed) stuck.push(`${deg}° (fell to ${g.crow.pos.y.toFixed(1)})`);
+    }
+    g.crow.pos.set(6, 0, 10);
+    g.crow.vel.set(0, 0, 0);
+    return { stuck, nest: [n.x, n.y, n.z] };
+  });
+  if (crown5) console.log('  crown:', JSON.stringify(crown5));
+  if (crown5 && crown5.stuck.length) {
+    errors.push(`L5: cannot land on the beacon from ${crown5.stuck.join(', ')}`);
+  }
+
+  /**
+   * And the flight the whole block is built on: pier to nest, carrying.
+   *
+   * The design claim is that banking costs a crossing of open water and not a
+   * stamina bar. If a crow leaving the pier with a full bar cannot reach the
+   * beacon, every trip to the nest ends in the harbour and the level is a
+   * grind — so it is measured rather than assumed.
+   */
+  const reach5 = !has5 ? null : await p5.evaluate(async () => {
+    const g = window.__game;
+    const n = g.world.nest;
+    const G = g.world.decks.gallery;
+
+    /**
+     * A world direction, expressed as the stick input that produces it.
+     *
+     * The crow moves in *camera space* — `wish = right * move.x + forward *
+     * -move.y` — so writing a world direction straight into `move` is off by the
+     * camera's 25° yaw, and writing `-dz` instead of `dz` sends it away
+     * entirely. Both of those were wrong in the first version of this test and
+     * both reported a reachable nest as unreachable. Solved against the game's
+     * real basis rather than a hardcoded angle.
+     */
+    const { forward, right } = g.stage.basis();
+    const det = right.x * forward.z - forward.x * right.z;
+    const toMove = (wx, wz) => ({
+      x: (wx * forward.z - forward.x * wz) / det,
+      y: -((right.x * wz - wx * right.z) / det),
+    });
+
+    /**
+     * Fly from a standing start onto a deck, the way a player does: climb clear
+     * of whatever is overhead, then cross.
+     *
+     * The hold-off matters. The crown overhangs the tower it stands on, so a
+     * crow that steers in while still below it rises into an underside and gets
+     * bonked — which is exactly the bug this test found in the level, when the
+     * gallery was narrower than the crown and *every* point on it was under the
+     * overhang.
+     */
+    const flyTo = (t, sx, sy, sz, stamina) => {
+      g.crow.pos.set(sx, sy, sz);
+      g.crow.vel.set(0, 0, 0);
+      g.crow.stamina = stamina;
+      let best = 1e9;
+      for (let i = 0; i < 60 * 10; i++) {
+        const dx = t.x - g.crow.pos.x, dz = t.z - g.crow.pos.z;
+        const d = Math.hypot(dx, dz) || 1;
+        const steer = (g.crow.pos.y > t.y + 0.2 || d > 2.2) ? 1 : 0;
+        const m = toMove((dx / d) * steer, (dz / d) * steer);
+        g.crow.update(1 / 60, { move: m, flap: g.crow.pos.y < t.y + 0.8 }, g.world, g.audio);
+        const flat = Math.hypot(g.crow.pos.x - t.x, g.crow.pos.z - t.z);
+        best = Math.min(best, flat);
+        // Landed means *here*, not merely at this height. The first version
+        // checked only y, and the coping is at 0.62 all the way round the
+        // harbour — so standing on the quay counted as reaching the pier head,
+        // eighteen metres away.
+        if (g.crow.grounded && Math.abs(g.crow.pos.y - t.y) < 0.3 && flat < 2.0) {
+          return { landed: true, closest: Number(best.toFixed(2)), at: Number((i / 60).toFixed(2)) };
+        }
+      }
+      return { landed: false, closest: Number(best.toFixed(2)), at: null };
+    };
+
+    /**
+     * The intended ladder out to the nest, and a half-empty bar rather than a
+     * full one — you arrive at a climb having just flown away from somebody,
+     * which is the reasoning that sizes RULES.maxUnbrokenClimb at 60% of the
+     * ceiling. The last leg is the teaching flight for the five.
+     */
+    const legs = [
+      ['pier head → the boat', { x: 2.4, y: g.world.decks.boat, z: -5 }, [-5.5, 0.62, -9.0], 0.55],
+      ['the boat → the wheelhouse', { x: -1.2, y: g.world.decks.wheelhouse, z: -5 }, [1.5, g.world.decks.boat, -5.0], 0.55],
+      ['the wheelhouse → the gallery', { x: n.x, y: G, z: n.z }, [-1.2, g.world.decks.wheelhouse, -5.0], 0.55],
+      ['the gallery → the nest', n, [n.x + 2.0, G, n.z], 0.55],
+      ['the east coping → the pilings', { x: 11, y: 1.36, z: -8 }, [14.35, 0.62, -8.0], 0.55],
+      ['the pier head → the gallery, full bar', { x: n.x, y: G, z: n.z }, [-5.5, 0.62, -9.0], 1.0],
+    ];
+    const runs = legs.map(([leg, t, from, st]) => ({ leg, ...flyTo(t, from[0], from[1], from[2], st) }));
+    g.crow.pos.set(1, 0, 8.5);
+    g.crow.vel.set(0, 0, 0);
+    return runs;
+  });
+  if (reach5) console.log('  reach:', JSON.stringify(reach5));
+  if (reach5) {
+    const missed = reach5.filter((r) => !r.landed).map((r) => `${r.leg} (within ${r.closest}m)`);
+    if (missed.length) errors.push(`L5: cannot fly ${missed.join('; ')}`);
+  }
+
+  // ── dusk, from the quay and from out over the water ───────────────────────
+  if (has5) {
+    const FLOOR = { p50: RULES.duskMedianFloor, p05: RULES.duskShadowFloor };
+    await p5.evaluate(() => { document.getElementById('hud').style.display = 'none'; });
+
+    const measure5 = async (through, settle, at) => {
+      await p5.evaluate(([tt, pos]) => {
+        const g = window.__game;
+        g.running = false;
+        g.finished = false;
+        g.elapsed = tt * g.sessionSeconds;
+        g.crow.pos.set(pos[0], pos[1], pos[2]);
+        g.crow.vel.set(0, 0, 0);
+      }, [through, at]);
+      await new Promise((r) => setTimeout(r, settle));
+      const b64 = await p5.screenshot({ type: 'png', encoding: 'base64' });
+      return p5.evaluate((u) => new Promise((res) => {
+        const img = new Image();
+        img.onload = () => {
+          const cv = document.createElement('canvas');
+          cv.width = img.width; cv.height = img.height;
+          const cx = cv.getContext('2d');
+          cx.drawImage(img, 0, 0);
+          const y0 = Math.floor(img.height * 0.42);
+          const d = cx.getImageData(0, y0, img.width, img.height - y0).data;
+          const L = [];
+          let r = 0, g = 0, b = 0, n = 0;
+          for (let i = 0; i < d.length; i += 16) {
+            L.push(0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]);
+            r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
+          }
+          L.sort((x, y) => x - y);
+          res({
+            p05: Math.round(L[Math.floor(L.length * 0.05)]),
+            p50: Math.round(L[Math.floor(L.length * 0.5)]),
+            rgb: [Math.round(r / n), Math.round(g / n), Math.round(b / n)],
+          });
+        };
+        img.src = u;
+      }), `data:image/png;base64,${b64}`);
+    };
+
+    let late5 = null;
+    for (const [where, pos] of [['quay', [-6, 0, 7]], ['water', [-5.5, 0.62, -7.5]]]) {
+      for (const [through, settle] of [[0.20, 500], [0.45, 9000], [0.98, 700]]) {
+        const m = await measure5(through, settle, pos);
+        const key = `l5-dusk-${where}-${String(Math.round(through * 100))}`;
+        writeFileSync(`${OUT}/${key}.png`, await p5.screenshot({ type: 'png' }));
+        console.log(`  ${key}: p05 ${m.p05}, p50 ${m.p50}, avg rgb ${m.rgb.join(',')}`);
+        if (m.p50 < FLOOR.p50) errors.push(`${key}: median ${m.p50} below the ${FLOOR.p50} floor`);
+        if (m.p05 < FLOOR.p05) errors.push(`${key}: 5th pct ${m.p05} below the ${FLOOR.p05} floor`);
+        if (through > 0.9) late5 = m;
+      }
+    }
+    /**
+     * And the hue, which is the number that has been quietly eroding.
+     *
+     * The lobby ships with blue over red by 10 and 17 at t = 0.98, down from
+     * the roofline's 18 and 34, because warm additive light eats the violet the
+     * whole style guide is built on. This block's biggest surface is cool by
+     * nature, so it should be repaying that rather than spending it — the
+     * margin is printed every run so it stops being invisible.
+     */
+    if (late5) {
+      console.log(`  L5 dusk hue: blue over red by ${late5.rgb[2] - late5.rgb[0]}`);
+      if (late5.rgb[2] <= late5.rgb[0]) {
+        errors.push(`L5 dusk reads warm, not violet: avg rgb ${late5.rgb.join(',')}`);
+      }
+    }
+    await p5.evaluate(() => { document.getElementById('hud').style.display = ''; });
+  }
+
+  // The ending: its own copy, its own goal, and no next block after it.
+  const end5 = !has5 ? null : await p5.evaluate(() => {
+    const g = window.__game;
+    g.total = 41.20; g.elapsed = 301; g.finished = false; g.running = true;
+    g._finish(true);
+    return {
+      title: document.getElementById('ending-title').textContent.replace(/\s+/g, ' ').trim(),
+      body: document.getElementById('ending-body').textContent.slice(0, 60),
+      goal: g.goal,
+      onward: document.getElementById('onward').hidden,
+    };
+  });
+  if (end5) console.log('  L5 ending:', JSON.stringify(end5));
+  if (end5 && end5.goal !== 40) errors.push(`L5 goal is ${end5.goal}, expected 40`);
+  if (end5 && !/forty-one dollars twenty cents/i.test(end5.title)) {
+    errors.push(`L5 ending headline wrong: "${end5.title}"`);
+  }
+  if (end5 && end5.onward === false) errors.push('L5 is the last block but offered a next one');
+  if (end5) { await new Promise((r) => setTimeout(r, 1400)); await shoot5('69-l5-ending'); }
+
+  // This section wins a block, which clears it. Any later section that needs a
+  // known save has to clear storage itself — see the navigation notes below.
+  await p5.close();
 }
 
 // ── the way from one block to the next ───────────────────────────────────────

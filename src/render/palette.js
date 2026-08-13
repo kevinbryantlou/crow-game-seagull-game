@@ -88,9 +88,16 @@ export const PAL = {
    * teal that reads as a jewel in a five-metre basin reads at thirty metres as
    * a hole in the block.
    *
-   * So this is pale and barely blue, at almost exactly `lawn`'s value, which
-   * puts it well clear of the 5th-percentile floor. It also does something none
-   * of the other big surfaces can: blue beats red here by 55, and the lobby
+   * So this is pale and blue rather than teal, at almost exactly `lawn`'s value,
+   * which puts it well clear of the 5th-percentile floor. The green came *down*
+   * after the first measurement: at 0x8fb8c6 it photographed sage-olive under
+   * the afternoon key — the runner's bug, outdoors, where an olive plane beside
+   * a tan quay reads as a field rather than as a harbour. Nothing reads blue in
+   * a 2.6-intensity warm key, so what this buys is cool-grey at noon instead of
+   * green, and unmistakably violet at dusk.
+   *
+   * It also does something none
+   * of the other big surfaces can: blue beats red here by 78, and the lobby
    * shipped with that margin down to 10 at t = 0.98 because warm additive light
    * eats the violet everything is built on. A big cool plane is the one thing
    * that pays that back rather than spending more of it.
@@ -99,8 +106,28 @@ export const PAL = {
    * rather than under it — kept close in value on purpose, because the coins on
    * the bottom have to read through the surface and a dark bed hides them.
    */
-  harbour:     0x8fb8c6,
-  harbourBed:  0x7fa8b4,
+  harbour:     0x8ab6d8,
+  harbourBed:  0x82a8c4,
+
+  /**
+   * Weathered dock timber — the pier, the floats, the dinghy, the pilings.
+   *
+   * These are `bark` and `barkShade` in every other block and that is wrong on
+   * this one, for a reason the roofline's terracotta wall and the lobby's runner
+   * both taught: the pier is the biggest thing standing over the water, so it is
+   * a light-rig decision before it is a colour one. In dark brown it pinned the
+   * harbour's 5th percentile at 13 against a floor of 24 while the water's own
+   * median sat comfortably at 92 — the water was never the problem, the timber
+   * on top of it was.
+   *
+   * Salt-bleached boards are also just truer than fresh brown lumber, and they
+   * are 41 points of luminance up on `bark` while staying unmistakably wood: the
+   * green still beats the blue, so it cannot be mistaken for the stone coping it
+   * runs out from.
+   */
+  dock:        0xb59872,
+  dockLit:     0xc9ae88,
+  dockMid:     0xa89070,
 
   // planting & water
   canopy:      0x7fa05c,

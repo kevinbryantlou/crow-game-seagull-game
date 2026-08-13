@@ -604,15 +604,19 @@ export const LEVELS = [
      */
     dayStart: 0.58,
     /**
-     * On the quay east of the market, looking out over the water.
+     * On the quay by the kid, looking straight out over the water.
      *
-     * The opening frame has to carry the block in one picture, and this one
-     * does: the harbour, the boats on it, the beacon with the nest standing in
-     * open water, the kid on her crate at the water's edge, and the market off
-     * to the west with a twenty on the counter. What it does not show is any
-     * way to walk to the middle of it, which is the point.
+     * The opening frame has to carry the block in one picture: the harbour, the
+     * boats on it, the beacon with the nest standing in open water, the kid on
+     * her crate at the edge of it, and no way to walk to the middle of any of
+     * that. It took a screenshot to get right. At [6, 0, 10] the whole frame
+     * was the ice house — the building sat between the crow and the camera and
+     * the water was a sliver along the top edge, which is the roofline's
+     * "measure the sightline" lesson arriving as a framing problem rather than
+     * an occlusion one. From x = 1 the sightline clears the ice house's z range
+     * entirely before it reaches its x range.
      */
-    spawn: [6, 0, 10],
+    spawn: [1, 0, 8.5],
 
     tasks: [
       { id: 'dive', text: 'Dive the harbor', when: (g) => g.crow.inWater },

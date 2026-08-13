@@ -175,7 +175,7 @@ export function buildLevel() {
     root.userData.fountainWater = water;
     // Faint, and from under the surface. Kept well below a pickup glint — the
     // brief's rule is that nothing added may outshine one.
-    night.add(water, PAL.harbour, { peak: 0.075, warm: 4.4, delay: 1.4 });
+    night.add(water, PAL.harbour, { peak: 0.12, warm: 4.4, delay: 1.4 });
   }
 
   /**
@@ -213,8 +213,19 @@ export function buildLevel() {
 
   // The breakwater, behind the far coping. It is what makes the water stop
   // somewhere rather than run out, and it is where half the gulls stand.
+  /**
+   * It casts no shadow, for the same reason the backdrop skyline does not.
+   *
+   * A 36 m wall standing at the very back of the map, under a sun that is behind
+   * the block all day, lays a band of shade straight across the harbour — and
+   * the harbour is the one surface on this block that no fixture can reach, so
+   * that band is pure loss. Nobody plays behind the breakwater; it is there to
+   * make the water stop somewhere and to give the gulls a rail. Removing a
+   * shadow can only *raise* luminance and every dusk rule in this game is a
+   * floor, which is the asymmetry that makes it safe.
+   */
   {
-    const m = box(36, 1.4, 1.4, PAL.stoneMid, { up: PAL.stone, down: PAL.shade });
+    const m = box(36, 1.4, 1.4, PAL.stoneMid, { up: PAL.stone, down: PAL.shade, shadow: false });
     m.position.set(FOUNTAIN.x, 0.7, WATER.minZ - 1.75);
     root.add(m);
     solid(FOUNTAIN.x, WATER.minZ - 1.75, 36, 1.4, 1.4, 0);
@@ -251,11 +262,19 @@ export function buildLevel() {
   // ══════════════════════════════════════════════════════════════════════════
   {
     const g = new THREE.Group();
-    g.add(at(box(PIER.w, 0.30, PIER.d, PAL.bark, { up: PAL.bark, down: PAL.barkShade }),
+    g.add(at(box(PIER.w, 0.30, PIER.d, PAL.dock, { up: PAL.dockLit, down: PAL.dockMid }),
       0, RIM - 0.15, 0));
-    // Deck boards, so it reads as planking rather than as a plank.
+    /**
+     * Deck boards, so it reads as planking rather than as a plank.
+     *
+     * Both tones are pale. The first pass alternated `bark` and `barkShade`,
+     * which drew thirteen dark grooves across the biggest surface standing over
+     * the water and was a good part of why the harbour's 5th percentile came in
+     * at 13 against a floor of 24. A board line only has to be a *step* in value
+     * to read at this distance, not a shadow.
+     */
     for (let i = 0; i < 13; i++) {
-      const p2 = box(PIER.w - 0.24, 0.04, 0.52, i % 2 ? PAL.bark : PAL.barkShade,
+      const p2 = box(PIER.w - 0.24, 0.04, 0.52, i % 2 ? PAL.dockLit : PAL.dock,
         { shadow: false, receive: true });
       p2.position.set(0, RIM + 0.005, -PIER.d / 2 + 0.5 + i * 0.76);
       g.add(p2);
@@ -263,10 +282,30 @@ export function buildLevel() {
     // Pilings under it, down to the bed.
     for (const px of [-1.5, 1.5]) {
       for (let i = 0; i < 5; i++) {
-        g.add(at(cyl(0.16, 0.18, RIM, 6, PAL.barkShade, { down: PAL.shade }),
+        g.add(at(cyl(0.16, 0.18, RIM, 6, PAL.dockMid, { up: PAL.dock, down: PAL.shade }),
           px, RIM / 2, -PIER.d / 2 + 1.0 + i * 2.0));
       }
     }
+    /**
+     * Two deck lights, and they are 0.95 m tall on purpose.
+     *
+     * The pier needs light of its own — it is the one walkable thing out over
+     * the water and the beacon is nine metres away — but a lamppost at this
+     * camera is a pool on the ground *plus* 4.6 m of opaque column and its
+     * shadow standing in the frame, which is what cost the park's ninth lamp
+     * more than it bought. A knee-high post occludes nothing and lights the
+     * boards, so the pool is nearly all of what you get.
+     */
+    for (const [i, lz] of [-3.0, 2.2].entries()) {
+      g.add(at(cyl(0.06, 0.07, 0.95, 5, PAL.steelDark), 1.6, RIM + 0.475, lz));
+      const head = at(ico(0.12, 0, PAL.goldLit, { shadow: false }), 1.6, RIM + 1.02, lz);
+      head.material = mat(PAL.goldLit);
+      g.add(head);
+      night.add(head, PAL.goldLit, { peak: 0.95, warm: 1.7, delay: 0.3 + i * 0.4 });
+      night.addPool(root, PIER.x + 1.6, PIER.z + lz, 4.6,
+        { profile: 'stall', peak: 0.72, warm: 1.7, delay: 0.3 + i * 0.4, y: RIM });
+    }
+
     g.position.set(PIER.x, 0, PIER.z);
     root.add(g);
     inWater(PIER.x, PIER.z, PIER.w, PIER.d, RIM, 0, { tag: 'pier' });
@@ -299,18 +338,38 @@ export function buildLevel() {
 
     // The piling cluster it stands on, and the shaft up to the gallery.
     for (const [px, pz] of [[-0.85, -0.85], [0.85, -0.85], [-0.85, 0.85], [0.85, 0.85]]) {
-      g.add(at(cyl(0.22, 0.26, DECK.gallery, 6, PAL.barkShade, { down: PAL.shade }),
+      g.add(at(cyl(0.22, 0.26, DECK.gallery, 6, PAL.dockMid, { up: PAL.dock, down: PAL.shade }),
         px, DECK.gallery / 2, pz));
     }
     g.add(at(cyl(0.72, 0.86, DECK.gallery, 8, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }),
       0, DECK.gallery / 2, 0));
 
-    // The gallery: a square deck with a low rail. 3.6 across, so arriving on it
-    // under pressure is not a pixel-accurate landing either.
-    g.add(at(box(3.6, 0.22, 3.6, PAL.steelDark, { up: PAL.steel, down: PAL.shade }),
+    /**
+     * The gallery: a square deck with a low rail, and it is 5.2 across for a
+     * reason that has nothing to do with looks.
+     *
+     * It was 3.6, against a crown of 3.2 — which left a ring of 0.2 m, and a
+     * crow has a support radius of 0.24. So *every* point on the gallery was
+     * inside the crown's footprint, the crown's underside is a ceiling, and a
+     * bird standing on the gallery trying to fly up to the nest bonked its head
+     * at 5.84 and fell back down. Forever. The only way onto the nest was to
+     * arrive already above it.
+     *
+     * Nothing caught that. "Nothing overlaps the nest" passes because the crown
+     * is *below* the twigs, and the crown-landing check drops a crow from above,
+     * which is the one approach that works. It took flying the intended route to
+     * find — arriving from underneath is a different question from arriving from
+     * over the top, and this block is the first one where the answer differs.
+     *
+     * At 5.2 the ring is 1.0 m wide, so a crow on it stands clear of the
+     * overhang and can rise straight past the crown's edge. A lighthouse gallery
+     * being wider than its lamp room is also exactly what a lighthouse looks
+     * like.
+     */
+    g.add(at(box(5.2, 0.22, 5.2, PAL.steelDark, { up: PAL.steel, down: PAL.shade }),
       0, DECK.gallery - 0.11, 0));
     for (const [rx, rz, rw, rd] of [
-      [0, -1.74, 3.6, 0.12], [0, 1.74, 3.6, 0.12], [-1.74, 0, 0.12, 3.6], [1.74, 0, 0.12, 3.6],
+      [0, -2.54, 5.2, 0.12], [0, 2.54, 5.2, 0.12], [-2.54, 0, 0.12, 5.2], [2.54, 0, 0.12, 5.2],
     ]) {
       g.add(at(box(rw, 0.30, rd, PAL.steel, { up: PAL.silver, down: PAL.shade }),
         rx, DECK.gallery + 0.15, rz));
@@ -358,7 +417,7 @@ export function buildLevel() {
     root.add(g);
 
     inWater(BEACON.x, BEACON.z, 2.2, 2.2, DECK.gallery, 0, { tag: 'beacon-shaft' });
-    inWater(BEACON.x, BEACON.z, 3.6, 3.6, DECK.gallery, DECK.gallery - 0.4, { tag: 'beacon-gallery' });
+    inWater(BEACON.x, BEACON.z, 5.2, 5.2, DECK.gallery, DECK.gallery - 0.4, { tag: 'beacon-gallery' });
     inWater(BEACON.x, BEACON.z, 1.8, 1.8, 6.5, DECK.gallery, { tag: 'beacon-tower' });
     inWater(BEACON.x, BEACON.z, 3.2, 3.2, 6.5, 6.26, { tag: 'beacon-crown' });
     perch(BEACON.x, DECK.gallery, BEACON.z);
@@ -507,7 +566,7 @@ export function buildLevel() {
     night.add(bulb, PAL.goldLit, { peak: 0.9, warm: 1.8, delay: 1.2, flicker: true });
     // The honesty box on a ledge beside the door.
     g.add(at(box(1.5, 0.13, 0.42, PAL.stone, { up: PAL.stone, down: PAL.shade }), 1.6, 1.06, 2.42));
-    g.add(at(box(0.5, 0.44, 0.30, PAL.bark, { up: PAL.barkShade, down: PAL.shade }), 1.6, 1.34, 2.36));
+    g.add(at(box(0.5, 0.44, 0.30, PAL.dockMid, { up: PAL.dock, down: PAL.shade }), 1.6, 1.34, 2.36));
 
     g.position.set(ICEHOUSE.x, 0, ICEHOUSE.z);
     root.add(g);
@@ -547,8 +606,8 @@ export function buildLevel() {
   /** A floating dock: a raft just clear of the water, reachable only by air. */
   const addFloat = (x, z, w, d) => {
     const g = new THREE.Group();
-    g.add(at(box(w, 0.24, d, PAL.bark, { up: PAL.bark, down: PAL.barkShade }), 0, DECK.float - 0.12, 0));
-    g.add(at(box(w - 0.3, 0.05, d - 0.3, PAL.barkShade, { shadow: false, receive: true }), 0, DECK.float + 0.01, 0));
+    g.add(at(box(w, 0.24, d, PAL.dock, { up: PAL.dockLit, down: PAL.dockMid }), 0, DECK.float - 0.12, 0));
+    g.add(at(box(w - 0.3, 0.05, d - 0.3, PAL.dockLit, { shadow: false, receive: true }), 0, DECK.float + 0.01, 0));
     for (const s of [-1, 1]) {
       g.add(at(box(w * 0.9, 0.16, 0.14, PAL.steelDark, { shadow: false }), 0, DECK.float - 0.30, s * (d / 2 - 0.2)));
     }
@@ -559,6 +618,17 @@ export function buildLevel() {
     return g;
   };
   addFloat(WEST_FLOAT.x, WEST_FLOAT.z, 6.0, 2.4);
+  // The west corner of the harbour has no fixture within fifteen metres of it
+  // and it measured as the darkest part of the block. A washer on the market's
+  // seaward gable is the honest place for this: pure pool, no column.
+  {
+    const w = at(box(0.34, 0.16, 0.20, PAL.goldLit, { shadow: false }), MARKET.x, 3.3, 2.7);
+    w.material = mat(PAL.goldLit);
+    root.add(w);
+    night.add(w, PAL.goldLit, { peak: 0.9, warm: 2.0, delay: 0.7 });
+    night.addPool(root, WEST_FLOAT.x, WEST_FLOAT.z, 4.4,
+      { profile: 'stall', peak: 0.72, warm: 2.0, delay: 0.7, y: DECK.float });
+  }
   addFloat(EAST_FLOAT.x, EAST_FLOAT.z, 5.0, 2.2);
 
   /**
@@ -576,7 +646,7 @@ export function buildLevel() {
     hull.position.y = 0.575;
     g.add(hull);
     g.add(at(box(7.2, 0.14, 3.0, PAL.terracotta, { up: PAL.terracottaLit, down: PAL.shade }), 0, 1.08, 0));
-    g.add(at(box(6.4, 0.06, 2.5, PAL.bark, { shadow: false, receive: true }), 0, DECK.boat + 0.01, 0));
+    g.add(at(box(6.4, 0.06, 2.5, PAL.dockLit, { shadow: false, receive: true }), 0, DECK.boat + 0.01, 0));
     // Gunwales, low enough to hop.
     for (const s of [-1, 1]) {
       g.add(at(box(6.8, 0.26, 0.16, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }), 0, DECK.boat + 0.13, s * 1.35));
@@ -603,16 +673,16 @@ export function buildLevel() {
     inWater(BOAT.x - 1.2, BOAT.z, 2.4, 2.4, DECK.wheelhouse, DECK.boat, { tag: 'wheelhouse' });
     perch(BOAT.x + 2, DECK.boat, BOAT.z);
     perch(BOAT.x - 1.2, DECK.wheelhouse, BOAT.z);
-    night.addPool(root, BOAT.x, BOAT.z, 5.4,
-      { profile: 'stall', peak: 0.58, warm: 2.0, delay: 0.9, y: SURFACE });
+    night.addPool(root, BOAT.x, BOAT.z, 4.2,
+      { profile: 'stall', peak: 0.62, warm: 2.0, delay: 0.9, y: DECK.boat });
   }
 
   // The dinghy, tied up west. Small, low, and a dollar in the bottom of it.
   {
     const g = new THREE.Group();
     g.add(at(box(3.0, 0.70, 1.6, PAL.stone, { up: PAL.stone, down: PAL.shade }), 0, 0.35, 0));
-    g.add(at(box(2.6, 0.05, 1.2, PAL.bark, { shadow: false, receive: true }), 0, 0.71, 0));
-    g.add(at(box(1.1, 0.08, 1.1, PAL.barkShade, { shadow: false }), -0.6, 0.76, 0));
+    g.add(at(box(2.6, 0.05, 1.2, PAL.dockLit, { shadow: false, receive: true }), 0, 0.71, 0));
+    g.add(at(box(1.1, 0.08, 1.1, PAL.dockMid, { shadow: false }), -0.6, 0.76, 0));
     g.position.set(DINGHY.x, 0, DINGHY.z);
     root.add(g);
     inWater(DINGHY.x, DINGHY.z, 3.0, 1.6, 0.70, 0, { tag: 'dinghy' });
@@ -627,7 +697,7 @@ export function buildLevel() {
   {
     const addPiling = (x, z, top = 1.3, r = 0.22) => {
       const g = new THREE.Group();
-      g.add(at(cyl(r, r * 1.15, top, 6, PAL.barkShade, { up: PAL.bark, down: PAL.shade }), 0, top / 2, 0));
+      g.add(at(cyl(r, r * 1.15, top, 6, PAL.dockMid, { up: PAL.dock, down: PAL.shade }), 0, top / 2, 0));
       g.add(at(cyl(r * 1.25, r * 1.25, 0.10, 6, PAL.steelDark, { up: PAL.steel }), 0, top - 0.05, 0));
       g.position.set(x, 0, z);
       root.add(g);
@@ -637,7 +707,7 @@ export function buildLevel() {
     for (const [dx, dz] of [[-0.5, -0.45], [0.5, -0.45], [0, 0.5]]) {
       addPiling(DOLPHIN.x + dx, DOLPHIN.z + dz, 1.3, 0.24);
     }
-    const cap = box(1.5, 0.12, 1.5, PAL.bark, { up: PAL.bark, down: PAL.barkShade });
+    const cap = box(1.5, 0.12, 1.5, PAL.dock, { up: PAL.dockLit, down: PAL.dockMid });
     cap.position.set(DOLPHIN.x, 1.30, DOLPHIN.z);
     root.add(cap);
     inWater(DOLPHIN.x, DOLPHIN.z, 1.5, 1.5, 1.36, 0, { tag: 'dolphin' });
@@ -661,7 +731,7 @@ export function buildLevel() {
   {
     const bollard = (x, z) => {
       const g = new THREE.Group();
-      g.add(at(cyl(0.20, 0.24, 0.60, 8, PAL.steelDark, { up: PAL.steel, down: PAL.shade }), 0, 0.30, 0));
+      g.add(at(cyl(0.20, 0.24, 0.60, 8, PAL.steel, { up: PAL.silver, down: PAL.shade }), 0, 0.30, 0));
       g.add(at(cyl(0.26, 0.22, 0.12, 8, PAL.steel, { up: PAL.silver }), 0, 0.66, 0));
       g.position.set(x, 0, z);
       root.add(g);
@@ -705,7 +775,7 @@ export function buildLevel() {
       g.add(pot);
     }
     // The net frame: two posts and a hanging net.
-    for (const px of [-1.6, 1.6]) g.add(at(cyl(0.09, 0.09, 3.0, 5, PAL.bark), px, 1.5, 1.6));
+    for (const px of [-1.6, 1.6]) g.add(at(cyl(0.09, 0.09, 3.0, 5, PAL.dockMid), px, 1.5, 1.6));
     const net = box(3.4, 1.9, 0.06, PAL.awning, { transparent: true, opacity: 0.55, shadow: false });
     net.position.set(0, 1.85, 1.6);
     g.add(net);
@@ -746,8 +816,8 @@ export function buildLevel() {
   // The kid's crate, and the trinkets she has already been given beside it.
   {
     const g = new THREE.Group();
-    g.add(at(box(0.86, 0.50, 0.72, PAL.bark, { up: PAL.barkShade, down: PAL.shade }), 0, 0.25, 0));
-    g.add(at(box(0.90, 0.06, 0.76, PAL.barkShade, { shadow: false }), 0, 0.53, 0));
+    g.add(at(box(0.86, 0.50, 0.72, PAL.dock, { up: PAL.dockLit, down: PAL.dockMid }), 0, 0.25, 0));
+    g.add(at(box(0.90, 0.06, 0.76, PAL.dockMid, { shadow: false }), 0, 0.53, 0));
     g.position.set(KID.x, 0, KID.z);
     root.add(g);
     solid(KID.x, KID.z, 0.86, 0.72, 0.50);
@@ -839,7 +909,7 @@ function pickupPlacements() {
   add('coins', 1.25, -14.0, 0.61, -6.0);
   add('bill1', 1.00, -16.0, 0.77, -3.4);
   // On the beacon's own gallery — free, once, because you are going there anyway.
-  add('coins', 1.25, 5.6, 3.46, -8.0);
+  add('coins', 1.25, 6.4, 3.46, -8.0);
 
   // — The fish market: $29 across one counter. —
   add('bill20', 20.00, -11.0, 1.26, 8.5, { owner: 'monger', label: "THE DAY'S TAKE" });
