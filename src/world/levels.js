@@ -189,7 +189,13 @@ export const LEVELS = [
        * done; whether you make it to the nest with it is a different problem
        * and the level is happy to let you find that out.
        */
-      { id: 'picnic', text: 'Lift the five off the cooler', when: (g) => !!g.crow.carried?.onCooler },
+      // "Steal the five from the picnickers", not "lift the five off the cooler".
+      // Two fixes in one line: *lift* is British for steal and reads as carrying
+      // on this side of the Atlantic, and *the cooler* names an object a player
+      // has to already have found. A task line's job is to point at a place on
+      // the map, and the picnickers are three people standing together — the
+      // most findable thing in the west half of the park.
+      { id: 'picnic', text: 'Steal the five from the picnickers', when: (g) => !!g.crow.carried?.onCooler },
       { id: 'trade', text: 'Trade something shiny' },
       { id: 'cart', text: 'Get the vendor away from his cart' },
       { id: 'ten', text: 'Get the ten' },
