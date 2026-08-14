@@ -1007,6 +1007,55 @@ export function auditLevel({ level, world, check, deps }) {
       shared.length === 0, `(${[...new Set(shared)].slice(0, 4).join('; ')})`);
   }
 
+  /**
+   * How far apart are the things you can stand on in the water?
+   *
+   * Nothing in this file used to ask. Every other rule is about one object — is
+   * this pickup buried, is this bird on a deck, is this collider in the basin —
+   * and a block whose whole currency is *footing* can have every one of them
+   * green while the water has quietly stopped costing anything. That is what
+   * happened here: the nest moved from a lighthouse to a loft, the loft is much
+   * wider than the shaft it replaced, and it came to rest 0.05 m from the piling
+   * cluster, 1.15 m from the lighthouse and 1.20 m from the boat. Six objects in
+   * a basin 32 x 13, each placement sensible on its own.
+   *
+   * **Adjacency is invisible in the source**, because it is a property of a pair
+   * and every line in a level file describes one thing. So it gets printed every
+   * run — the matrix is the useful artifact, more than the assertion — and the
+   * one number that is actually load-bearing is asserted: the platform the nest
+   * stands on has to be a flight from anything else, or banking is a hop.
+   */
+  if (world.decks && world.fountain?.shape === 'box') {
+    const standables = world.colliders.filter(
+      (c) => c.inWater && c.perch !== false && c.top > 0.3 && c.tag !== 'loft-roof');
+    const gapOf = (a, b) => Math.hypot(
+      Math.max(0, Math.max(a.minX - b.maxX, b.minX - a.maxX)),
+      Math.max(0, Math.max(a.minZ - b.maxZ, b.minZ - a.maxZ)),
+    );
+    const nestPad = standables.find(
+      (c) => world.nest.x > c.minX && world.nest.x < c.maxX
+        && world.nest.z > c.minZ && world.nest.z < c.maxZ);
+
+    if (nestPad) {
+      const near = standables
+        .filter((c) => c !== nestPad)
+        .map((c) => ({ tag: c.tag || 'untagged', d: gapOf(nestPad, c) }))
+        .sort((a, b) => a.d - b.d);
+      console.log(`       nest platform gaps: ${near.slice(0, 5)
+        .map((n) => `${n.tag} ${n.d.toFixed(1)}m`).join(', ')}`);
+      /**
+       * 2.5 m is the bar, and it is deliberately modest: it is about twice the
+       * crow's own footprint, so it cannot be crossed by standing on one thing
+       * and reaching the next. It is not "the nest feels remote" — that is a
+       * judgement for a playtest. It is "the nest is not touching anything".
+       */
+      const touching = near.filter((n) => n.d < 2.5);
+      check(say('the nest platform is a flight from everything else in the water'),
+        touching.length === 0,
+        `(${touching.map((n) => `${n.tag} at ${n.d.toFixed(2)}m`).join(', ')})`);
+    }
+  }
+
   check(say('nothing is standing in the edge kerb'), inKerb.length === 0, `(${inKerb.join('; ')})`);
   }
 

@@ -712,7 +712,7 @@ export const LEVELS = [
       ['the office, round the corner', 0, [16, 8.5], [24, 2.0]],
       ['the hoist and the west end', 0, [-28, 9.5], [-22, 1.5]],
       ['the crab pots, along the kerb', 0, [12, 13.0], [21, 12.5]],
-      ['the boat, round the wheelhouse', 1.15, [-3.0, -5.0], [3.0, -5.0]],
+      ['the boat, round the wheelhouse', 1.15, [-2.6, -4.0], [3.4, -4.0]],
     ],
 
     ending: {

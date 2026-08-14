@@ -1832,7 +1832,9 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
       // first version of this did and reported as an unreachable deck.
       ['the wheelhouse → the loft stage', APRON, [-1.2, g.world.decks.wheelhouse, -5.0], 0.55],
       ['the loft stage → the nest', n, [APRON.x, G, APRON.z], 0.55],
-      ['the east coping → the pilings', { x: 11, y: 1.36, z: -8 }, [14.35, 0.62, -8.0], 0.55],
+      // The dolphin moved west when the nest moved east — it holds the teaching
+      // five, and it had ended up 0.8 m from the nest platform.
+      ['the west coping → the pilings', { x: -13.5, y: 1.36, z: -9.0 }, [-18.95, 0.62, -9.0], 0.55],
       ['the pier head → the loft, full bar', APRON, [-5.5, 0.62, -9.0], 1.0],
     ];
     const runs = legs.map(([leg, t, from, st]) => ({ leg, ...flyTo(t, from[0], from[1], from[2], st) }));

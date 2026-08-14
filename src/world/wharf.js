@@ -109,7 +109,18 @@ const OFFICE = { x: 20, z: 4.0 };
  * boat's wheelhouse) → 5.0, which is 2.6 m against a 9 m rule — the difficulty
  * here was never vertical, it is the water in between.
  */
-const LOFT = { x: 7.5, z: -8.5, roof: 5.0 };
+/**
+ * Solved from the constraints rather than placed by eye, which is how it ended
+ * up 0.05 m from a piling the last time.
+ *
+ * The stage is 5.4 across. The mole's berthing ledge ends at z = −11.85 and the
+ * quay coping at z = 0.4, so 2.5 m of clearance at both ends puts the centre at
+ * −6.65. The boat's hull reaches x = 4.4 and overlaps this in z, so the same
+ * clearance in x puts the centre at 9.6. Both gaps are the audit's minimum, and
+ * the audit prints the whole matrix every run because adjacency is the one
+ * property of a level that is invisible in its source.
+ */
+const LOFT = { x: 9.6, z: -6.65, roof: 5.0 };
 /**
  * The harbour light, on the head of the west arm at the mouth.
  *
@@ -120,8 +131,39 @@ const LOFT = { x: 7.5, z: -8.5, roof: 5.0 };
  * the wall. The east arm keeps a plain green marker, which is the real pairing.
  */
 const LIGHT = { x: 4.5 };
-const BOAT = { x: 0, z: -5.0 };
-const DOLPHIN = { x: 11, z: -8.0 };                      // the piling cluster
+/**
+ * Alongside the pier, not merged into it — and deliberately still alongside.
+ *
+ * The hull used to *overlap* the pier by 0.1 m, which is two colliders sharing a
+ * strip and a boat that has grown into the dock. It lies 0.3 m off it now, which
+ * is what a moored boat does.
+ *
+ * A design review argued for pushing it 2 m out so that boarding the skipper is
+ * a flight. It is right about the effect and the basin cannot pay for it: 32 m of
+ * water has to hold a 4 m pier, a 7.2 m boat and a 5.4 m loft, and buying 2 m
+ * here costs the nest the 2.5 m clearance that is the more important number by
+ * far. **A boat moored at a dock is also simply what this is** — the fiction
+ * wants it against the pier, and the level's claim that there is nowhere to
+ * retreat to has been corrected to match the geometry rather than the other way
+ * round.
+ */
+const BOAT = { x: 0.4, z: -4.0 };
+/**
+ * The piling cluster, and it has moved west of the pier.
+ *
+ * It was at (11, −8), which was nine metres from the old lighthouse nest and
+ * five centimetres from the loft that replaced it. The five on its cap is the
+ * block's teaching object — the task line says *get the five off the far
+ * pilings* and its whole job is to make a player fly out over water for the
+ * first time — and it had ended up on the nest's doorstep, so the lesson fired
+ * while you were already standing at the bank. Moving the nest moved what the
+ * nest was far from; nothing pointed that out because no rule measures the gap
+ * between two things.
+ *
+ * West of the pier it is on the opposite side of the block from the loft, so the
+ * trip is its own decision again.
+ */
+const DOLPHIN = { x: -13.5, z: -9.0 };
 /** Where the west float used to be. Still lit — it is open water now. */
 const WEST_FLOAT = { x: -14, z: -6.0 };
 const DINGHY = { x: -16.0, z: -3.4 };
@@ -384,6 +426,28 @@ export function buildLevel() {
       root.add(apron);
       solid(cx, MOLE.z, w, MOLE.d, 1.4, 0, { tag: 'breakwater' });
       perch(cx, 1.4, MOLE.z);
+
+      /**
+       * A berthing ledge along the harbour face, at the same 0.62 as the coping
+       * on the other three sides — and it is a bug fix, not decoration.
+       *
+       * The mole is 1.4 m tall, which is well over the 0.34 a floating crow can
+       * scramble. So the north wall of the basin was the one edge of the water
+       * that could be swum to and not climbed out of, and the escape grid found
+       * exactly that: three cells along it where the only ways out were a
+       * sixteen-metre swim west or a boat hull too high to board. **The lobster
+       * pot, for the fourth time on this block's water.**
+       *
+       * Every real mole has one of these for boats to lie against, and it makes
+       * all four sides of the basin behave the same way, which is what a player
+       * will assume after the first swim.
+       */
+      const ledgeZ = MOLE.z + MOLE.d / 2 + 0.35;
+      const ledge = box(w, RIM, 0.7, PAL.concreteMid,
+        { up: PAL.concrete, down: PAL.shade, shadow: false });
+      ledge.position.set(cx, RIM / 2, ledgeZ);
+      root.add(ledge);
+      inWater(cx, ledgeZ, w, 0.7, RIM, 0, { tag: 'mole-ledge' });
     };
     arm(MOLE.x - MOLE.w / 2, MOUTH.minX);
     arm(MOUTH.maxX, MOLE.x + MOLE.w / 2);
@@ -996,9 +1060,17 @@ export function buildLevel() {
     inWater(DOLPHIN.x, DOLPHIN.z, 1.5, 1.5, 1.36, 0, { tag: 'dolphin' });
     perch(DOLPHIN.x, 1.36, DOLPHIN.z);
 
+    /**
+     * Four, not seven.
+     *
+     * Two stood 0.79 m and 1.81 m off the pier — close enough to step to, so
+     * they bought nothing but gull furniture on a block that had already given
+     * up both its floats for exactly that reason. A third sat at (10.0, −10.8),
+     * entirely *inside* the loft stage's footprint: an invisible prop carrying a
+     * perch point underneath a deck.
+     */
     for (const [px, pz, h] of [
-      [-9.5, -10.2, 1.5], [-8.2, -10.4, 1.2], [1.5, -10.6, 1.4],
-      [12.6, -2.0, 1.3], [-16.6, -9.4, 1.35], [10.0, -10.8, 1.25],
+      [1.5, -10.6, 1.4], [13.0, 2.0, 1.3], [-16.6, -9.4, 1.35], [-3.0, -11.4, 1.25],
     ]) {
       addPiling(px, pz, h, 0.20);
       inWater(px, pz, 0.5, 0.5, h + 0.06, 0, { tag: 'piling' });
@@ -1503,13 +1575,13 @@ function pickupPlacements() {
   //
   // The five on the dolphin is the block's teaching object and the task points
   // at it. It is on a 1.5 m cap nine metres from the nearest walkable thing.
-  add('bill5', 5.00, 11.0, 1.42, -8.0,
+  add('bill5', 5.00, -13.5, 1.42, -9.0,
     { owner: null, label: 'THE FIVE ON THE PILINGS', onPiling: true });
   add('coins', 1.25, -16.6, 1.41, -9.4);
   add('bill1', 1.00, -16.0, 0.77, -3.4);
   // On the loft's stage, in front of the hut — free, once, because you are
   // going there anyway.
-  add('coins', 1.25, 7.5, 2.56, -6.2);
+  add('coins', 1.25, 9.6, 2.56, -4.4);
 
   // — The fish market: $29 across one counter. —
   add('bill20', 20.00, -11.0, 1.26, 8.5, { owner: 'monger', label: "THE DAY'S TAKE" });
@@ -1521,14 +1593,14 @@ function pickupPlacements() {
   add('coins', 3.60, 9.6, 1.14, 8.62, { owner: 'deckhand', label: 'THE HONESTY BOX' });
   add('bill5', 5.00, 18.6, 1.22, 6.15, { owner: 'harbormaster', label: 'THE FIVE ON THE LEDGE' });
   add('coins', 1.20, 20.8, 1.22, 6.15, { owner: 'harbormaster' });
-  add('bill10', 10.00, 2.4, 1.32, -5.6, { owner: 'skipper', label: 'THE FARE BOX' });
-  add('coins', 1.40, 2.5, 1.22, -4.2, { owner: 'skipper' });
+  add('bill10', 10.00, 2.8, 1.32, -4.6, { owner: 'skipper', label: 'THE FARE BOX' });
+  add('coins', 1.40, 2.9, 1.22, -3.2, { owner: 'skipper' });
 
   // — Shinies: worthless, tradeable, and two of the four are out over water. —
   add('shiny', 0, -4.5, 0.07, 5.5, { shinyKind: 'cap' });
   add('shiny', 0, 0.5, RIM - 0.28, -1.5, { inWater: true, shinyKind: 'ring' });
-  add('shiny', 0, 12.6, 1.42, -2.0, { shinyKind: 'key' });
-  add('shiny', 0, -1.2, 2.47, -5.0, { shinyKind: 'foil' });
+  add('shiny', 0, 13.0, 1.42, 2.0, { shinyKind: 'key' });
+  add('shiny', 0, -0.8, 2.47, -4.0, { shinyKind: 'foil' });
 
   // — The mackerel. Not money; the only way to move a fishmonger. —
   // On the counter, well clear of both the cash box and the jar: the beak takes
@@ -1572,16 +1644,24 @@ function humanPlacements() {
     {
       id: 'skipper', name: 'the skipper', cloth: 3, skin: 1, hair: 2,
       /**
-       * On his own deck at 1.15, with water on all four sides.
+       * On his own deck at 1.15, with water on three sides and the pier on the
+       * fourth.
        *
        * A human's floorY is authored and they never leave it, which on every
        * other block is a thing the crow exploits by going up. Here it is the
-       * guard's whole character: he cannot chase you off the boat, he cannot be
-       * baited off it, and he is standing over $11.40. Getting it means landing
-       * next to him and being right about the timing, because there is nowhere
-       * to retreat to that is not a swim.
+       * guard's whole character: he cannot chase you off the boat and he cannot
+       * be baited off it, so the $11.40 he stands over is the only money on this
+       * block guarded by somebody who is certain to still be there.
+       *
+       * This used to claim there was *nowhere to retreat to that is not a swim*,
+       * and that was never true of what shipped — the hull overlapped the pier,
+       * so the retreat was always a hop. A design review wanted the boat pushed
+       * two metres out to make boarding a real flight; the basin cannot pay for
+       * it without costing the nest its clearance, which is the more important
+       * number. The claim is corrected rather than the geometry, and a moored
+       * boat lying against a dock is what the fiction wanted anyway.
        */
-      pos: [1.6, 1.15, -5.0], home: [1.6, 1.15, -5.0],
+      pos: [2.0, 1.15, -4.0], home: [2.0, 1.15, -4.0],
       patrol: null, speed: 1.0, chaseSpeed: 3.6, viewDist: 8.5, viewCos: 0.25,
       guardRadius: 3.2, alertness: 1.2, faces: [-1, 0.15],
     },
@@ -1646,9 +1726,9 @@ function humanPlacements() {
  */
 function gullPlacements() {
   return [
-    { x: -9.5, z: -10.2, y: 1.56 },
     { x: 1.5, z: -10.6, y: 1.46 },
-    { x: 12.6, z: -2.0, y: 1.36 },
+    { x: 1.5, z: -10.6, y: 1.46 },
+    { x: 13.0, z: 2.0, y: 1.36 },
     { x: 9.5, z: -13.2, y: 1.4 },
     // Both of these are on the arms, and both have been moved once already: a
     // bird's y is authored, so a gull left where the breakwater used to be
@@ -1656,7 +1736,7 @@ function gullPlacements() {
     // rule earning its keep — widening the mouth is exactly the kind of edit
     // that strands one.
     { x: -17.0, z: -13.2, y: 1.4 },
-    { x: -8.2, z: -10.4, y: 1.26 },
+    { x: -3.0, z: -11.4, y: 1.31 },
     { x: -14.0, z: 4.15, y: 4.1 },
     { x: -10.5, z: 4.15, y: 4.1 },
     { x: 20.0, z: 4.0, y: 3.63 },
