@@ -518,13 +518,31 @@ export function buildLevel() {
    * A forty-metre soffit casts a forty-metre shadow across the back of the
    * floor, and the answer is light on the ground rather than another pendant —
    * the park bought two points of median and lost four of 5th percentile by
-   * adding one more lamppost. That lesson is about *columns*, though, and a
-   * washer bolted to a wall has none: it is pure pool. Which is the reason this
-   * block can carry roughly twice the fixture count of any outdoor one without
-   * paying for it. An interior at six in the evening has its lights on; the
-   * three blocks before this were lit by a sky.
+   * adding one more lamppost. That lesson is about *adding* columns, though,
+   * and these add none: they bolt to the five that already hold the gallery up,
+   * so each is pure pool and pays for nothing it does not already cost. Which
+   * is the reason this block can carry roughly twice the fixture count of any
+   * outdoor one. An interior at six in the evening has its lights on; the three
+   * blocks before this were lit by a sky.
+   *
+   * **They floated for the block's whole life, and the x list was the only
+   * thing wrong with them.** The comment here used to say "bolted to a wall",
+   * and there is no wall: the back one is at z = −11.4 and these sit at −7.05,
+   * four and a third metres out in open air. Reported from a playtest as five
+   * pale rectangles hanging in the middle of the room.
+   *
+   * The obvious repair is the wrong one. The pools were authored correctly for
+   * a wall mount — each spans z −11.2 to 0, its back edge 0.2 m off the wall —
+   * so moving the fixtures back to match looks right and hides all five behind
+   * the gallery deck at 4.54, which is why they were out here in the first
+   * place. What they were actually missing is 1 m of x: the colonnade is at
+   * [−16, −8, 0, 8, 16] and these were at [−17, −10, −3, 4, 12], close enough
+   * to look deliberate and never close enough to touch. Their z was right all
+   * along — a washer 0.3 deep at −7.05 embeds 27 mm into a column whose face at
+   * this height is −7.1725, which is proud of it without sharing a plane with
+   * it. Same mounting the two free-standing columns' sconces already use.
    */
-  for (const wx of [-17, -10, -3, 4, 12]) {
+  for (const wx of [-16, -8, 0, 8, 16]) {
     const w = box(0.5, 0.22, 0.3, PAL.goldLit, { shadow: false });
     w.position.set(wx, 3.5, -7.05);
     root.add(w);
