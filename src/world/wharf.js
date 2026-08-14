@@ -62,14 +62,15 @@ export const BOUNDS = { minX: -30, maxX: 30, minZ: -15, maxZ: 15 };
  * in. Its north edge is the breakwater's inner face rather than a fourth wall,
  * because the harbour opens to the sea there.
  *
- * It runs to x = 23 rather than 14, which is nine metres of water taken from
- * what used to be a container yard on the east quay. The yard was **dead area**
- * — no cast, no pitch, forty cents of money and nothing to do — and this block
- * needed water more than it needed a second container stack: the basin is the
- * thing every design decision here is short of, and the review measured 24% of
- * it built on. It is 41 x 12.95 now, up 28%.
+ * It runs to x = 28 rather than 14, taking fourteen metres of what used to be
+ * the east quay. That end was **dead area** twice measured: a container yard
+ * first, then bare concrete with two lampposts on it — $0.42 of money, nobody in
+ * the cast, three props, and the only band of the block with no water in it at
+ * all. Both times the answer was the same, because the basin is the thing every
+ * decision on this block is short of. It is 46 x 12.95 now, up 44% on where it
+ * started.
  */
-const BASIN = { minX: -18, maxX: 23, minZ: -12.55, maxZ: 0.4 };
+const BASIN = { minX: -18, maxX: 28, minZ: -12.55, maxZ: 0.4 };
 /** The breakwater. Wider than the basin, so it closes it at both corners. */
 const MOLE = { x: -2, z: -13.25, w: 64, d: 1.4 };
 /**
@@ -401,8 +402,11 @@ export function buildLevel() {
     const zc = (BASIN.maxZ + T - MOLE.z) / 2 + MOLE.z;
     const zd = BASIN.maxZ + T - MOLE.z;
     cope(BASIN.minX - T / 2, zc, T, zd);
-    cope(BASIN.maxX + T / 2, zc, T, zd);
-    perch(BASIN.maxX + T / 2, RIM, 0);
+    /**
+     * The east side has no coping run: the water reaches the map edge, so there
+     * is no quay there to hold it back. The invisible bound does that job, and a
+     * wall drawn along it would be a wall in the middle of the sea.
+     */
     perch(BASIN.minX - T / 2, RIM, -8);
   }
 
@@ -528,31 +532,40 @@ export function buildLevel() {
      * mouth lost the only low thing they could climb out onto and were left
      * facing a 1.4 m wall. Widening a wall is exactly the edit that quietly
      * removes the way out of the water.
+     *
+     * **And the tower stands on the pier's centre, not the mole's.** The first
+     * version widened the head northward and left the tower where it was, so
+     * the plinth went on overhanging by exactly as much as before — just to the
+     * south instead of both ways, which is the side facing the camera and the
+     * only side anyone could see. Moving the wall out from under something and
+     * not moving the something is a fix that photographs identically to no fix
+     * at all.
      */
     const pierZ = MOLE.z - 0.6;
+    const LZ = pierZ;                    // the tower sits on the pier, not the mole
     root.add(at(box(3.4, B, 2.6, PAL.concreteMid, { up: PAL.concrete, down: PAL.shade, shadow: false }),
       LIGHT.x, B / 2, pierZ));
     inWater(LIGHT.x, pierZ, 3.4, 2.6, B, 0, { tag: 'light-pier' });
     root.add(at(cyl(1.05, 1.25, 0.5, 10, PAL.concreteMid, { up: PAL.concrete, down: PAL.shade, shadow: false }),
-      LIGHT.x, B + 0.25, MOLE.z));
+      LIGHT.x, B + 0.25, LZ));
     root.add(at(cyl(0.62, 0.88, 4.6, 10, PAL.stone, { up: PAL.stone, down: PAL.concreteMid, shadow: false }),
-      LIGHT.x, B + 0.5 + 2.3, MOLE.z));
+      LIGHT.x, B + 0.5 + 2.3, LZ));
     // The painted band, so a white cylinder against a pale sky has a height.
     root.add(at(cyl(0.75, 0.79, 0.8, 10, PAL.container[0], { up: PAL.containerLit[0], down: PAL.shade, shadow: false }),
-      LIGHT.x, B + 2.4, MOLE.z));
+      LIGHT.x, B + 2.4, LZ));
     // The gallery and the lamp room. Small, because nothing has to stand here.
     root.add(at(cyl(0.86, 0.86, 0.16, 10, PAL.steelDark, { up: PAL.steel, shadow: false }),
-      LIGHT.x, B + 5.2, MOLE.z));
+      LIGHT.x, B + 5.2, LZ));
     const lantern = at(cyl(0.52, 0.56, 0.9, 8, PAL.goldLit, { shadow: false }),
-      LIGHT.x, B + 5.7, MOLE.z);
+      LIGHT.x, B + 5.7, LZ);
     lantern.material = mat(PAL.goldLit);
     root.add(lantern);
     root.add(at(cone(0.62, 0.6, 8, PAL.container[0], { up: PAL.containerLit[0], down: PAL.shade, shadow: false }),
-      LIGHT.x, B + 6.45, MOLE.z));
+      LIGHT.x, B + 6.45, LZ));
     night.add(lantern, PAL.goldLit, { peak: 1.0, warm: 1.2, delay: 0.0, flicker: true });
-    night.addPool(root, LIGHT.x, MOLE.z + 2.0, 7.0,
+    night.addPool(root, LIGHT.x, LZ + 2.6, 7.0,
       { profile: 'stall', peak: 0.58, warm: 1.2, y: SURFACE });
-    solid(LIGHT.x, MOLE.z, 1.8, 1.8, B + 5.2, 0, { tag: 'lighthouse' });
+    solid(LIGHT.x, LZ, 1.8, 1.8, B + 5.2, 0, { tag: 'lighthouse' });
   }
 
   // ── the backdrop: open ocean, and one ship on it ──────────────────────────
@@ -577,6 +590,28 @@ export function buildLevel() {
   // darker than the paving: a wide dark band across the foreground is a third
   // of the frame no lamp reaches.
   {
+    /**
+     * Slab joints across the near quay, and they are the answer to a note that
+     * kept coming back as "the foreground reads empty".
+     *
+     * It is not empty — the band from z 11 to 15 carries eight props and eleven
+     * pickups, more than any other depth on the block. It reads empty because it
+     * is one unbroken plane of a single colour occupying the bottom third of
+     * every frame, and at this camera a large flat surface with no line on it has
+     * no scale: there is nothing to measure the crow against. The park solves the
+     * same problem with mown stripes and paths.
+     *
+     * Four joint lines, barely a step darker, running the length of the quay. A
+     * bold line here would read as five black bands after dark — the exact
+     * mistake the park's first mower stripes made — so these are the smallest
+     * value step that survives dusk.
+     */
+    for (const [i, jz] of [11.6, 13.0, 14.2, 8.2].entries()) {
+      addDecal(0, jz, 150, 0.16, PAL.concreteMid);
+    }
+    // And two cross joints, so the grid is not only horizontal.
+    for (const jx of [-16, 12]) addDecal(jx, 12.4, 0.16, 6.0, PAL.concreteMid);
+
     addDecal(0, 17.5, 150, 5, PAL.concrete);
     const kerb = box(150, 0.34, 1.2, PAL.concreteMid, { up: PAL.concrete, down: PAL.shade });
     kerb.position.set(0, 0.17, 14.8);
@@ -1330,7 +1365,7 @@ export function buildLevel() {
 
     // A floodlight mast at each stack. At the far east and west ends, where
     // nothing has a sightline to lose behind them.
-    for (const [mx, mz] of [[27.5, 5.0], [-28.5, -6.5]]) {
+    for (const [mx, mz] of [[-28.5, -6.5]]) {
       const g = new THREE.Group();
       g.add(at(cyl(0.10, 0.13, 4.2, 6, PAL.steel, { up: PAL.steel, down: PAL.steelDark }), 0, 2.1, 0));
       g.add(at(box(0.5, 0.14, 0.5, PAL.steelDark), 0, 0.07, 0));
@@ -1352,6 +1387,64 @@ export function buildLevel() {
   addBench(-2, 12.5);
   addBench(11, 12.0);
 
+  /**
+   * The east corner, and this is the third attempt at making that end mean
+   * something.
+   *
+   * It was a container yard (dead), then bare concrete with two lampposts on it
+   * (deader — measured at $0.42 of money, nobody in the cast, three props, and
+   * the only band of the block with no water in it at all). The harbour has taken
+   * most of it. What is left is a working corner rather than a margin: the
+   * harbourmaster's slipway running down into the water, with a dinghy hauled out
+   * on it and a winch at the head.
+   *
+   * A slip is the right object because it is the one thing a quay has that is
+   * *about* the boundary between land and water — which is what this whole block
+   * is about, and the thing the east end was conspicuously missing.
+   */
+  {
+    const SX = 24.5;
+    // Three ramp steps down to the waterline. Each is a different height, so no
+    // two share a top face — see the boat's wheelhouse for what that costs.
+    for (const [i, th] of [0.42, 0.29, 0.16].entries()) {
+      const step = box(6.0, th, 2.0, i ? PAL.concreteMid : PAL.concrete,
+        { up: PAL.concrete, down: PAL.shade });
+      step.position.set(SX, th / 2, 2.6 - i * 2.0);
+      root.add(step);
+      // The lower steps run into the basin, which is what a slipway is for.
+      inWater(SX, 2.6 - i * 2.0, 6.0, 2.0, th, 0, { tag: 'slipway' });
+    }
+    addDecal(SX, 6.4, 8.0, 5.0, PAL.concreteMid);
+
+    // A dinghy hauled out at the head of it, upside down on trestles.
+    const hull = box(2.8, 0.62, 1.5, PAL.container[3],
+      { up: PAL.containerLit[3], down: PAL.shade });
+    hull.position.set(SX - 0.4, 0.86, 5.6);
+    root.add(hull);
+    for (const tx of [-1.1, 1.1]) {
+      root.add(at(box(0.16, 0.62, 1.7, PAL.dockMid, { up: PAL.dock, down: PAL.shade }),
+        SX - 0.4 + tx, 0.31, 5.6));
+    }
+    solid(SX - 0.4, 5.6, 2.8, 1.7, 1.17);
+    perch(SX - 0.4, 1.17, 5.6);
+
+    // The winch, and a light on a short post over it.
+    root.add(at(box(0.9, 0.3, 0.9, PAL.steelDark, { up: PAL.steel, down: PAL.shade }),
+      SX + 2.6, 0.15, 4.2));
+    root.add(at(cyl(0.34, 0.34, 0.5, 8, PAL.steel, { up: PAL.silver, down: PAL.shade }),
+      SX + 2.6, 0.55, 4.2));
+    solid(SX + 2.6, 4.2, 0.9, 0.9, 0.80);
+    perch(SX + 2.6, 0.80, 4.2);
+    root.add(at(cyl(0.07, 0.09, 2.4, 5, PAL.steel), SX + 2.6, 2.0, 5.6));
+    const bulb = at(ico(0.15, 0, PAL.goldLit, { shadow: false }), SX + 2.6, 3.3, 5.6);
+    bulb.material = mat(PAL.goldLit);
+    root.add(bulb);
+    solid(SX + 2.6, 5.6, 0.3, 0.3, 2.4);
+    night.add(bulb, PAL.goldLit, { peak: 0.95, warm: 2.2, delay: 0.9, flicker: true });
+    night.addPool(root, SX, 4.4, 6.4,
+      { profile: 'stall', peak: 0.62, warm: 2.2, delay: 0.9 });
+  }
+
   // Two bins. There was a third at (-7.5, 11.5), between the market and the ice
   // house, and the playtest reported it as being in the way — a bin is 1.3m
   // across and 1.6 tall, standing on the route people walk most.
@@ -1368,10 +1461,14 @@ export function buildLevel() {
    */
   addLamp(-27.5, 9.5);
   addLamp(-19.5, 11.5);
-  addLamp(-8.0, 3.4);
+  // There was one at (-8.0, 3.4), 0.2 m off the market canopy's east corner and
+  // inside its z range — it photographed as clipping through the roof. The quay
+  // has five others and the market has its own strip light, so it is gone rather
+  // than nudged: a sixth lamp here was buying overlap, not coverage.
   addLamp(4.5, 11.0);
-  addLamp(14.5, 8.0);
-  addLamp(25.5, 8.5);
+  // There were two more out east, at (25.5, 8.5) and (14.5, 8.0), on the stretch
+  // of bare quay that is now harbour. A lamppost with nothing to light is 4.6m of
+  // opaque column and its shadow, which is the trade the park's ninth lamp lost.
 
   // The kid's crate, and the trinkets she has already been given beside it.
   {
@@ -1591,15 +1688,15 @@ function pickupPlacements() {
   //   and deliberately nowhere near enough. —
   for (const [x, z] of [
     [-26.5, 8.0], [-21.0, 12.0], [-16.0, 11.5], [-9.5, 12.5], [-3.0, 9.5],
-    [1.2, 13.2], [7.0, 11.0], [14.5, 12.4], [22.0, 9.5], [27.0, 5.5],
+    [1.2, 13.2], [7.0, 11.0], [14.5, 12.4], [20.5, 12.0], [16.0, 13.4],
   ]) add('penny', 0.01, x, 0.06, z);
-  for (const [x, z] of [[-28.0, 4.5], [-21.5, 5.0], [-5.5, 11.5], [12.5, 11.0], [24.5, 2.0]]) {
+  for (const [x, z] of [[-28.0, 4.5], [-21.5, 5.0], [-5.5, 11.5], [12.5, 11.0], [21.5, 4.6]]) {
     add('nickel', 0.05, x, 0.06, z);
   }
-  for (const [x, z] of [[-23.5, 10.5], [2.5, 2.6], [5.0, 10.0], [22.5, 11.5]]) {
+  for (const [x, z] of [[-23.5, 10.5], [2.5, 2.6], [5.0, 10.0], [19.0, 12.6]]) {
     add('dime', 0.10, x, 0.06, z);
   }
-  for (const [x, z] of [[-27.5, 1.5], [1.0, 6.5], [26.5, 1.5]]) add('quarter', 0.25, x, 0.06, z);
+  for (const [x, z] of [[-27.5, 1.5], [1.0, 6.5], [22.8, 8.0]]) add('quarter', 0.25, x, 0.06, z);
 
   // Loose change on the furniture, and a dollar somebody left in the crab pots.
   add('coins', 0.80, 11.5, 0.76, 2.2);
@@ -1677,7 +1774,7 @@ function humanPlacements() {
        * point: you time him rather than learn a cone.
        */
       pos: [2, 0, 10], home: [2, 0, 10],
-      patrol: [[-22, 9], [-10, 11.5], [1, 11], [9, 9.5], [14, 3.0], [22, 10.5], [27, 6.0], [10, 2.6], [-4, 3.4], [-24, 4.0]],
+      patrol: [[-22, 9], [-10, 11.5], [1, 11], [9, 9.5], [14, 3.0], [21, 11.0], [26, 8.4], [10, 2.6], [-4, 3.4], [-24, 4.0]],
       speed: 1.35, chaseSpeed: 4.1, viewDist: 9.5, viewCos: 0.3,
       guardRadius: 3.4, alertness: 0.95,
     },
