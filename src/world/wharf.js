@@ -122,6 +122,7 @@ const LOFT = { x: 7.5, z: -8.5, roof: 5.0 };
 const LIGHT = { x: 4.5 };
 const BOAT = { x: 0, z: -5.0 };
 const DOLPHIN = { x: 11, z: -8.0 };                      // the piling cluster
+/** Where the west float used to be. Still lit — it is open water now. */
 const WEST_FLOAT = { x: -14, z: -6.0 };
 const DINGHY = { x: -16.0, z: -3.4 };
 
@@ -217,8 +218,20 @@ export function buildLevel() {
   // floating six centimetres over the ground: a flat PlaneGeometry sitting
   // between 1 mm and 30 cm above a surface has to carry polygonOffset, and
   // `addDecal` is the only thing here that hands it out.
-  addDecal((BASIN.minX + BASIN.maxX) / 2, (BASIN.minZ + BASIN.maxZ) / 2,
-    BASIN.maxX - BASIN.minX, BASIN.maxZ - BASIN.minZ, PAL.harbourBed);
+  /**
+   * It runs north past the basin to under the breakwater, which is wider than
+   * the water it is the bed of — deliberately.
+   *
+   * The mouth is bridged by a translucent quad, and translucent over *bare
+   * ground* is a pale tan band, which is what the seam at the harbour mouth
+   * turned into once the z-fighting was fixed. The strip between the basin's
+   * north edge and the sea's south edge had no bed under it, so the water there
+   * was tinting the quay's concrete instead of the harbour floor. Extending the
+   * bed costs one decal's worth of nothing and the overhang is invisible: it
+   * ends up inside the mole arms, which are opaque solids standing on it.
+   */
+  addDecal((BASIN.minX + BASIN.maxX) / 2, (BASIN.maxZ + (MOLE.z - MOLE.d / 2 - 0.4)) / 2,
+    BASIN.maxX - BASIN.minX, BASIN.maxZ - (MOLE.z - MOLE.d / 2 - 0.4), PAL.harbourBed);
 
   // ── the water: a basin that opens to the sea ──────────────────────────────
   /**
@@ -846,7 +859,22 @@ export function buildLevel() {
     perch(x, DECK.float, z);
     return g;
   };
-  addFloat(WEST_FLOAT.x, WEST_FLOAT.z, 6.0, 2.4);
+  /**
+   * No floats at all, in the end.
+   *
+   * There were two: one between the boat and the loft, and one west of the pier.
+   * Both went, over two playtest rounds, for the same reason — a boat, two
+   * floats, a dinghy, a hut on piles and seven pilings inside a basin thirty
+   * metres across is not a block that spends footing. **Footing stops being a
+   * cost the moment there is something to stand on every four metres**, and a
+   * float was the least interesting of those things: a flat rectangle at knee
+   * height that asks nothing of the player.
+   *
+   * What is left in the water earns its place — the pier you can walk, the boat
+   * with a guard on it, the dinghy, the pilings you can only reach in the air,
+   * and the loft. `addFloat` stays: the idiom is sound and a later block may
+   * want one.
+   */
   // The west corner of the harbour has no fixture within fifteen metres of it
   // and it measured as the darkest part of the block. A washer on the market's
   // seaward gable is the honest place for this: pure pool, no column.
@@ -856,7 +884,7 @@ export function buildLevel() {
     root.add(w);
     night.add(w, PAL.goldLit, { peak: 0.9, warm: 2.0, delay: 0.7 });
     night.addPool(root, WEST_FLOAT.x, WEST_FLOAT.z, 4.4,
-      { profile: 'stall', peak: 0.72, warm: 2.0, delay: 0.7, y: DECK.float });
+      { profile: 'stall', peak: 0.72, warm: 2.0, delay: 0.7, y: SURFACE });
   }
   /**
    * One float, not two.
@@ -1181,7 +1209,6 @@ export function buildLevel() {
     // light on water.
     for (const [px, pz, r, peak] of [
       [BOAT.x, BOAT.z, 4.8, 0.32],
-      [WEST_FLOAT.x, WEST_FLOAT.z, 4.6, 0.32],
       [PIER.x + 2.2, PIER.z - 1.0, 5.2, 0.28],
     ]) {
       night.addPool(root, px, pz, r,
@@ -1478,7 +1505,7 @@ function pickupPlacements() {
   // at it. It is on a 1.5 m cap nine metres from the nearest walkable thing.
   add('bill5', 5.00, 11.0, 1.42, -8.0,
     { owner: null, label: 'THE FIVE ON THE PILINGS', onPiling: true });
-  add('coins', 1.25, -14.0, 0.61, -6.0);
+  add('coins', 1.25, -16.6, 1.41, -9.4);
   add('bill1', 1.00, -16.0, 0.77, -3.4);
   // On the loft's stage, in front of the hut — free, once, because you are
   // going there anyway.
@@ -1629,7 +1656,7 @@ function gullPlacements() {
     // rule earning its keep — widening the mouth is exactly the kind of edit
     // that strands one.
     { x: -17.0, z: -13.2, y: 1.4 },
-    { x: -14.0, z: -6.0, y: DECK.float },
+    { x: -8.2, z: -10.4, y: 1.26 },
     { x: -14.0, z: 4.15, y: 4.1 },
     { x: -10.5, z: 4.15, y: 4.1 },
     { x: 20.0, z: 4.0, y: 3.63 },
