@@ -925,11 +925,31 @@ export function buildLevel() {
     // The back bar, and the alley between. 1.65 m of it, which is what the
     // bartender needs to not be standing inside his own furniture and what a
     // chase needs to get out of the far end.
+    /**
+     * 6.4 wide, not 8, and centred at 12.2 rather than on BAR.x.
+     *
+     * The colonnade's east column stands at x = 16, z = −7.6, and this unit
+     * used to run to 17 at z = −7.4 — so the column passed straight through the
+     * back bar, shelves, bottles and all, for the block's whole life. Nothing
+     * caught it because every check this block has looks at the floor, and from
+     * most of the room the bar's own bulk hides the intersection; it only shows
+     * from the east, where the column comes up out of the counter.
+     *
+     * It surfaced when the wall washers moved onto the columns and put a light
+     * on that one. The washer was not the bug — it was the thing that made
+     * anyone look.
+     *
+     * The unit now stops at 15.4, a tenth clear of the column's 15.52 face, so
+     * the column is the bar's east bookend rather than something growing out of
+     * it. A bar built between two columns is what the room already implies.
+     */
+    const BACK_W = 6.4;
+    const BACK_X = 12.2;
     const back = new THREE.Group();
-    back.add(at(box(8, 2.4, 0.5, PAL.barkShade, { up: PAL.bark, down: PAL.shade }), 0, 1.2, 0));
+    back.add(at(box(BACK_W, 2.4, 0.5, PAL.barkShade, { up: PAL.bark, down: PAL.shade }), 0, 1.2, 0));
     const shelf = [];
     for (let i = 0; i < 3; i++) {
-      const s = box(7.6, 0.09, 0.34, PAL.stone, { shadow: false });
+      const s = box(BACK_W - 0.4, 0.09, 0.34, PAL.stone, { shadow: false });
       s.position.set(0, 0.9 + i * 0.52, 0.28);
       back.add(s);
       shelf.push(s);
@@ -938,13 +958,15 @@ export function buildLevel() {
       const h = 0.2 + Math.random() * 0.14;
       const btl = cyl(0.035, 0.05, h, 5,
         [PAL.canopyShade, PAL.terracotta, PAL.bark, PAL.awning][i % 4], { shadow: false });
-      btl.position.set(-3.4 + (i % 11) * 0.68, 0.95 + Math.floor(i / 11) * 0.52 + h / 2, 0.28);
+      // Spread across the narrower unit rather than kept at the old pitch,
+      // which would have walked the last three bottles out through the end.
+      btl.position.set(-2.75 + (i % 11) * 0.55, 0.95 + Math.floor(i / 11) * 0.52 + h / 2, 0.28);
       back.add(btl);
     }
     night.add(shelf, PAL.goldLit, { peak: 0.75, warm: 2.8, delay: 1.1 });
-    back.position.set(BAR.x, 0, -7.4);
+    back.position.set(BACK_X, 0, -7.4);
     root.add(back);
-    solid(BAR.x, -7.4, 8, 0.5, 2.4);
+    solid(BACK_X, -7.4, BACK_W, 0.5, 2.4);
     night.addPool(root, BAR.x, BAR.z + 1.2, 6.2,
       { profile: 'stall', peak: 0.58, warm: 2.8, delay: 1.1 });
 
