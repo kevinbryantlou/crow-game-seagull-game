@@ -61,8 +61,15 @@ export const BOUNDS = { minX: -30, maxX: 30, minZ: -15, maxZ: 15 };
  * The basin's waterline — the coping's inner faces, and the water you can swim
  * in. Its north edge is the breakwater's inner face rather than a fourth wall,
  * because the harbour opens to the sea there.
+ *
+ * It runs to x = 23 rather than 14, which is nine metres of water taken from
+ * what used to be a container yard on the east quay. The yard was **dead area**
+ * — no cast, no pitch, forty cents of money and nothing to do — and this block
+ * needed water more than it needed a second container stack: the basin is the
+ * thing every design decision here is short of, and the review measured 24% of
+ * it built on. It is 41 x 12.95 now, up 28%.
  */
-const BASIN = { minX: -18, maxX: 14, minZ: -12.55, maxZ: 0.4 };
+const BASIN = { minX: -18, maxX: 23, minZ: -12.55, maxZ: 0.4 };
 /** The breakwater. Wider than the basin, so it closes it at both corners. */
 const MOLE = { x: -2, z: -13.25, w: 64, d: 1.4 };
 /**
@@ -101,7 +108,15 @@ const PIER = { x: -5.5, z: -4.55, w: 4.0, d: 9.9 };     // z −9.5 … 0.4
 const MARKET = { x: -14, z: 6.0 };
 const COUNTER = { x: -14, z: 8.5 };                      // the bait anchor
 const ICEHOUSE = { x: 8, z: 6.2 };
-const OFFICE = { x: 20, z: 4.0 };
+/**
+ * Lined up with the ice house rather than set back from it.
+ *
+ * The two buildings were 2.2 m out of step in z, which at this camera reads as
+ * two unrelated sheds rather than one working frontage — and the office is the
+ * easternmost building, so nothing further along corrected the impression. On a
+ * quay the buildings share a building line, because they share a quay.
+ */
+const OFFICE = { x: 17.5, z: 6.2 };
 /**
  * The net loft: the nest, on a hut on piles in open water.
  *
@@ -498,6 +513,26 @@ export function buildLevel() {
      * the frame, which is the fault the container terminal had.
      */
     const B = 1.4;
+    /**
+     * A square pier under it, wider than the mole.
+     *
+     * The octagonal plinth is 2.5 m across and the mole is 1.4 m deep, so the
+     * base overhung the wall it stands on by half a metre on each side and read
+     * as a tower balanced on a kerb. A real harbour light sits on a widened head
+     * built out from the arm for exactly this reason — the mole is a wall, and
+     * you thicken it where you want to put something on it.
+     *
+     * It is built out to *seaward* rather than squared about the mole's centre,
+     * so it does not cover the berthing ledge on the harbour face. The first
+     * attempt did, and the escape grid caught it immediately: two cells in the
+     * mouth lost the only low thing they could climb out onto and were left
+     * facing a 1.4 m wall. Widening a wall is exactly the edit that quietly
+     * removes the way out of the water.
+     */
+    const pierZ = MOLE.z - 0.6;
+    root.add(at(box(3.4, B, 2.6, PAL.concreteMid, { up: PAL.concrete, down: PAL.shade, shadow: false }),
+      LIGHT.x, B / 2, pierZ));
+    inWater(LIGHT.x, pierZ, 3.4, 2.6, B, 0, { tag: 'light-pier' });
     root.add(at(cyl(1.05, 1.25, 0.5, 10, PAL.concreteMid, { up: PAL.concrete, down: PAL.shade, shadow: false }),
       LIGHT.x, B + 0.25, MOLE.z));
     root.add(at(cyl(0.62, 0.88, 4.6, 10, PAL.stone, { up: PAL.stone, down: PAL.concreteMid, shadow: false }),
@@ -1176,9 +1211,14 @@ export function buildLevel() {
         perch(x + dx, 2.4 + lvl * 2.45, z + dz);
       });
     };
-    // East quay, beyond the water. Two down, one up, stepped.
-    containers(24, -7.0, [[0, 0, 0, 0], [0, 2.8, 0, 1], [0, 1.4, 1, 3]]);
-    // West quay, a single pair.
+    /**
+     * One stack, on the west quay.
+     *
+     * There was a second at (24, −7) and the playtest called it dead area, which
+     * it was — the east sixth of the block had no cast, no pitch and forty cents
+     * of money, and a stack of boxes is not a reason to walk somewhere. The
+     * harbour runs through there now.
+     */
     containers(-24, -6.5, [[0, 0, 0, 2], [0, 2.8, 0, 3]]);
 
     /** Fish crates, stacked by the market where the catch lands. */
@@ -1194,7 +1234,9 @@ export function buildLevel() {
     }
     solid(-8.7, 6.8, 1.6, 1.6, 0.90);
     perch(-8.7, 0.90, 6.8);
-    for (const [cx, cz, ry] of [[6.2, 2.9, -0.2], [18.0, 8.6, 0.25]]) {
+    // One pair, west of the ice house. There was a second against the office and
+    // it read as clutter once the two buildings shared a frontage.
+    for (const [cx, cz, ry] of [[6.2, 2.9, -0.2]]) {
       crate(cx, 0, cz, 1, ry); crate(cx, 0.30, cz, 3, ry + 0.2);
     }
 
@@ -1255,7 +1297,6 @@ export function buildLevel() {
       perch(x, 1.28, z);
     };
     stack(-13.4, 12.1);
-    stack(9.8, 6.2);
   }
 
   /**
@@ -1289,7 +1330,7 @@ export function buildLevel() {
 
     // A floodlight mast at each stack. At the far east and west ends, where
     // nothing has a sightline to lose behind them.
-    for (const [mx, mz] of [[29.5, -7.0], [-28.5, -6.5]]) {
+    for (const [mx, mz] of [[27.5, 5.0], [-28.5, -6.5]]) {
       const g = new THREE.Group();
       g.add(at(cyl(0.10, 0.13, 4.2, 6, PAL.steel, { up: PAL.steel, down: PAL.steelDark }), 0, 2.1, 0));
       g.add(at(box(0.5, 0.14, 0.5, PAL.steelDark), 0, 0.07, 0));
@@ -1314,7 +1355,6 @@ export function buildLevel() {
   // Two bins. There was a third at (-7.5, 11.5), between the market and the ice
   // house, and the playtest reported it as being in the way — a bin is 1.3m
   // across and 1.6 tall, standing on the route people walk most.
-  addBin(13.5, 3.0, PAL.canopyShade);
   addBin(-22.5, 7.5, PAL.steelDark);
 
   /**
@@ -1551,12 +1591,12 @@ function pickupPlacements() {
   //   and deliberately nowhere near enough. —
   for (const [x, z] of [
     [-26.5, 8.0], [-21.0, 12.0], [-16.0, 11.5], [-9.5, 12.5], [-3.0, 9.5],
-    [1.2, 13.2], [7.0, 11.0], [15.5, 6.5], [22.0, 9.5], [27.0, 5.5],
+    [1.2, 13.2], [7.0, 11.0], [14.5, 12.4], [22.0, 9.5], [27.0, 5.5],
   ]) add('penny', 0.01, x, 0.06, z);
   for (const [x, z] of [[-28.0, 4.5], [-21.5, 5.0], [-5.5, 11.5], [12.5, 11.0], [24.5, 2.0]]) {
     add('nickel', 0.05, x, 0.06, z);
   }
-  for (const [x, z] of [[-23.5, 10.5], [2.5, 2.6], [5.0, 10.0], [19.5, 11.0]]) {
+  for (const [x, z] of [[-23.5, 10.5], [2.5, 2.6], [5.0, 10.0], [22.5, 11.5]]) {
     add('dime', 0.10, x, 0.06, z);
   }
   for (const [x, z] of [[-27.5, 1.5], [1.0, 6.5], [26.5, 1.5]]) add('quarter', 0.25, x, 0.06, z);
@@ -1591,8 +1631,8 @@ function pickupPlacements() {
 
   // — The ice house, the office, and the boat. —
   add('coins', 3.60, 9.6, 1.14, 8.62, { owner: 'deckhand', label: 'THE HONESTY BOX' });
-  add('bill5', 5.00, 18.6, 1.22, 6.15, { owner: 'harbormaster', label: 'THE FIVE ON THE LEDGE' });
-  add('coins', 1.20, 20.8, 1.22, 6.15, { owner: 'harbormaster' });
+  add('bill5', 5.00, 16.1, 1.22, 8.35, { owner: 'harbormaster', label: 'THE FIVE ON THE LEDGE' });
+  add('coins', 1.20, 18.3, 1.22, 8.35, { owner: 'harbormaster' });
   add('bill10', 10.00, 2.8, 1.32, -4.6, { owner: 'skipper', label: 'THE FARE BOX' });
   add('coins', 1.40, 2.9, 1.22, -3.2, { owner: 'skipper' });
 
@@ -1637,7 +1677,7 @@ function humanPlacements() {
        * point: you time him rather than learn a cone.
        */
       pos: [2, 0, 10], home: [2, 0, 10],
-      patrol: [[-22, 9], [-10, 11.5], [1, 11], [9, 9.5], [15, 4.0], [22, 9.5], [26, 5.0], [10, 2.6], [-4, 3.4], [-24, 4.0]],
+      patrol: [[-22, 9], [-10, 11.5], [1, 11], [9, 9.5], [14, 3.0], [22, 10.5], [27, 6.0], [10, 2.6], [-4, 3.4], [-24, 4.0]],
       speed: 1.35, chaseSpeed: 4.1, viewDist: 9.5, viewCos: 0.3,
       guardRadius: 3.4, alertness: 0.95,
     },
@@ -1667,7 +1707,7 @@ function humanPlacements() {
     },
     {
       id: 'harbormaster', name: 'the harbormaster', cloth: 1, skin: 2, hair: 3,
-      pos: [21.6, 0, 6.8], home: [21.6, 0, 6.8],
+      pos: [19.1, 0, 9.0], home: [19.1, 0, 9.0],
       patrol: null, speed: 1.1, chaseSpeed: 3.9, viewDist: 9, viewCos: 0.25,
       guardRadius: 3.6, alertness: 1.05, faces: [-0.7, 0.7],
     },
@@ -1739,7 +1779,7 @@ function gullPlacements() {
     { x: -3.0, z: -11.4, y: 1.31 },
     { x: -14.0, z: 4.15, y: 4.1 },
     { x: -10.5, z: 4.15, y: 4.1 },
-    { x: 20.0, z: 4.0, y: 3.63 },
+    { x: 17.5, z: 6.2, y: 3.63 },
   ];
 }
 
