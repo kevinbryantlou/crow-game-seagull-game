@@ -24,13 +24,35 @@ npm run serve:static   # Vercel-style static server (no trailing-slash redirect)
 
 Deploying the public snapshot:
 
+**Build from a worktree, not from the working tree.** `build:web` bundles
+whatever is on disk, not what is committed — so a deploy run while anything is
+half-saved ships that. Checking `git status` first is a race, not a guarantee,
+and it is not hypothetical: two Claude sessions have written to this repo at
+once, and one swept the other's uncommitted work into a commit with `git add
+-A` while the other did the same with `git stash`. A detached worktree at a
+chosen SHA cannot see either tree.
+
 ```bash
-npm run build:web
+WT=/tmp/sc-deploy && rm -rf $WT
+git worktree add --detach $WT <sha>          # the SHA you mean to ship
+ln -s "$PWD/node_modules" $WT/node_modules
+(cd $WT && npm run build:web)
+
 rm -rf ../beacon2/small-change-crow-game && mkdir -p ../beacon2/small-change-crow-game
-cp -R dist/. ../beacon2/small-change-crow-game/
+cp -R $WT/dist/. ../beacon2/small-change-crow-game/
+git worktree remove --force $WT
+
 node scripts/serve-static.mjs ../beacon2 4181          # Vercel-style, no redirect
 node scripts/shoot.mjs http://localhost:4181/small-change-crow-game    # no slash!
 ```
+
+That last line is the gate, and it is the only run that exercises the shipped
+code path: a production bundle has no `window.__game`, so anything in `shoot`
+that needs the handle must be guarded or it crashes on exactly the run that
+matters. **Verifying the cheat tripwires needs a browser, not a grep** — the
+TEST MODE strings are always compiled in and only fire when a `TEST_*` constant
+is non-null, so a string search of the bundle reports a false alarm every time.
+Load the page and read `#testmode.hidden`.
 
 `shoot` needs `dev` running in another shell.
 
