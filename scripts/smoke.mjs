@@ -34,7 +34,7 @@ globalThis.window = globalThis;
 
 const { LEVELS } = await import('../src/world/levels.js');
 const { RULES } = await import('../src/world/rules.js');
-const { overlaps, blocksWalker, deckAt, WALKER_RADIUS, inWaterXZ, waterExtent } = await import('../src/world/collide.js');
+const { overlaps, blocksWalker, deckAt, WALKER_RADIUS, WALKER_HEIGHT, WALKER_STEP_OVER, inWaterXZ, waterExtent } = await import('../src/world/collide.js');
 const { Crow, TUNING: CROW } = await import('../src/entities/crow.js');
 const { Human, Pigeon, Gull } = await import('../src/entities/human.js');
 const { Pickup, BAIT_KINDS } = await import('../src/world/pickups.js');
@@ -567,7 +567,8 @@ console.log('\nthe sky ramp');
 
 // ── every block, every rule ─────────────────────────────────────────────────
 const deps = {
-  RULES, overlaps, blocksWalker, deckAt, WALKER_RADIUS, inWaterXZ, waterExtent,
+  RULES, overlaps, blocksWalker, deckAt, WALKER_RADIUS, WALKER_HEIGHT, WALKER_STEP_OVER,
+  inWaterXZ, waterExtent,
   Crow, CROW, Human, Pigeon, Gull, Pickup, BAIT_KINDS, prepareOccluders,
 };
 const summary = [];

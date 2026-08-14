@@ -26,7 +26,8 @@ const finite = (v) => Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isF
  */
 export function auditLevel({ level, world, check, deps }) {
   const {
-    RULES, overlaps, blocksWalker, deckAt, WALKER_RADIUS, inWaterXZ, waterExtent,
+    RULES, overlaps, blocksWalker, deckAt, WALKER_RADIUS, WALKER_HEIGHT, WALKER_STEP_OVER,
+    inWaterXZ, waterExtent,
     Crow, CROW, Human, Pigeon, Gull, Pickup, BAIT_KINDS, prepareOccluders,
   } = deps;
 
@@ -920,7 +921,38 @@ export function auditLevel({ level, world, check, deps }) {
       && c.minX < kerb.maxX && c.maxX > kerb.minX
       && c.minZ < kerb.maxZ && c.maxZ > kerb.minZ)
       .map((c) => `(${((c.minX + c.maxX) / 2).toFixed(1)}, ${((c.minZ + c.maxZ) / 2).toFixed(1)})`);
-    check(say('nothing is standing in the edge kerb'), inKerb.length === 0, `(${inKerb.join('; ')})`);
+    /**
+   * A block may declare a walking lane, and nothing solid may stand in it.
+   *
+   * The wharf's playtest asked for a clear path across the three buildings on
+   * its quay. Nothing was impassable — what had happened is that the route was
+   * never written down, so props landed in it one at a time, each placement
+   * sensible on its own: a bin between the market and the ice house, a lamp on
+   * the line everyone walks. **A promenade nobody drew is a promenade everybody
+   * builds on.** Declaring it turns the next such placement into a failing check
+   * instead of a second playtest note.
+   *
+   * Only things that would actually stop someone count, so the kerb-height and
+   * the flush stuff is ignored by `blocksWalker`.
+   */
+  if (world.lane) {
+    const L = world.lane;
+    const inLane = world.colliders.filter((c) => {
+      if (c.shape === 'ring' || !blocksWalker(c, WALKER_HEIGHT, WALKER_STEP_OVER, 0)) return false;
+      if (c.bottom > 0.5) return false;               // things with air under them
+      // Bounded in x as well as z: the map's own invisible walls run the whole
+      // length of the block, so a z-only test matches them on every level and
+      // reports the edge of the world as an obstruction.
+      if (c.maxX < L.minX || c.minX > L.maxX) return false;
+      return c.maxZ > L.z - L.w / 2 && c.minZ < L.z + L.w / 2;
+    });
+    check(say('the quay walk is clear of anything a walker would have to go round'),
+      inLane.length === 0,
+      `(${inLane.length}: ${inLane.slice(0, 5).map((c) => c.tag
+        || `(${((c.minX + c.maxX) / 2).toFixed(1)}, ${((c.minZ + c.maxZ) / 2).toFixed(1)})`).join(', ')})`);
+  }
+
+  check(say('nothing is standing in the edge kerb'), inKerb.length === 0, `(${inKerb.join('; ')})`);
   }
 
   // ── where people stand ────────────────────────────────────────────────────

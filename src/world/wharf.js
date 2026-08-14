@@ -65,6 +65,15 @@ export const BOUNDS = { minX: -30, maxX: 30, minZ: -15, maxZ: 15 };
 const BASIN = { minX: -18, maxX: 14, minZ: -12.55, maxZ: 0.4 };
 /** The breakwater. Wider than the basin, so it closes it at both corners. */
 const MOLE = { x: -2, z: -13.25, w: 64, d: 1.4 };
+/**
+ * The harbour mouth — the gap in the breakwater, and the reason the water reads
+ * as connected to something.
+ *
+ * Kept inside the basin's own width (x -18..14) so the opening is a gap in the
+ * *basin's* north edge rather than a notch beyond the corner of it, and east of
+ * the beacon so the block's focal object is not standing in front of the hole.
+ */
+const MOUTH = { minX: 5, maxX: 13 };
 const RIM = 0.62;          // coping top, and the pier deck
 const SURFACE = RIM - 0.20;
 const BED = 0.06;
@@ -109,6 +118,17 @@ const DINGHY = { x: -16.0, z: -3.4 };
  * trading is core loop.
  */
 const KID = { x: -1.0, z: 2.6 };
+
+/**
+ * The quay walk: the lane that runs the length of the block in front of the
+ * market, the ice house and the harbourmaster's office.
+ *
+ * Stated as a number because the playtest asked for a clear path and the reason
+ * there was not one is that nobody had ever written down where it ran. Props
+ * accumulate in an undrawn route one at a time, each placement reasonable by
+ * itself. `laneClear` in the audit asserts nothing solid stands in it.
+ */
+const LANE = { z: 10.15, w: 2.2, minX: -28, maxX: 28 };
 
 export function buildLevel() {
   const root = new THREE.Group();
@@ -182,6 +202,22 @@ export function buildLevel() {
    * as they like. Ground paint is a value decision, so it is bay-marking white
    * with a thin warm edge, which is what a real quay is painted with anyway.
    */
+  /**
+   * The quay walk — the lane that runs the length of the block past all three
+   * buildings, and the reason `LANE` exists as a number rather than a habit.
+   *
+   * The playtest asked for a clear walking path across the market stall, the ice
+   * house and the harbourmaster's office. It was not that anything was
+   * *impassable*; it was that the route was never drawn, so the furniture had
+   * accumulated in it one prop at a time — a bin here, a lamp there — each
+   * reasonable on its own. A promenade nobody drew is a promenade everybody
+   * builds on.
+   *
+   * So it is stated once and everything else is placed against it. `laneClear`
+   * below asserts it, which is what stops the next prop landing in the middle of
+   * it for the same good reason as the last one.
+   */
+  addDecal(0, LANE.z, 150, LANE.w, PAL.concrete);
   addDecal(4.5, 2.2, 6.4, 0.34, PAL.stone);
   addDecal(4.5, 3.9, 6.4, 0.34, PAL.stone);
   addDecal(-22.0, 0.6, 5.4, 0.30, PAL.stone);
@@ -310,56 +346,93 @@ export function buildLevel() {
   }
 
   /**
-   * The breakwater — the harbour arm, and the north wall of the basin.
+   * The breakwater, in two arms with a harbour mouth between them.
    *
-   * It is doing three jobs at once, which is why it is worth its meshes: it
-   * closes the basin so a crow in the water always has a wall to be turned back
-   * by, it hides the seam between the basin and the open sea, and it is where
-   * half the gulls stand. The crow can land on it and can go no further north —
-   * the invisible bound sits just behind it, so there is never any water the
-   * player can reach that the water body does not know about.
+   * It was one unbroken 64 m wall, and the playtest note was that the dock still
+   * read as closed off — a basin with a lid on it rather than a harbour. It was
+   * right: a harbour is defined by the fact that the sea gets in. Every real one
+   * has a mouth, and the arms exist to shelter it, not to seal it.
    *
-   * **It casts no shadow**, for the same reason the backdrop does not. A 64 m
-   * wall under a sun that is behind the block all day lays a band of shade
-   * straight across the harbour, and the harbour is the one surface here that no
+   * So the water now runs continuously from the quay out through the gap and on
+   * to the horizon, with nothing crossing that line. What stops the crow is an
+   * invisible bound across the mouth — the same device already holding the other
+   * three map edges, moved to the one place a player will actually swim at. The
+   * distinction Kevin drew is the one being honoured: *the player not being able
+   * to go there is fine; the water looking like it stops there is not.*
+   *
+   * **It casts no shadow**, for the same reason the backdrop does not. A wall
+   * this long under a sun that is behind the block all day lays a band of shade
+   * straight across the harbour, and the harbour is the one surface here no
    * fixture can reach. Removing a shadow can only *raise* luminance and every
-   * dusk rule in this game is a floor, which is the asymmetry that makes it safe.
+   * dusk rule in this game is a floor.
    */
   {
-    const m = box(MOLE.w, 1.4, MOLE.d, PAL.concreteMid,
-      { up: PAL.concrete, down: PAL.shade, shadow: false });
-    m.position.set(MOLE.x, 0.7, MOLE.z);
-    root.add(m);
-    // A rubble apron on the seaward face, so it reads as a mole rather than a
-    // kerb. Below the waterline, so it is silhouette and nothing else.
-    const apron = box(MOLE.w, 0.5, 1.6, PAL.concreteMid,
-      { up: PAL.concreteMid, down: PAL.shade, shadow: false });
-    apron.position.set(MOLE.x, 0.25, MOLE.z - MOLE.d / 2 - 0.7);
-    root.add(apron);
-    solid(MOLE.x, MOLE.z, MOLE.w, MOLE.d, 1.4, 0, { tag: 'breakwater' });
-    perch(MOLE.x, 1.4, MOLE.z);
+    const flat = { up: PAL.concrete, down: PAL.shade, shadow: false };
+    /** One arm, from `x0` to `x1`, with its rubble apron on the seaward face. */
+    const arm = (x0, x1) => {
+      const w = x1 - x0, cx = (x0 + x1) / 2;
+      const m = box(w, 1.4, MOLE.d, PAL.concreteMid, flat);
+      m.position.set(cx, 0.7, MOLE.z);
+      root.add(m);
+      const apron = box(w, 0.5, 1.6, PAL.concreteMid,
+        { up: PAL.concreteMid, down: PAL.shade, shadow: false });
+      apron.position.set(cx, 0.25, MOLE.z - MOLE.d / 2 - 0.7);
+      root.add(apron);
+      solid(cx, MOLE.z, w, MOLE.d, 1.4, 0, { tag: 'breakwater' });
+      perch(cx, 1.4, MOLE.z);
+    };
+    arm(MOLE.x - MOLE.w / 2, MOUTH.minX);
+    arm(MOUTH.maxX, MOLE.x + MOLE.w / 2);
 
-    // The harbour light at the head of the mole — a channel marker, and the one
-    // green thing on the block. Every real harbour mouth has a pair.
-    const post = at(cyl(0.16, 0.20, 1.9, 6, PAL.concrete, { down: PAL.shade, shadow: false }),
-      MOLE.x + 26, 1.4 + 0.95, MOLE.z);
-    root.add(post);
-    const marker = at(ico(0.26, 0, PAL.canopyLit, { shadow: false }), MOLE.x + 26, 1.4 + 2.05, MOLE.z);
-    marker.material = mat(PAL.canopyLit);
-    root.add(marker);
-    night.add(marker, PAL.canopyLit, { peak: 1.0, warm: 1.2, delay: 0.1, flicker: true });
+    /**
+     * The water in the mouth itself — one quad bridging the basin to the sea.
+     *
+     * Without it the two planes meet at the mole line with a 1.4 m strip of bare
+     * ground between them, which is the seam the arms used to hide and which the
+     * gap would otherwise put on show.
+     */
+    const gap = new THREE.Mesh(
+      new THREE.PlaneGeometry(MOUTH.maxX - MOUTH.minX, MOLE.d + 0.4).rotateX(-Math.PI / 2),
+      new THREE.MeshLambertMaterial({
+        color: PAL.harbour, transparent: true, opacity: 0.66, flatShading: true,
+      }),
+    );
+    gap.position.set((MOUTH.minX + MOUTH.maxX) / 2, SURFACE, MOLE.z);
+    gap.userData.baseOpacity = 0.66;
+    root.add(gap);
+    night.add(gap, PAL.harbour, { peak: 0.30, warm: 3.4, delay: 1.2 });
+
+    /**
+     * A green light on each arm head, which is what a harbour mouth has and what
+     * makes the gap read as a gap rather than as a wall someone forgot to build.
+     */
+    for (const hx of [MOUTH.minX - 0.9, MOUTH.maxX + 0.9]) {
+      root.add(at(cyl(0.16, 0.20, 1.9, 6, PAL.concrete, { down: PAL.shade, shadow: false }),
+        hx, 1.4 + 0.95, MOLE.z));
+      const marker = at(ico(0.26, 0, PAL.canopyLit, { shadow: false }), hx, 1.4 + 2.05, MOLE.z);
+      marker.material = mat(PAL.canopyLit);
+      root.add(marker);
+      night.add(marker, PAL.canopyLit, { peak: 1.0, warm: 1.2, delay: 0.1, flicker: true });
+    }
   }
 
-  // ── the far shore: a working port across the water ────────────────────────
+  // ── the backdrop: open ocean, and one ship on it ──────────────────────────
   addFarShore({ root, night });
 
-  // Invisible bounds. The north one sits just behind the breakwater rather than
-  // at the map edge: beyond it the water is a backdrop plane with no water body
-  // under it, and a crow that could land out there would be standing on the sea.
+  /**
+   * Invisible bounds.
+   *
+   * The north one used to be a single wall behind an unbroken breakwater. With a
+   * mouth in that breakwater it is the only thing stopping a crow swimming out
+   * to a sea plane that has no water body under it — so it sits on the mole line
+   * and spans the map, which puts it inside the arms where they exist and across
+   * the open mouth where they do not. A player meets it in exactly one place,
+   * and it is the place a harbour would have a boat in it.
+   */
   solid(BOUNDS.minX - 2, 0, 4, 96, 28, 0, { perch: false });
   solid(BOUNDS.maxX + 2, 0, 4, 96, 28, 0, { perch: false });
   solid(0, BOUNDS.maxZ + 2.5, 150, 4, 28, 0, { perch: false });
-  solid(0, MOLE.z - MOLE.d / 2 - 2.1, 220, 4, 30, 0, { perch: false });
+  solid(0, MOLE.z, 220, MOLE.d, 30, 0, { perch: false });
 
   // The kerb along the near edge, so the quay stops somewhere. Narrow, and no
   // darker than the paving: a wide dark band across the foreground is a third
@@ -877,10 +950,19 @@ export function buildLevel() {
   }
 
   /**
-   * Crab pots and a net frame — the block's deliberate near-side occluder.
+   * Crab pots — the block's near-side occluder, and it is only pots now.
    *
-   * At the near-east corner, which is as far from the kid, the counter and the
-   * beacon as the block goes. Nothing that is core loop is behind it.
+   * There was a net on a frame behind them: two posts and a 3.4 x 1.9 panel at
+   * eye height. It photographed as a **billboard** — a flat teal rectangle
+   * standing in the near corner with the level behind it — and the playtest
+   * called it exactly that. A hanging net is a thing you can see through in life
+   * and a solid quad at this distance, and 55% opacity does not read as mesh, it
+   * reads as tinted glass.
+   *
+   * What is left is the part that was doing the work: a low stack of pots with
+   * mass and no height. An occluder does not have to be tall to be an occluder —
+   * it has to be *between* — and the fade only ever mattered on the one ray from
+   * the camera to the crow. Nothing that is core loop is behind it either way.
    */
   {
     const g = new THREE.Group();
@@ -889,16 +971,10 @@ export function buildLevel() {
       pot.position.set((i % 2) * 1.15 - 0.55, 0.21 + Math.floor(i / 2) * 0.44, (i % 3 === 2) ? 0.2 : -0.15);
       g.add(pot);
     }
-    // The net frame: two posts and a hanging net.
-    for (const px of [-1.6, 1.6]) g.add(at(cyl(0.09, 0.09, 3.0, 5, PAL.dockMid), px, 1.5, 1.6));
-    const net = box(3.4, 1.9, 0.06, PAL.awning, { transparent: true, opacity: 0.55, shadow: false });
-    net.position.set(0, 1.85, 1.6);
-    g.add(net);
     g.position.set(16, 0, 12.4);
     root.add(g);
     occluders.push(...g.children);
     solid(16, 12.25, 2.6, 1.6, 1.34);
-    solid(16, 14.0, 3.4, 0.3, 3.0);
     perch(16, 1.34, 12.25);
   }
 
@@ -1070,7 +1146,16 @@ export function buildLevel() {
   addBench(-2, 12.5);
   addBench(11, 12.0);
 
-  addBin(-7.5, 11.5, PAL.steelDark);
+  /**
+   * Bins, and one that is no longer here.
+   *
+   * There was a third at (-7.5, 11.5), standing in the middle of the walking
+   * lane below — reported from the playtest as being in the way, which it was.
+   * A bin is 1.3 m across and 1.6 tall and it was the only thing between the
+   * market and the ice house, so the route every player takes most often had a
+   * dustbin parked in the middle of it. The two that remain are both off the
+   * lane: one against the office, one at the west end.
+   */
   addBin(13.5, 3.0, PAL.canopyShade);
   addBin(-22.5, 7.5, PAL.steelDark);
 
@@ -1083,10 +1168,10 @@ export function buildLevel() {
    * house door, the boat's deck light and the beacon do most of the work here;
    * these fill the gaps between them.
    */
-  addLamp(-27.5, 9.5);
-  addLamp(-19.5, 11.5);
+  addLamp(-27.5, 12.4);
+  addLamp(-19.5, 12.6);
   addLamp(-8.0, 3.4);
-  addLamp(4.5, 11.0);
+  addLamp(0.5, 12.4);
   addLamp(14.5, 8.0);
   addLamp(25.5, 8.5);
 
@@ -1114,6 +1199,8 @@ export function buildLevel() {
   return {
     root, colliders, occluders, perches,
     nightLights: night,
+    /** The quay walk, asserted clear by audit-level.mjs. */
+    lane: LANE,
     fountain: FOUNTAIN,
     waterDeck: DECK.quay,
     nest: NEST,
@@ -1132,170 +1219,134 @@ export function buildLevel() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// The far shore
+// The backdrop
 // ════════════════════════════════════════════════════════════════════════════
 
 /**
- * A working port across the water, in place of the skyline of towers.
+ * Open ocean, and one ship on it.
  *
- * Every block so far ends in `addSkyline` — a row of residential blocks with
- * randomised lit windows. It is the right backdrop for a city block, a park and
- * a hotel, and it is the wrong one here twice over: a fishing dock does not look
- * out at apartments, and the wharf's own note was that the palette had gone
- * brown and flat. A container terminal answers both. **Container stacks are
- * architecture-sized colour that needs no excuse**, which is the one thing this
- * game's accent palette has never had — everything else it paints is the size of
- * a coat.
+ * This block has now had three backdrops and the argument for each one taught
+ * something. It began as `addSkyline`, the row of apartment blocks every other
+ * level ends in, which is wrong here because a fishing dock does not look out at
+ * housing. It became a container terminal — a far quay with stacks, gantries,
+ * sheds, silos and a chimney — which fixed the fiction and broke the picture:
+ * from a camera pitched 38° down through a 20° lens **the horizon is never in
+ * frame**, so all a player ever saw of that terminal was the tallest few metres
+ * of it, floating with no ground under it. Containers apparently at sea. The
+ * detail that justified it was in the half of the model nobody could see.
  *
- * It is also *cheaper* than what it replaces. `addSkyline` builds one box per
- * building plus a grid of window quads and drops 22% of them at random, which
- * came to 124 meshes on this block — 32% of the whole level, and the largest
- * single thing any block spends meshes on. This is about half that, because a
- * container is one box and reads as itself.
+ * So the far shore is gone and the water runs to the horizon, with a single
+ * point of interest on it. That is Kevin's proposal and it is the right one for
+ * a reason worth writing down: **at this camera a backdrop can have exactly one
+ * readable idea in it.** A skyline gets away with many because they are all the
+ * same idea repeated. A working port is several ideas, and at forty metres they
+ * become one indistinct band — whereas a ship is one silhouette that survives
+ * being small, and it says *this water goes somewhere* better than a quay full
+ * of cranes ever did.
  *
- * Everything here casts no shadow and receives none. It is weather: nothing
- * plays on the far shore, nothing can reach it, and a 30 m gantry under a sun
- * this low would throw a shadow the length of the map.
+ * It is also the cheapest of the three by a distance: about 30 meshes against
+ * the terminal's 94 and the skyline's 124, on a block where the backdrop used to
+ * be a third of everything drawn.
  */
 function addFarShore({ root, night }) {
-  const Z = -24;                 // the far quay's front face
   const flat = { shadow: false, receive: false };
   const lit = [];
-
-  /** The seawall, so the port stands above the waterline instead of in it. */
-  const wall = box(240, 1.7, 4.0, PAL.concreteMid, { up: PAL.concrete, down: PAL.shade, ...flat });
-  wall.position.set(-4, 0.85, Z + 2.0);
-  root.add(wall);
+  const g = new THREE.Group();
 
   /**
-   * Container stacks. Three high at most, and never a solid wall of them —
-   * a stepped stack reads as cargo and a rectangle of it reads as a building.
-   */
-  const stack = (x, z, cols, rows, seed) => {
-    for (let c = 0; c < cols; c++) {
-      // Step the back column down, so the top edge is ragged.
-      const h = Math.max(1, rows - (c % 3 === 2 ? 1 : 0));
-      for (let r = 0; r < h; r++) {
-        const i = (seed + c * 3 + r * 5) % 4;
-        const b = box(6.0, 2.4, 2.4,
-          PAL.container[i], { up: PAL.containerLit[i], down: PAL.shade, ...flat });
-        b.position.set(x + c * 6.2, 1.7 + 1.2 + r * 2.5, z);
-        root.add(b);
-      }
-    }
-  };
-  stack(-74, Z - 1.0, 4, 3, 0);
-  stack(-46, Z - 2.6, 3, 2, 2);
-  stack(-24, Z - 1.0, 4, 3, 1);
-  stack(14, Z - 2.6, 3, 2, 3);
-  stack(38, Z - 1.0, 4, 2, 2);
-  stack(66, Z - 2.2, 3, 3, 1);
-
-  /**
-   * Gantry cranes. Two legs, a boom that reaches out over the water, and a
-   * counterweight the other side — which is the whole silhouette, and the only
-   * shape on this block that says *port* rather than *waterfront*.
-   */
-  const crane = (x, h) => {
-    const legs = 9.0;
-    for (const s of [-1, 1]) {
-      root.add(at(box(1.0, h, 1.0, PAL.buoy, { up: PAL.buoyLit, down: PAL.shade, ...flat }),
-        x + s * legs / 2, 1.7 + h / 2, Z - 1.0));
-      // A rail bogie at the foot, so the leg lands on something.
-      root.add(at(box(2.0, 0.7, 2.4, PAL.steelDark, { up: PAL.steel, ...flat }),
-        x + s * legs / 2, 1.7 + 0.35, Z - 1.0));
-    }
-    // The portal beam, and the boom out over the water.
-    root.add(at(box(legs + 2.4, 1.5, 1.6, PAL.buoy, { up: PAL.buoyLit, down: PAL.shade, ...flat }),
-      x, 1.7 + h, Z - 1.0));
-    root.add(at(box(3.0, 1.1, 1.4, PAL.buoy, { up: PAL.buoyLit, down: PAL.shade, ...flat }),
-      x + 9.0, 1.7 + h - 0.2, Z - 1.0));
-    root.add(at(box(4.4, 1.1, 1.4, PAL.steelDark, { up: PAL.steel, down: PAL.shade, ...flat }),
-      x - 8.4, 1.7 + h - 0.2, Z - 1.0));
-    // The machine house on top, and its light.
-    root.add(at(box(3.0, 1.8, 2.0, PAL.concrete, { up: PAL.stone, down: PAL.shade, ...flat }),
-      x - 2.0, 1.7 + h + 1.5, Z - 1.0));
-    const lamp = at(ico(0.34, 0, PAL.goldLit, flat), x, 1.7 + h + 2.6, Z - 1.0);
-    lamp.material = mat(PAL.goldLit);
-    root.add(lamp);
-    lit.push(lamp);
-  };
-  crane(-58, 15);
-  crane(0, 17);
-  crane(52, 14);
-
-  /** Transit sheds, low and pale, with a lit clerestory strip along the front. */
-  const shed = (x, w, h) => {
-    root.add(at(box(w, h, 9.0, PAL.concrete, { up: PAL.stone, down: PAL.shade, ...flat }),
-      x, 1.7 + h / 2, Z - 8.0));
-    root.add(at(box(w + 1.0, 0.7, 10.0, PAL.concreteMid, { up: PAL.concrete, down: PAL.shade, ...flat }),
-      x, 1.7 + h + 0.3, Z - 8.0));
-    // The windows are one strip rather than a grid of quads — at this distance a
-    // row of lit panes and a lit band are the same picture, and the band is one
-    // mesh instead of thirty.
-    const band = box(w * 0.86, 1.1, 0.4, PAL.goldLit, flat);
-    band.position.set(x, 1.7 + h * 0.58, Z - 3.4);
-    band.material = mat(PAL.goldLit);
-    root.add(band);
-    lit.push(band);
-  };
-  shed(-92, 26, 7.5);
-  shed(-6, 30, 8.5);
-  shed(84, 24, 7.0);
-
-  /** Silos and a stack, for something round and something tall. */
-  for (const [sx, sr, sh] of [[24, 3.0, 13], [31, 3.0, 11], [37.5, 2.6, 12]]) {
-    root.add(at(cyl(sr, sr, sh, 10, PAL.stone, { up: PAL.stone, down: PAL.concreteMid, ...flat }),
-      sx, 1.7 + sh / 2, Z - 9.0));
-    root.add(at(cyl(sr + 0.3, sr + 0.3, 0.6, 10, PAL.concreteMid, { up: PAL.concrete, ...flat }),
-      sx, 1.7 + sh, Z - 9.0));
-  }
-  {
-    const h = 26;
-    root.add(at(cyl(1.5, 2.0, h, 8, PAL.stone, { up: PAL.stone, down: PAL.concreteMid, ...flat }),
-      -34, 1.7 + h / 2, Z - 11.0));
-    root.add(at(cyl(1.6, 1.6, 2.2, 8, PAL.container[0], { up: PAL.containerLit[0], ...flat }),
-      -34, 1.7 + h - 1.1, Z - 11.0));
-    const beacon = at(ico(0.30, 0, PAL.container[0], flat), -34, 1.7 + h + 0.5, Z - 11.0);
-    beacon.material = mat(PAL.container[0]);
-    root.add(beacon);
-    lit.push(beacon);
-  }
-
-  /**
-   * A ship alongside, because a port with no ship in it is a car park. Hull,
-   * white superstructure aft, and a row of deck cranes — read at this distance
-   * as one long dark shape with a bright block at one end, which is exactly what
-   * a ship looks like from a mile away.
-   */
-  {
-    const sx = -108, sz = Z + 6.5;
-    root.add(at(box(58, 4.2, 8.0, PAL.container[1], { up: PAL.containerLit[1], down: PAL.shade, ...flat }),
-      sx, 0.42 + 2.1, sz));
-    root.add(at(box(58, 0.8, 8.6, PAL.container[0], { up: PAL.containerLit[0], ...flat }),
-      sx, 0.42 + 4.2, sz));
-    root.add(at(box(11, 7.0, 7.0, PAL.stone, { up: PAL.stone, down: PAL.shade, ...flat }),
-      sx - 22, 0.42 + 4.6 + 3.5, sz));
-    const bridge = box(9.5, 1.0, 7.2, PAL.goldLit, flat);
-    bridge.position.set(sx - 22, 0.42 + 4.6 + 5.4, sz + 0.2);
-    bridge.material = mat(PAL.goldLit);
-    root.add(bridge);
-    lit.push(bridge);
-    for (let i = 0; i < 3; i++) {
-      root.add(at(box(1.0, 6.0, 1.0, PAL.buoy, { up: PAL.buoyLit, down: PAL.shade, ...flat }),
-        sx + 4 + i * 12, 0.42 + 4.6 + 3.0, sz));
-    }
-  }
-
-  /**
-   * One night light for the whole far shore, on one shared material.
+   * Hull, and it sits low.
    *
-   * `mat()` caches by colour, so every one of these lit strips is already the
-   * same material — which is exactly what the skyline relied on and the reason a
-   * hundred windows cost one clone. The delay puts the port on before the quay,
-   * because a terminal works all night and a fish market does not.
+   * A loaded ship rides deep, which is what puts the containers near the
+   * waterline where they read as cargo rather than as buildings — the exact
+   * failure the terminal had. Nothing here is above about nine metres.
    */
-  night.add(lit, PAL.goldLit, { peak: 0.80, warm: 5.5, delay: 0.15 });
+  const L = 40, H = 3.0;
+  /**
+  /**
+   * A **dark** hull under a bright deck line, which is the third livery this
+   * ship has had and the first that reads.
+   *
+   * Pale blue photographed as a black slab, because the sun is behind the block
+   * all day and the ship's long camera-facing side is in shadow at every hour.
+   * The obvious correction — paint it concrete, like the quay — was worse: a
+   * pale band under a row of containers is a *shore*, and the whole point of
+   * removing the far quay was to stop things looking like they were standing on
+   * land that was not there.
+   *
+   * What a ship needs at this distance is the contrast a real one has: a dark
+   * hull, a bright band along the deck edge, and the boot-top at the waterline.
+   * Three stripes, and the eye assembles a ship out of them.
+   */
+  g.add(at(box(L, H, 7.0, PAL.trouser[2], { up: PAL.steelDark, down: PAL.shade, ...flat }),
+    0, H / 2, 0));
+  // The boot-top stripe at the waterline, and the sheer line above it. Two flat
+  // bands are what makes a box read as a hull at this distance.
+  g.add(at(box(L + 0.2, 0.7, 7.2, PAL.container[0], { up: PAL.containerLit[0], ...flat }),
+    0, 0.35, 0));
+  g.add(at(box(L + 0.3, 0.5, 7.4, PAL.stone, { up: PAL.stone, ...flat }), 0, H - 0.25, 0));
+  // A raked bow, so the ship has a front. One wedge is enough.
+  g.add(at(box(4.0, H, 4.4, PAL.trouser[2], { up: PAL.steelDark, down: PAL.shade, ...flat }),
+    L / 2 + 1.6, H / 2 + 0.25, 0));
+
+  /**
+   * A partial load, which is the note as given — *does not have to be a full
+   * load.* It is also better: an even wall of boxes is a building again, and the
+   * gaps are what say "ship being worked" rather than "wall painted like
+   * containers".
+   *
+   * `[x offset, tier, hue]`, hand-placed rather than looped, because the point
+   * is the raggedness.
+   */
+  for (const [dx, hue] of [
+    [-13, 0], [-8, 3], [-3, 1], [2, 2], [7, 0], [12, 3], [16.5, 1],
+  ]) {
+    g.add(at(box(4.2, 1.7, 5.6, PAL.container[hue],
+      { up: PAL.containerLit[hue], down: PAL.shade, ...flat }),
+    dx, H + 0.15, 0));
+  }
+
+  /** The house aft, white, with a lit bridge band. The one warm mark out here. */
+  g.add(at(box(5.4, 2.6, 6.0, PAL.stone, { up: PAL.stone, down: PAL.shade, ...flat }),
+    -L / 2 + 4.0, H + 1.3, 0));
+  const bridge = box(5.7, 0.6, 6.3, PAL.goldLit, flat);
+  bridge.position.set(-L / 2 + 4.0, H + 2.2, 0);
+  bridge.material = mat(PAL.goldLit);
+  g.add(bridge);
+  lit.push(bridge);
+  // Funnel, and a mast light forward.
+  g.add(at(box(2.0, 1.5, 2.2, PAL.container[0], { up: PAL.containerLit[0], down: PAL.shade, ...flat }),
+    -L / 2 + 4.0, H + 3.3, 0));
+  const mast = at(ico(0.26, 0, PAL.goldLit, flat), L / 2 - 2.6, H + 2.8, 0);
+  mast.material = mat(PAL.goldLit);
+  g.add(at(cyl(0.14, 0.14, 2.8, 5, PAL.stone, { ...flat }), L / 2 - 2.6, H + 1.4, 0));
+  g.add(mast);
+  lit.push(mast);
+
+  /**
+   * Out past the mouth and turned across the frame, so it reads broadside.
+   *
+   * **The height is the constraint, not the distance, and that is the whole
+   * lesson of this backdrop.** Measured from the running game: from the pier the
+   * sea is in frame out to z = −28 at water level but only to z = −11.5 at eight
+   * metres up; from the beacon, −36.5 and −20. So *the taller a thing is, the
+   * nearer it must be to stay in frame* — and anything that breaks that rule has
+   * its base visible and its top cut off, which is precisely why the container
+   * terminal read as boxes floating on the water. It was not floating. It was
+   * decapitated.
+   *
+   * Hence a **low** ship rather than a distant one: hull, a single tier of
+   * containers, a short house, nothing above about 7.6 m. At z = −19.5 that is
+   * inside the frame from the beacon, which is where a player goes on every trip
+   * to the nest, and partly cut from the pier — which is what a backdrop is
+   * allowed to be. It was 74 m long and 13 m tall first, and it read as a wall
+   * with its head off.
+   */
+  g.position.set(-3, 0, -23.0);
+  g.rotation.y = -0.10;
+  root.add(g);
+
+  /** One clone for the whole backdrop, as the skyline's hundred windows were. */
+  night.add(lit, PAL.goldLit, { peak: 0.85, warm: 5.5, delay: 0.15 });
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -1494,7 +1545,10 @@ function gullPlacements() {
     { x: 1.5, z: -10.6, y: 1.46 },
     { x: 12.6, z: -2.0, y: 1.36 },
     { x: -6.0, z: -13.2, y: 1.4 },
-    { x: 6.5, z: -13.2, y: 1.4 },
+    // West of the mouth. It used to be at x 6.5, which stopped being breakwater
+    // the moment the gap opened there — and a bird's y is authored, so it stood
+    // in mid-air over the channel until the deck check caught it.
+    { x: -17.0, z: -13.2, y: 1.4 },
     { x: -14.0, z: -6.0, y: DECK.float },
     { x: -14.0, z: 4.15, y: 4.1 },
     { x: -10.5, z: 4.15, y: 4.1 },
