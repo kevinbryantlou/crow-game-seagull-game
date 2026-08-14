@@ -65,7 +65,20 @@ const settleLights = async (page, ms = 11000) => {
     const n = window.__game?.world?.nightLights;
     if (!n) return true;
     const lit = n.items.filter((i) => i.peak > 0);
-    return lit.length === 0 || lit.every((i) => i.level >= i.peak * 0.995);
+    /**
+     * `level` is the 0..1 ramp position; `peak` is the multiplier applied to it,
+     * and the rendered value is `level * peak`. So the test is on `level` alone.
+     *
+     * This first read `i.level >= i.peak * 0.995`, which compares a ramp
+     * position against a brightness — two different units. The effect was
+     * backwards: a light with peak 0.06 was declared settled at level 0.06, i.e.
+     * **5% of the way through its fade**, while peak 1.0 was correct by
+     * coincidence. The dimmest lights were let through soonest, and the dim ones
+     * are the ground pools carrying the median. It survived only because the
+     * remaining ramp finishes during the screenshot round-trip, which is
+     * incidental timing rather than a reason.
+     */
+    return lit.length === 0 || lit.every((i) => i.level >= 0.995);
   }, { timeout: ms, polling: 100 }).catch(() => {});
 };
 
