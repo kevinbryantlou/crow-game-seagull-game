@@ -1848,6 +1848,61 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
     if (missed.length) errors.push(`L5: cannot fly ${missed.join('; ')}`);
   }
 
+  /**
+   * The bottle, and it is checked in the real engine because it is the only
+   * money on this block that has to be taken while *swimming*.
+   *
+   * Everything else is picked up standing on something. A pickup floating at the
+   * waterline is a different question — the crow's beak is at a bob-dependent
+   * height, and the audit's rules would all pass on a bottle nobody could reach:
+   * it is not buried, not hidden, not too near anything, and `inWater` exempts it
+   * from resting on a deck. It would simply sit there for the whole run.
+   */
+  const bottle5 = !has5 ? null : await p5.evaluate(async () => {
+    const g = window.__game;
+    const b = g.pickups.find((x) => x.kind === 'bottle');
+    if (!b) return { missing: true };
+    const home = b.home.clone();
+    // Floating *at* the bottle, not beside it. The beak extends 0.44 m along the
+    // crow's heading, so a crow parked a beak-length away with an arbitrary
+    // facing is a crow whose beak points into open water — which is a test of
+    // where the bird happened to be looking, not of whether the bottle can be
+    // taken.
+    g.crow.pos.set(home.x, g.world.fountain.rim - 0.2, home.z);
+    g.crow.vel.set(0, 0, 0);
+    /**
+     * Stepped with `crow.update`, not with `requestAnimationFrame`.
+     *
+     * `_bestAction` measures from `crow.beakWorld`, which comes off the rig's
+     * world matrix — and the rig only moves when the *simulation* steps. By the
+     * time this runs, earlier sections in this file have left `g.running` false,
+     * so rAF was firing and the sim was not: the crow's position had changed and
+     * its beak had not, and the check reported a bottle nobody could reach when
+     * a real swimming crow takes it fine. Waiting on frames is only waiting on
+     * the thing you mean when the thing you mean is driven by frames.
+     */
+    const dry = { move: { x: 0, y: 0 }, flap: false };
+    for (let i = 0; i < 10; i++) g.crow.update(1 / 60, dry, g.world, g.audio);
+    // `neck.localToWorld` reads matrixWorld, which only refreshes during a
+    // render — and the renderer is not running here. Same fact the audit's
+    // sightline raycast has to deal with, from the other side.
+    g.crow.root.updateMatrixWorld(true);
+    const wet = g.crow.inWater;
+    const act = g._bestAction();
+    g._doAction(act);
+    g.crow.update(1 / 60, dry, g.world, g.audio);
+    const got = g.crow.carried ? g.crow.carried.value : 0;
+    if (g.crow.carried) g._doAction({ verb: 'DROP', kind: 'drop' });
+    g.crow.pos.set(1, 0, 8.5); g.crow.vel.set(0, 0, 0);
+    return { wet, got, verb: act ? act.verb : null };
+  });
+  if (bottle5) console.log('  bottle:', JSON.stringify(bottle5));
+  if (bottle5 && bottle5.missing) errors.push('L5: the message in a bottle is not on the block');
+  if (bottle5 && !bottle5.missing) {
+    if (!bottle5.wet) errors.push('L5: the bottle can be reached without getting in the water');
+    if (bottle5.got < 5) errors.push(`L5: a swimming crow could not take the bottle (got ${bottle5.got})`);
+  }
+
   // ── dusk, from the quay and from out over the water ───────────────────────
   if (has5) {
     const FLOOR = { p50: RULES.duskMedianFloor, p05: RULES.duskShadowFloor };

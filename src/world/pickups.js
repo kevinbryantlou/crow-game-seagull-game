@@ -17,6 +17,7 @@ export const KIND_LABEL = {
   bill20: 'TWENTY',
   shiny: 'SOMETHING SHINY', hotdog: 'HOT DOG', chips: 'A CONE OF CHIPS',
   pretzel: 'A SOFT PRETZEL', croissant: 'A CROISSANT', fish: 'A MACKEREL',
+  bottle: 'A MESSAGE IN A BOTTLE',
 };
 
 const SHINY_LABEL = {
@@ -232,6 +233,40 @@ function buildMesh(spec) {
       for (const [sx, sz] of [[0.05, 0.05], [-0.06, 0.03], [0.02, -0.07]]) {
         g.add(at(box(0.016, 0.016, 0.016, PAL.stone, { shadow: false }), sx, 0.04, sz));
       }
+      return g;
+    }
+    case 'bottle': {
+      /**
+       * A corked bottle with a note in it, floating on its side.
+       *
+       * The one pickup in the game whose *label* is the joke — it is worth five
+       * dollars and nothing says why, which is the right amount of explanation
+       * for a thing found floating in a harbour.
+       *
+       * The glass is transparent, so the note inside reads through it and the
+       * sightline check treats it as no obstruction at all. It lies on its side
+       * because a bottle standing upright in open water is a bottle somebody is
+       * holding.
+       */
+      const g = new THREE.Group();
+      const glass = cyl(0.062, 0.062, 0.26, 8, PAL.waterLit,
+        { transparent: true, opacity: 0.42, shadow: false });
+      glass.rotation.z = Math.PI / 2;
+      g.add(glass);
+      // The neck and the cork, tapering off one end.
+      const neck = cyl(0.032, 0.05, 0.09, 7, PAL.waterLit,
+        { transparent: true, opacity: 0.42, shadow: false });
+      neck.rotation.z = Math.PI / 2;
+      neck.position.x = 0.17;
+      g.add(neck);
+      g.add(at(cyl(0.03, 0.03, 0.05, 6, PAL.bark, { up: PAL.barkShade, down: PAL.shade }),
+        0.235, 0, 0));
+      // The note: a pale roll, deliberately proud of the glass so it is what you
+      // see first. Without it this is a bottle; with it, it is a message.
+      const note = cyl(0.036, 0.036, 0.17, 6, PAL.stone, { up: PAL.stone, down: PAL.shade });
+      note.rotation.z = Math.PI / 2;
+      note.rotation.y = 0.35;
+      g.add(note);
       return g;
     }
     case 'fish': {

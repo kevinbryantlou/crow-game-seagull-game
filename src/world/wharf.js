@@ -1435,11 +1435,21 @@ export function buildLevel() {
       SX + 2.6, 0.55, 4.2));
     solid(SX + 2.6, 4.2, 0.9, 0.9, 0.80);
     perch(SX + 2.6, 0.80, 4.2);
-    root.add(at(cyl(0.07, 0.09, 2.4, 5, PAL.steel), SX + 2.6, 2.0, 5.6));
-    const bulb = at(ico(0.15, 0, PAL.goldLit, { shadow: false }), SX + 2.6, 3.3, 5.6);
+    /**
+     * The lamp post, and its centre is at half its height because that is where
+     * a cylinder's origin is.
+     *
+     * It was 2.4 tall centred at y = 2.0, which puts its base at 0.8 — hanging
+     * eighty centimetres in the air with its own shadow on the ground under it,
+     * reported from a playtest. `cyl()` centres on its origin like every other
+     * primitive here; the number that looks like "how high up is it" has to be
+     * half the height whenever the thing stands on the floor.
+     */
+    root.add(at(cyl(0.07, 0.09, 3.0, 5, PAL.steel), SX + 2.6, 1.5, 5.6));
+    const bulb = at(ico(0.15, 0, PAL.goldLit, { shadow: false }), SX + 2.6, 3.1, 5.6);
     bulb.material = mat(PAL.goldLit);
     root.add(bulb);
-    solid(SX + 2.6, 5.6, 0.3, 0.3, 2.4);
+    solid(SX + 2.6, 5.6, 0.3, 0.3, 3.0);
     night.add(bulb, PAL.goldLit, { peak: 0.95, warm: 2.2, delay: 0.9, flicker: true });
     night.addPool(root, SX, 4.4, 6.4,
       { profile: 'stall', peak: 0.62, warm: 2.2, delay: 0.9 });
@@ -1708,6 +1718,25 @@ function pickupPlacements() {
     [-9.0, -3.0], [-2.5, -8.6], [2.5, -2.0], [1.0, -11.0], [-16.0, -9.0], [11.5, -3.2],
   ]) add('quarter', 0.25, x, RIM - 0.28, z, { inWater: true });
 
+  /**
+   * A message in a bottle, floating in the east harbour.
+   *
+   * $5, and it is the only real money on this block that asks you to **get
+   * wet**. Measured before adding it: the water — the block's signature cost,
+   * 45% speed and three seconds of soaking — paid $1.50 of $64.20, which is 2.3%
+   * of the level for the one thing the level is *about*. Six quarters on the
+   * basin floor is a tutorial, not a reason.
+   *
+   * It floats at the surface rather than resting on the bed, which is what makes
+   * it a different problem from the quarters: those are a dive, and this is a
+   * swim out to something you can see the whole way. It sits in the open water
+   * east of the loft, so there is nothing to land on within eight metres and no
+   * dry approach at all — the only way to it is to be in the harbour.
+   *
+   * Nothing explains why a bottle is worth five dollars, and nothing should.
+   */
+  add('bottle', 5.00, 22.0, RIM - 0.14, -5.5, { inWater: true, label: 'A MESSAGE IN A BOTTLE' });
+
   // — Out over the water: unowned, and unreachable on foot. —
   //
   // The five on the dolphin is the block's teaching object and the task points
@@ -1825,6 +1854,37 @@ function humanPlacements() {
       patrol: [[-6.5, 5.6], [-6.0, 10.4], [-2.5, 7.0]],
       speed: 1.15, chaseSpeed: 3.4, viewDist: 4.0, viewCos: 0.7,
       guardRadius: 1.8, alertness: 0.35, oblivious: true,
+    },
+    {
+      id: 'sailor', name: 'a sailor', cloth: 1, skin: 3, hair: 1,
+      /**
+       * Working the slipway at the east end.
+       *
+       * The corner needed a person more than it needed another object. It had
+       * measured dead twice — a container yard, then bare concrete — and the
+       * slip fixed the *geometry* of that while leaving it the one working part
+       * of the quay with nobody working it. A dock is people; an empty dock is a
+       * diorama.
+       *
+       * He paces the slip rather than standing on it, for the reason the park's
+       * frisbee player paces: a cone you can memorise is a puzzle you beat once,
+       * and one that walks and comes back makes the same approach safe and
+       * unsafe at different moments without anything moving fast enough to feel
+       * unfair. His triangle takes him from the winch, down the slip toward the
+       * water, and back up past the hauled-out dinghy.
+       *
+       * Oblivious, and that is deliberate. This block already has four guards
+       * and the east end is not where the money is — $6.20 on the office window
+       * is the harbourmaster's. A fifth pair of eyes here would make the corner
+       * a pitch, and what it needs is to be somewhere *inhabited*, not somewhere
+       * else to be careful. He is a body in the way, which is the job the park's
+       * phone-starer does and the most useful thing a person can be on a block
+       * about footing.
+       */
+      pos: [26.6, 0, 6.4], home: [26.6, 0, 6.4],
+      patrol: [[26.6, 6.4], [23.0, 8.2], [27.4, 10.0]],
+      speed: 1.1, chaseSpeed: 3.4, viewDist: 4.0, viewCos: 0.7,
+      guardRadius: 1.8, alertness: 0.3, oblivious: true,
     },
     {
       id: 'kid', name: 'the kid on the crate', cloth: 2, skin: 2, hair: 2,
