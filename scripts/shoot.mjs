@@ -1660,7 +1660,7 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
   await look5('63-l5-kid', -1, 0, 4.2);
   await look5('64-l5-pier', -5.5, 0.62, -7.5);
   await look5('65-l5-boat', 1.5, 1.15, -5);
-  await look5('66-l5-beacon', 4.5, 6.5, -8);
+  await look5('66-l5-loft', 7.5, 5.0, -8.5);
   await look5('67-l5-pilings', 11, 1.36, -8);
   await look5('68-l5-east', 14, 0, 7);
 
@@ -1720,12 +1720,12 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
   }
 
   /**
-   * The beacon crown, and the same assertion the chandelier earned.
+   * The net loft's roof, and the same assertion the chandelier earned.
    *
-   * It is a 3.2 m platform on a tower in open water and it is the only way to
-   * bank anything on this block — if an edge of it is not a floor, the money
-   * goes in the harbour. Dropped onto eight points round the rim with no input,
-   * which asserts the collision rather than a particular flight path.
+   * It is a 3.9 m roof on a hut on piles in open water and it is the only way to
+   * bank anything on this block — if an edge of it is not a floor, the money goes
+   * in the harbour. Dropped onto eight points round the rim with no input, which
+   * asserts the collision rather than a particular flight path.
    */
   const crown5 = !has5 ? null : await p5.evaluate(async () => {
     const g = window.__game;
@@ -1733,7 +1733,7 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
     const stuck = [];
     for (let deg = 0; deg < 360; deg += 45) {
       const a = (deg * Math.PI) / 180;
-      g.crow.pos.set(n.x + Math.cos(a) * 1.35, n.y + 1.2, n.z + Math.sin(a) * 1.35);
+      g.crow.pos.set(n.x + Math.cos(a) * 1.5, n.y + 1.2, n.z + Math.sin(a) * 1.5);
       g.crow.vel.set(0, 0, 0);
       let landed = false;
       for (let i = 0; i < 240 && !landed; i++) {
@@ -1748,7 +1748,7 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
   });
   if (crown5) console.log('  crown:', JSON.stringify(crown5));
   if (crown5 && crown5.stuck.length) {
-    errors.push(`L5: cannot land on the beacon from ${crown5.stuck.join(', ')}`);
+    errors.push(`L5: cannot land on the loft roof from ${crown5.stuck.join(', ')}`);
   }
 
   /**
@@ -1762,7 +1762,9 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
   const reach5 = !has5 ? null : await p5.evaluate(async () => {
     const g = window.__game;
     const n = g.world.nest;
-    const G = g.world.decks.gallery;
+    const G = g.world.decks.stage;
+    /** The open apron in front of the hut, which is where you actually land. */
+    const APRON = { x: n.x, y: G, z: n.z + 2.3 };
 
     /**
      * A world direction, expressed as the stick input that produces it.
@@ -1824,10 +1826,14 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
     const legs = [
       ['pier head → the boat', { x: 2.4, y: g.world.decks.boat, z: -5 }, [-5.5, 0.62, -9.0], 0.55],
       ['the boat → the wheelhouse', { x: -1.2, y: g.world.decks.wheelhouse, z: -5 }, [1.5, g.world.decks.boat, -5.0], 0.55],
-      ['the wheelhouse → the gallery', { x: n.x, y: G, z: n.z }, [-1.2, g.world.decks.wheelhouse, -5.0], 0.55],
-      ['the gallery → the nest', n, [n.x + 2.0, G, n.z], 0.55],
+      // The stage's landable part is the *apron*, not its centre — the hut stands
+      // in the middle of it. Aiming a flight at the centre of a platform with a
+      // building on it is the test flying into the building, which is what the
+      // first version of this did and reported as an unreachable deck.
+      ['the wheelhouse → the loft stage', APRON, [-1.2, g.world.decks.wheelhouse, -5.0], 0.55],
+      ['the loft stage → the nest', n, [APRON.x, G, APRON.z], 0.55],
       ['the east coping → the pilings', { x: 11, y: 1.36, z: -8 }, [14.35, 0.62, -8.0], 0.55],
-      ['the pier head → the gallery, full bar', { x: n.x, y: G, z: n.z }, [-5.5, 0.62, -9.0], 1.0],
+      ['the pier head → the loft, full bar', APRON, [-5.5, 0.62, -9.0], 1.0],
     ];
     const runs = legs.map(([leg, t, from, st]) => ({ leg, ...flyTo(t, from[0], from[1], from[2], st) }));
     g.crow.pos.set(1, 0, 8.5);

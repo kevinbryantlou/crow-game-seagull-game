@@ -726,12 +726,13 @@ export const LEVELS = [
        * you are standing on a harbour light on a dock that belongs to gulls.
        */
       won: () =>
-        'The last bill goes into the nest and the lamp comes on under your feet, once, '
-        + 'and then again, and the whole harbour turns amber and back.<br><br>'
-        + 'You come back six metres over open water with no way down that a person can '
-        + 'take, and every boat in the basin between you and the dock. On the rail below '
-        + 'you a gull has not moved in an hour. It has been watching you all afternoon the '
-        + 'way you would watch somebody who took the other option, and got away with it.',
+        'The last bill goes into the nest, and out at the harbour mouth the light comes '
+        + 'on — once, and then again, and the whole basin turns amber and back.<br><br>'
+        + 'You come back five metres over open water, on the roof of a hut on stilts that '
+        + 'nobody has kept a net in for years, with every boat in the harbour between you '
+        + 'and the dock. On the rail below you a gull has not moved in an hour. It has been '
+        + 'watching you all afternoon the way you would watch somebody who took the other '
+        + 'option, and got away with it.',
       lost: (total) =>
         `You got to $${total.toFixed(2)}. The market has hosed down its boards and the `
         + 'water has gone the colour of a bruise all the way to the breakwater.<br><br>'

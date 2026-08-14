@@ -93,7 +93,8 @@ export const DECK = {
   float: 0.55,
   boat: 1.15,
   wheelhouse: 2.4,
-  gallery: 3.4,
+  /** The net loft's stage, out in the water on piles. */
+  stage: 2.5,
 };
 
 const PIER = { x: -5.5, z: -4.55, w: 4.0, d: 9.9 };     // z −9.5 … 0.4
@@ -101,7 +102,24 @@ const MARKET = { x: -14, z: 6.0 };
 const COUNTER = { x: -14, z: 8.5 };                      // the bait anchor
 const ICEHOUSE = { x: 8, z: 6.2 };
 const OFFICE = { x: 20, z: 4.0 };
-const BEACON = { x: 4.5, z: -8.0 };
+/**
+ * The net loft: the nest, on a hut on piles in open water.
+ *
+ * `roof` is the only height anything else needs. The climb to it is 2.4 (the
+ * boat's wheelhouse) → 5.0, which is 2.6 m against a 9 m rule — the difficulty
+ * here was never vertical, it is the water in between.
+ */
+const LOFT = { x: 7.5, z: -8.5, roof: 5.0 };
+/**
+ * The harbour light, on the head of the west arm at the mouth.
+ *
+ * Out at the far west end of the mole it was barely in frame — the camera cuts
+ * off anything that tall that far to the side, so all a player saw was a plinth.
+ * The entrance is where a harbour light actually stands, it is near the middle
+ * of the map, and it means the one lit tower on the block marks the one gap in
+ * the wall. The east arm keeps a plain green marker, which is the real pairing.
+ */
+const LIGHT = { x: 3.4 };
 const BOAT = { x: 0, z: -5.0 };
 const DOLPHIN = { x: 11, z: -8.0 };                      // the piling cluster
 const WEST_FLOAT = { x: -14, z: -6.0 };
@@ -119,16 +137,6 @@ const DINGHY = { x: -16.0, z: -3.4 };
  */
 const KID = { x: -1.0, z: 2.6 };
 
-/**
- * The quay walk: the lane that runs the length of the block in front of the
- * market, the ice house and the harbourmaster's office.
- *
- * Stated as a number because the playtest asked for a clear path and the reason
- * there was not one is that nobody had ever written down where it ran. Props
- * accumulate in an undrawn route one at a time, each placement reasonable by
- * itself. `laneClear` in the audit asserts nothing solid stands in it.
- */
-const LANE = { z: 10.15, w: 2.2, minX: -28, maxX: 28 };
 
 export function buildLevel() {
   const root = new THREE.Group();
@@ -202,22 +210,6 @@ export function buildLevel() {
    * as they like. Ground paint is a value decision, so it is bay-marking white
    * with a thin warm edge, which is what a real quay is painted with anyway.
    */
-  /**
-   * The quay walk — the lane that runs the length of the block past all three
-   * buildings, and the reason `LANE` exists as a number rather than a habit.
-   *
-   * The playtest asked for a clear walking path across the market stall, the ice
-   * house and the harbourmaster's office. It was not that anything was
-   * *impassable*; it was that the route was never drawn, so the furniture had
-   * accumulated in it one prop at a time — a bin here, a lamp there — each
-   * reasonable on its own. A promenade nobody drew is a promenade everybody
-   * builds on.
-   *
-   * So it is stated once and everything else is placed against it. `laneClear`
-   * below asserts it, which is what stops the next prop landing in the middle of
-   * it for the same good reason as the last one.
-   */
-  addDecal(0, LANE.z, 150, LANE.w, PAL.concrete);
   addDecal(4.5, 2.2, 6.4, 0.34, PAL.stone);
   addDecal(4.5, 3.9, 6.4, 0.34, PAL.stone);
   addDecal(-22.0, 0.6, 5.4, 0.30, PAL.stone);
@@ -406,7 +398,7 @@ export function buildLevel() {
      * A green light on each arm head, which is what a harbour mouth has and what
      * makes the gap read as a gap rather than as a wall someone forgot to build.
      */
-    for (const hx of [MOUTH.minX - 0.9, MOUTH.maxX + 0.9]) {
+    for (const hx of [MOUTH.maxX + 0.9]) {
       root.add(at(cyl(0.16, 0.20, 1.9, 6, PAL.concrete, { down: PAL.shade, shadow: false }),
         hx, 1.4 + 0.95, MOLE.z));
       const marker = at(ico(0.26, 0, PAL.canopyLit, { shadow: false }), hx, 1.4 + 2.05, MOLE.z);
@@ -414,6 +406,42 @@ export function buildLevel() {
       root.add(marker);
       night.add(marker, PAL.canopyLit, { peak: 1.0, warm: 1.2, delay: 0.1, flicker: true });
     }
+
+    /**
+     * The lighthouse, standing on the west arm.
+     *
+     * It used to be in the middle of the harbour with the nest stacked on top of
+     * it, which is where it grew a tier every time something needed fixing. Out
+     * here it has nothing to carry: nothing lands on it, nothing has to rise past
+     * it, and it can simply be a tower with a light on it — which is the one
+     * thing it was always trying to be.
+     *
+     * Height is capped by the camera rather than by taste. From the pier the sea
+     * is in frame to about 7 m at this distance, so a 7.4 m tower is the tallest
+     * thing that stays whole; anything taller loses its lamp room off the top of
+     * the frame, which is the fault the container terminal had.
+     */
+    const B = 1.4;
+    root.add(at(cyl(1.05, 1.25, 0.5, 10, PAL.concreteMid, { up: PAL.concrete, down: PAL.shade, shadow: false }),
+      LIGHT.x, B + 0.25, MOLE.z));
+    root.add(at(cyl(0.62, 0.88, 4.6, 10, PAL.stone, { up: PAL.stone, down: PAL.concreteMid, shadow: false }),
+      LIGHT.x, B + 0.5 + 2.3, MOLE.z));
+    // The painted band, so a white cylinder against a pale sky has a height.
+    root.add(at(cyl(0.75, 0.79, 0.8, 10, PAL.container[0], { up: PAL.containerLit[0], down: PAL.shade, shadow: false }),
+      LIGHT.x, B + 2.4, MOLE.z));
+    // The gallery and the lamp room. Small, because nothing has to stand here.
+    root.add(at(cyl(0.86, 0.86, 0.16, 10, PAL.steelDark, { up: PAL.steel, shadow: false }),
+      LIGHT.x, B + 5.2, MOLE.z));
+    const lantern = at(cyl(0.52, 0.56, 0.9, 8, PAL.goldLit, { shadow: false }),
+      LIGHT.x, B + 5.7, MOLE.z);
+    lantern.material = mat(PAL.goldLit);
+    root.add(lantern);
+    root.add(at(cone(0.62, 0.6, 8, PAL.container[0], { up: PAL.containerLit[0], down: PAL.shade, shadow: false }),
+      LIGHT.x, B + 6.45, MOLE.z));
+    night.add(lantern, PAL.goldLit, { peak: 1.0, warm: 1.2, delay: 0.0, flicker: true });
+    night.addPool(root, LIGHT.x, MOLE.z + 2.0, 7.0,
+      { profile: 'stall', peak: 0.58, warm: 1.2, y: SURFACE });
+    solid(LIGHT.x, MOLE.z, 1.8, 1.8, B + 5.2, 0, { tag: 'lighthouse' });
   }
 
   // ── the backdrop: open ocean, and one ship on it ──────────────────────────
@@ -518,108 +546,120 @@ export function buildLevel() {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // THE BEACON — the nest, standing in open water
+  // THE NET LOFT — the nest, standing in open water
   // ══════════════════════════════════════════════════════════════════════════
-  const NEST = { x: BEACON.x, y: 6.5, z: BEACON.z };
+  /**
+   * A fisherman's loft on piles: four legs in the water, one room, a flat roof,
+   * and the nest on the roof.
+   *
+   * This replaces a lighthouse, and the reason is a playtest note — *the
+   * lighthouse is starting to look a little insane.* It was: a tower with a 5.2 m
+   * gallery skirt, a 3.2 m lamp deck above that, a glazed corona and a nest in
+   * the middle of it, all stacked on one stalk in open water. Every layer had
+   * been added to fix a real problem — the gallery was widened so a crow could
+   * rise past the crown's overhang, the crown was widened to clear the twig ring
+   * — and the result was a wedding cake. **A shape that grows a tier every time
+   * it is corrected is telling you the shape is wrong.**
+   *
+   * A loft is the honest object instead. Harbours are full of them: a shed on
+   * legs over the water where nets were dried and gear was kept, reached by boat
+   * and by nobody else. It gives the nest a *single* landing — one flat roof, no
+   * skirt, no overhang, nothing above it — and it keeps everything the beacon was
+   * carrying for the level: it stands in open water with no walking route to it,
+   * so every bank is still a flight out and back over nothing, and it is still
+   * the lit thing in the middle of the harbour after dark.
+   *
+   * The lighthouse itself is not gone; it has moved to the breakwater, which is
+   * where a harbour light belongs and where it can be tall without anything
+   * having to land on it.
+   */
+  const NEST = { x: LOFT.x, y: LOFT.roof, z: LOFT.z };
   {
     const g = new THREE.Group();
+    const DECKY = LOFT.roof - 2.5;          // the loft floor
 
-    // The piling cluster it stands on, and the shaft up to the gallery.
-    for (const [px, pz] of [[-0.85, -0.85], [0.85, -0.85], [-0.85, 0.85], [0.85, 0.85]]) {
-      g.add(at(cyl(0.22, 0.26, DECK.gallery, 6, PAL.dockMid, { up: PAL.dock, down: PAL.shade }),
-        px, DECK.gallery / 2, pz));
+    // Four legs, down to the bed. Splayed a little, as piles are.
+    for (const [px, pz] of [[-1.9, -1.9], [1.9, -1.9], [-1.9, 1.9], [1.9, 1.9]]) {
+      g.add(at(cyl(0.20, 0.24, DECKY, 6, PAL.dockMid, { up: PAL.dock, down: PAL.shade }),
+        px, DECKY / 2, pz));
     }
-    g.add(at(cyl(0.72, 0.86, DECK.gallery, 8, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }),
-      0, DECK.gallery / 2, 0));
+    // Cross-bracing, so the legs read as a structure rather than four posts.
+    for (const s of [-1, 1]) {
+      g.add(at(box(4.2, 0.14, 0.12, PAL.dockMid, { up: PAL.dock, down: PAL.shade }),
+        0, DECKY * 0.45, s * 1.9));
+      g.add(at(box(0.12, 0.14, 4.2, PAL.dockMid, { up: PAL.dock, down: PAL.shade }),
+        s * 1.9, DECKY * 0.45, 0));
+    }
 
     /**
-     * The gallery: a square deck with a low rail, and it is 5.2 across for a
-     * reason that has nothing to do with looks.
-     *
-     * It was 3.6, against a crown of 3.2 — which left a ring of 0.2 m, and a
-     * crow has a support radius of 0.24. So *every* point on the gallery was
-     * inside the crown's footprint, the crown's underside is a ceiling, and a
-     * bird standing on the gallery trying to fly up to the nest bonked its head
-     * at 5.84 and fell back down. Forever. The only way onto the nest was to
-     * arrive already above it.
-     *
-     * Nothing caught that. "Nothing overlaps the nest" passes because the crown
-     * is *below* the twigs, and the crown-landing check drops a crow from above,
-     * which is the one approach that works. It took flying the intended route to
-     * find — arriving from underneath is a different question from arriving from
-     * over the top, and this block is the first one where the answer differs.
-     *
-     * At 5.2 the ring is 1.0 m wide, so a crow on it stands clear of the
-     * overhang and can rise straight past the crown's edge. A lighthouse gallery
-     * being wider than its lamp room is also exactly what a lighthouse looks
-     * like.
+     * The stage it stands on, and it is a metre and a half wider than the hut on
+     * purpose: a landing that is only as big as the thing on it is a lid, which
+     * is the mistake the old gallery made. This leaves a walkable apron all the
+     * way round and a wide one at the front, which is where the loose change is.
      */
-    g.add(at(box(5.2, 0.22, 5.2, PAL.steelDark, { up: PAL.steel, down: PAL.shade }),
-      0, DECK.gallery - 0.11, 0));
+    g.add(at(box(5.4, 0.22, 5.4, PAL.dock, { up: PAL.dockLit, down: PAL.dockMid }),
+      0, DECKY - 0.11, 0));
+    // A rail on three sides, low, open toward the pier.
     for (const [rx, rz, rw, rd] of [
-      [0, -2.54, 5.2, 0.12], [0, 2.54, 5.2, 0.12], [-2.54, 0, 0.12, 5.2], [2.54, 0, 0.12, 5.2],
+      [0, -2.64, 5.4, 0.12], [-2.64, 0, 0.12, 5.4], [2.64, 0, 0.12, 5.4],
     ]) {
-      g.add(at(box(rw, 0.30, rd, PAL.steel, { up: PAL.silver, down: PAL.shade }),
-        rx, DECK.gallery + 0.15, rz));
+      g.add(at(box(rw, 0.34, rd, PAL.dockMid, { up: PAL.dock, down: PAL.shade }),
+        rx, DECKY + 0.17, rz));
     }
 
-    // The tower, white, tapering. It is the one thing on this block you can see
-    // from anywhere, which is the whole job of a harbour light.
-    g.add(at(cyl(0.62, 0.88, 6.5 - DECK.gallery, 10, PAL.stone, { up: PAL.stone, down: PAL.stoneMid }),
-      0, (DECK.gallery + 6.5) / 2, 0));
-    // A painted band, because a white cylinder against a pale sky is a shape
-    // nobody can read the height of.
-    g.add(at(cyl(0.75, 0.79, 0.6, 10, PAL.terracotta, { up: PAL.terracottaLit, down: PAL.shade }),
-      0, DECK.gallery + 1.5, 0));
+    // The hut: boarded walls, a door on the pier side, one window each way.
+    g.add(at(box(3.6, 2.28, 3.6, PAL.container[2], { up: PAL.containerLit[2], down: PAL.shade }),
+      0, DECKY + 1.14, 0));
+    const door = box(0.9, 1.7, 0.12, PAL.dockMid, { shadow: false });
+    door.position.set(0, DECKY + 0.85, 1.81);
+    g.add(door);
+    const panes = [];
+    for (const [wx, wz, ry] of [[-1.2, 1.81, 0], [1.81, -0.4, Math.PI / 2]]) {
+      const win = box(0.9, 0.7, 0.10, PAL.goldLit, { shadow: false });
+      win.position.set(wx, DECKY + 1.45, wz);
+      win.rotation.y = ry;
+      win.material = mat(PAL.goldLit);
+      g.add(win);
+      panes.push(win);
+    }
+    night.add(panes, PAL.goldLit, { peak: 0.95, warm: 2.0, delay: 0.4 });
 
     /**
-     * The lamp gallery at the top, and the nest sitting inside it.
+     * The roof, and it is the nest's only landing.
      *
-     * The crown is a floor with a low rim, not a lantern with a roof. A hanging
-     * or capping fitting over the nest is the lobby's chandelier problem again —
-     * "no mesh may cross the nest's own footprint above its base" is an asserted
-     * rule now, and it falls out of modelling the thing the nest sits on and
-     * forgetting what sits on it. The glazing is a ring of panels at 1.5 m
-     * radius; the twig ring is 0.75. Nothing is over it at all.
+     * 3.6 m against a 1.5 m twig ring, so it clears the platform rule with
+     * room — and, more to the point, **nothing overhangs it and nothing stands
+     * on it.** The old crown was a lid: a crow on the gallery below could not
+     * rise past its edge, which took a reach test to find because every check
+     * that looks at the nest looks *down* at it. A flat roof with open sky over
+     * it cannot have that bug.
      */
-    g.add(at(box(3.2, 0.24, 3.2, PAL.steelDark, { up: PAL.steel, down: PAL.shade }),
-      0, 6.5 - 0.12, 0));
-    const panes = [];
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
-      const pane = at(box(0.62, 0.32, 0.10, PAL.goldLit, { shadow: false }),
-        Math.cos(a) * 1.48, 6.5 + 0.16, Math.sin(a) * 1.48);
-      pane.rotation.y = -a;
-      pane.material = mat(PAL.goldLit);
-      g.add(pane);
-      panes.push(pane);
-    }
-    // The lens itself, on the north edge and clear of the twigs.
-    const lens = at(cyl(0.30, 0.34, 0.52, 8, PAL.goldLit, { shadow: false }), 0, 6.76, -1.15);
-    lens.material = mat(PAL.goldLit);
-    g.add(lens);
-    night.add([...panes, lens], PAL.goldLit,
-      { peak: 1.0, warm: 1.4, delay: 0.0, flicker: false });
+    g.add(at(box(3.9, 0.20, 3.9, PAL.dock, { up: PAL.dockLit, down: PAL.dockMid }),
+      0, LOFT.roof - 0.10, 0));
+    // A lamp on a bracket at the eaves, on the pier side. The loft is the block's
+    // lit object in the water now that the beacon has moved to the mole.
+    g.add(at(cyl(0.05, 0.05, 0.5, 4, PAL.steelDark, { shadow: false }),
+      0, LOFT.roof + 0.24, 1.7));
+    const lamp = at(ico(0.20, 0, PAL.goldLit, { shadow: false }), 0, LOFT.roof + 0.42, 1.9);
+    lamp.material = mat(PAL.goldLit);
+    g.add(lamp);
+    night.add(lamp, PAL.goldLit, { peak: 1.0, warm: 1.6, delay: 0.15, flicker: true });
 
-    g.position.set(BEACON.x, 0, BEACON.z);
+    g.position.set(LOFT.x, 0, LOFT.z);
     root.add(g);
 
-    inWater(BEACON.x, BEACON.z, 2.2, 2.2, DECK.gallery, 0, { tag: 'beacon-shaft' });
-    inWater(BEACON.x, BEACON.z, 5.2, 5.2, DECK.gallery, DECK.gallery - 0.4, { tag: 'beacon-gallery' });
-    inWater(BEACON.x, BEACON.z, 1.8, 1.8, 6.5, DECK.gallery, { tag: 'beacon-tower' });
-    inWater(BEACON.x, BEACON.z, 3.2, 3.2, 6.5, 6.26, { tag: 'beacon-crown' });
-    perch(BEACON.x, DECK.gallery, BEACON.z);
-    perch(BEACON.x, 6.5, BEACON.z);
+    inWater(LOFT.x, LOFT.z, 5.4, 5.4, DECKY, 0, { tag: 'loft-stage' });
+    inWater(LOFT.x, LOFT.z, 3.9, 3.9, LOFT.roof, DECKY, { tag: 'loft-roof' });
+    perch(LOFT.x, DECKY, LOFT.z);
+    perch(LOFT.x, LOFT.roof, LOFT.z);
 
     const nest = makeNest();
-    nest.position.set(BEACON.x, 6.5, BEACON.z);
+    nest.position.set(LOFT.x, LOFT.roof, LOFT.z);
     root.add(nest);
     root.userData.nestGroup = nest;
 
-    // The pool it throws on the water. Discs, small and bright rather than
-    // large and dim: a pool costs its area and its brightness is nearly free.
-    night.addPool(root, BEACON.x, BEACON.z, 6.2,
-      { profile: 'stall', peak: 0.62, warm: 1.4, y: SURFACE });
+    night.addPool(root, LOFT.x, LOFT.z, 6.0,
+      { profile: 'stall', peak: 0.60, warm: 1.6, y: SURFACE });
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -1146,16 +1186,9 @@ export function buildLevel() {
   addBench(-2, 12.5);
   addBench(11, 12.0);
 
-  /**
-   * Bins, and one that is no longer here.
-   *
-   * There was a third at (-7.5, 11.5), standing in the middle of the walking
-   * lane below — reported from the playtest as being in the way, which it was.
-   * A bin is 1.3 m across and 1.6 tall and it was the only thing between the
-   * market and the ice house, so the route every player takes most often had a
-   * dustbin parked in the middle of it. The two that remain are both off the
-   * lane: one against the office, one at the west end.
-   */
+  // Two bins. There was a third at (-7.5, 11.5), between the market and the ice
+  // house, and the playtest reported it as being in the way — a bin is 1.3m
+  // across and 1.6 tall, standing on the route people walk most.
   addBin(13.5, 3.0, PAL.canopyShade);
   addBin(-22.5, 7.5, PAL.steelDark);
 
@@ -1168,10 +1201,10 @@ export function buildLevel() {
    * house door, the boat's deck light and the beacon do most of the work here;
    * these fill the gaps between them.
    */
-  addLamp(-27.5, 12.4);
-  addLamp(-19.5, 12.6);
+  addLamp(-27.5, 9.5);
+  addLamp(-19.5, 11.5);
   addLamp(-8.0, 3.4);
-  addLamp(0.5, 12.4);
+  addLamp(4.5, 11.0);
   addLamp(14.5, 8.0);
   addLamp(25.5, 8.5);
 
@@ -1199,12 +1232,10 @@ export function buildLevel() {
   return {
     root, colliders, occluders, perches,
     nightLights: night,
-    /** The quay walk, asserted clear by audit-level.mjs. */
-    lane: LANE,
     fountain: FOUNTAIN,
     waterDeck: DECK.quay,
     nest: NEST,
-    nestPlatform: 3.2,     // the lamp gallery's floor
+    nestPlatform: 3.6,     // the loft's roof
     nestFootprint: 1.5,    // the twig ring itself
     decks: DECK,
     /** The bait anchor. The game calls it `cart` whatever the block sells. */
@@ -1281,12 +1312,23 @@ function addFarShore({ root, night }) {
     0, H / 2, 0));
   // The boot-top stripe at the waterline, and the sheer line above it. Two flat
   // bands are what makes a box read as a hull at this distance.
-  g.add(at(box(L + 0.2, 0.7, 7.2, PAL.container[0], { up: PAL.containerLit[0], ...flat }),
-    0, 0.35, 0));
-  g.add(at(box(L + 0.3, 0.5, 7.4, PAL.stone, { up: PAL.stone, ...flat }), 0, H - 0.25, 0));
+  /**
+   * The boot-top and the deck rail, and **neither shares a face with the hull.**
+   *
+   * They did, and it flickered: the boot-top's underside sat at exactly y = 0
+   * with the hull's, and the rail's top at exactly y = H with the hull's deck.
+   * Two coplanar faces at identical depth is a coin flip per pixel — the same
+   * thing that drew a staircase down level 1's frontage — and on a backdrop
+   * object at forty metres it reads as a shimmer along the whole length. Both
+   * bands are inset a few centimetres in y and proud in z, which is also what a
+   * rubbing strake actually is.
+   */
+  g.add(at(box(L + 0.24, 0.66, 7.24, PAL.container[0], { up: PAL.containerLit[0], ...flat }),
+    0, 0.40, 0));
+  g.add(at(box(L + 0.30, 0.46, 7.30, PAL.stone, { up: PAL.stone, ...flat }), 0, H - 0.34, 0));
   // A raked bow, so the ship has a front. One wedge is enough.
-  g.add(at(box(4.0, H, 4.4, PAL.trouser[2], { up: PAL.steelDark, down: PAL.shade, ...flat }),
-    L / 2 + 1.6, H / 2 + 0.25, 0));
+  g.add(at(box(4.0, H - 0.3, 4.4, PAL.trouser[2], { up: PAL.steelDark, down: PAL.shade, ...flat }),
+    L / 2 + 1.6, (H - 0.3) / 2 + 0.22, 0));
 
   /**
    * A partial load, which is the note as given — *does not have to be a full
@@ -1300,14 +1342,16 @@ function addFarShore({ root, night }) {
   for (const [dx, hue] of [
     [-13, 0], [-8, 3], [-3, 1], [2, 2], [7, 0], [12, 3], [16.5, 1],
   ]) {
+    // Sitting *on* the deck, not sunk into it. These were centred at H + 0.15
+    // with a height of 1.7, so their lower halves were inside the hull.
     g.add(at(box(4.2, 1.7, 5.6, PAL.container[hue],
       { up: PAL.containerLit[hue], down: PAL.shade, ...flat }),
-    dx, H + 0.15, 0));
+    dx, H + 0.85, 0));
   }
 
   /** The house aft, white, with a lit bridge band. The one warm mark out here. */
   g.add(at(box(5.4, 2.6, 6.0, PAL.stone, { up: PAL.stone, down: PAL.shade, ...flat }),
-    -L / 2 + 4.0, H + 1.3, 0));
+    -L / 2 + 4.0, H + 1.3, 0.02));
   const bridge = box(5.7, 0.6, 6.3, PAL.goldLit, flat);
   bridge.position.set(-L / 2 + 4.0, H + 2.2, 0);
   bridge.material = mat(PAL.goldLit);
@@ -1341,8 +1385,15 @@ function addFarShore({ root, night }) {
    * allowed to be. It was 74 m long and 13 m tall first, and it read as a wall
    * with its head off.
    */
+  /**
+   * Square to the grid, not angled.
+   *
+   * It sat at −0.10 rad on the theory that a slight skew reads as "moored"
+   * rather than "placed". At this camera it reads as a mistake instead: every
+   * other edge in the game is axis-aligned, so a backdrop object a few degrees
+   * off is the one thing in frame that looks like it slipped.
+   */
   g.position.set(-3, 0, -23.0);
-  g.rotation.y = -0.10;
   root.add(g);
 
   /** One clone for the whole backdrop, as the skyline's hundred windows were. */
@@ -1392,7 +1443,7 @@ function pickupPlacements() {
 
   // — The harbour floor. You have to go in. —
   for (const [x, z] of [
-    [-9.0, -3.0], [-2.5, -8.6], [2.5, -2.0], [7.2, -9.8], [-16.0, -9.0], [11.5, -3.2],
+    [-9.0, -3.0], [-2.5, -8.6], [2.5, -2.0], [1.0, -11.0], [-16.0, -9.0], [11.5, -3.2],
   ]) add('quarter', 0.25, x, RIM - 0.28, z, { inWater: true });
 
   // — Out over the water: unowned, and unreachable on foot. —
@@ -1403,8 +1454,9 @@ function pickupPlacements() {
     { owner: null, label: 'THE FIVE ON THE PILINGS', onPiling: true });
   add('coins', 1.25, -14.0, 0.61, -6.0);
   add('bill1', 1.00, -16.0, 0.77, -3.4);
-  // On the beacon's own gallery — free, once, because you are going there anyway.
-  add('coins', 1.25, 6.4, 3.46, -8.0);
+  // On the loft's stage, in front of the hut — free, once, because you are
+  // going there anyway.
+  add('coins', 1.25, 7.5, 2.56, -6.2);
 
   // — The fish market: $29 across one counter. —
   add('bill20', 20.00, -11.0, 1.26, 8.5, { owner: 'monger', label: "THE DAY'S TAKE" });
