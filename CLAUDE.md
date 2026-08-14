@@ -602,6 +602,28 @@ once per entry in `LEVELS`:
   eyeballed.
 - **Nothing is standing in the edge kerb.**
 
+- **Two solids must never share a horizontal face plane where they overlap.** A
+  roof whose top lands exactly on the top of the walls it caps is two faces at
+  identical depth, which is a coin flip per pixel — reported three times now as a
+  staircase down level 1's frontage, a shimmer along the wharf's container ship,
+  and a flickering wheelhouse roof on its boat. It is invisible in the source,
+  because every one of those numbers is the *correct* height for the part. A part
+  either overlaps what it sits on or stops short of it, and never lands exactly
+  on it. Asserted, top-against-top on stacked footprints only: a shared *base* at
+  ground level is how every building stands and is under the floor, and two
+  concentric shells (the pool's inner and outer walls) have overlapping bounding
+  boxes and no shared surface at all. The rule found a fourth instance nobody had
+  reported, on the lobby clock, which is the object that block banks on.
+- **A check that filters on `geometry.type` finds nothing, and this is the second
+  time.** The rule above first read `geometry.type === 'BoxGeometry'` and passed
+  on all five blocks with the bug it was written for sitting in front of it —
+  `box()` runs its geometry through `tint()`, which hands back a non-indexed
+  clone whose type is `BufferGeometry`. The pool-vs-decal rule had already been
+  broken this exact way when pools became circles, and it is already written down
+  a few paragraphs above, and I walked into it anyway. **Identify geometry by what
+  it does, not by its constructor**, and assert the check found something to look
+  at — then delete the line the check guards and confirm it goes red.
+
 - **A saturated colour is a light-rig decision even on a small object.** The
   wharf's first container palette was properly saturated — `0xc4553f`,
   `0x3d7fa8` — and it failed the dusk 5th-percentile floor on all six samples

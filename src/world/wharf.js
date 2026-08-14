@@ -73,7 +73,7 @@ const MOLE = { x: -2, z: -13.25, w: 64, d: 1.4 };
  * *basin's* north edge rather than a notch beyond the corner of it, and east of
  * the beacon so the block's focal object is not standing in front of the hole.
  */
-const MOUTH = { minX: 5, maxX: 13 };
+const MOUTH = { minX: -10, maxX: 3 };
 const RIM = 0.62;          // coping top, and the pier deck
 const SURFACE = RIM - 0.20;
 const BED = 0.06;
@@ -119,11 +119,10 @@ const LOFT = { x: 7.5, z: -8.5, roof: 5.0 };
  * of the map, and it means the one lit tower on the block marks the one gap in
  * the wall. The east arm keeps a plain green marker, which is the real pairing.
  */
-const LIGHT = { x: 3.4 };
+const LIGHT = { x: 4.5 };
 const BOAT = { x: 0, z: -5.0 };
 const DOLPHIN = { x: 11, z: -8.0 };                      // the piling cluster
 const WEST_FLOAT = { x: -14, z: -6.0 };
-const EAST_FLOAT = { x: 8, z: -3.5 };
 const DINGHY = { x: -16.0, z: -3.4 };
 
 /**
@@ -398,7 +397,7 @@ export function buildLevel() {
      * A green light on each arm head, which is what a harbour mouth has and what
      * makes the gap read as a gap rather than as a wall someone forgot to build.
      */
-    for (const hx of [MOUTH.maxX + 0.9]) {
+    for (const hx of [MOUTH.minX - 0.9]) {
       root.add(at(cyl(0.16, 0.20, 1.9, 6, PAL.concrete, { down: PAL.shade, shadow: false }),
         hx, 1.4 + 0.95, MOLE.z));
       const marker = at(ico(0.26, 0, PAL.canopyLit, { shadow: false }), hx, 1.4 + 2.05, MOLE.z);
@@ -608,8 +607,10 @@ export function buildLevel() {
     }
 
     // The hut: boarded walls, a door on the pier side, one window each way.
-    g.add(at(box(3.6, 2.28, 3.6, PAL.container[2], { up: PAL.containerLit[2], down: PAL.shade }),
-      0, DECKY + 1.14, 0));
+    // Starting 4 cm inside the stage rather than exactly on its top face — see
+    // the boat's wheelhouse for what sharing a plane costs.
+    g.add(at(box(3.6, 2.32, 3.6, PAL.container[2], { up: PAL.containerLit[2], down: PAL.shade }),
+      0, DECKY + 1.12, 0));
     const door = box(0.9, 1.7, 0.12, PAL.dockMid, { shadow: false });
     door.position.set(0, DECKY + 0.85, 1.81);
     g.add(door);
@@ -857,7 +858,15 @@ export function buildLevel() {
     night.addPool(root, WEST_FLOAT.x, WEST_FLOAT.z, 4.4,
       { profile: 'stall', peak: 0.72, warm: 2.0, delay: 0.7, y: DECK.float });
   }
-  addFloat(EAST_FLOAT.x, EAST_FLOAT.z, 5.0, 2.2);
+  /**
+   * One float, not two.
+   *
+   * There was a second at (8, −3.5), between the charter boat and the loft, and
+   * the playtest read the water as crowded — which it was: a boat, two floats, a
+   * dinghy, a hut on piles and seven pilings inside a basin thirty metres
+   * across. This block spends *footing*, and footing stops being a cost when
+   * there is something to stand on every four metres.
+   */
 
   /**
    * The charter boat — a guard on an island.
@@ -873,14 +882,32 @@ export function buildLevel() {
     const hull = box(7.0, 1.15, 2.8, PAL.container[1], { up: PAL.containerLit[1], down: PAL.shade });
     hull.position.y = 0.575;
     g.add(hull);
-    g.add(at(box(7.2, 0.14, 3.0, PAL.terracotta, { up: PAL.terracottaLit, down: PAL.shade }), 0, 1.08, 0));
+    /**
+     * **No two of these share a plane**, and the y numbers look fussy for that
+     * reason alone.
+     *
+     * Reported from a playtest as the wheelhouse roof flickering, and it was
+     * four faults rather than one: the rubbing band's top, the gunwales' bottom
+     * and the wheelhouse's bottom all sat at exactly the hull's deck line of
+     * 1.15, and the roof's top sat at exactly the wheelhouse walls' top of 2.40.
+     * Two coplanar faces at identical depth is a coin flip per pixel — the same
+     * thing that drew a staircase down level 1's frontage and shimmered along
+     * the container ship — and it is invisible in the source, because every one
+     * of those numbers is the *correct* height for the part.
+     *
+     * The rule that avoids it: a part that sits on another either overlaps it or
+     * stops short of it, and never lands exactly on it. Here the band stops 3 cm
+     * low, the gunwales and the wheelhouse start 2 cm high, and the walls finish
+     * 9 cm inside the roof, where their top face is hidden entirely.
+     */
+    g.add(at(box(7.2, 0.14, 3.0, PAL.terracotta, { up: PAL.terracottaLit, down: PAL.shade }), 0, 1.05, 0));
     g.add(at(box(6.4, 0.06, 2.5, PAL.dockLit, { shadow: false, receive: true }), 0, DECK.boat + 0.01, 0));
     // Gunwales, low enough to hop.
     for (const s of [-1, 1]) {
-      g.add(at(box(6.8, 0.26, 0.16, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }), 0, DECK.boat + 0.13, s * 1.35));
+      g.add(at(box(6.8, 0.26, 0.16, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }), 0, DECK.boat + 0.15, s * 1.35));
     }
     // The wheelhouse.
-    g.add(at(box(2.2, 1.25, 2.2, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }), -1.2, DECK.boat + 0.625, 0));
+    g.add(at(box(2.2, 1.14, 2.2, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }), -1.2, DECK.boat + 0.59, 0));
     g.add(at(box(2.4, 0.14, 2.4, PAL.steelDark, { up: PAL.steel, down: PAL.shade }), -1.2, DECK.wheelhouse - 0.07, 0));
     const glass = box(2.0, 0.6, 0.1, PAL.waterLit, { shadow: false });
     glass.position.set(-1.2, DECK.boat + 0.85, 1.06);
@@ -1155,7 +1182,6 @@ export function buildLevel() {
     for (const [px, pz, r, peak] of [
       [BOAT.x, BOAT.z, 4.8, 0.32],
       [WEST_FLOAT.x, WEST_FLOAT.z, 4.6, 0.32],
-      [EAST_FLOAT.x, EAST_FLOAT.z, 4.2, 0.30],
       [PIER.x + 2.2, PIER.z - 1.0, 5.2, 0.28],
     ]) {
       night.addPool(root, px, pz, r,
@@ -1474,7 +1500,7 @@ function pickupPlacements() {
   // — Shinies: worthless, tradeable, and two of the four are out over water. —
   add('shiny', 0, -4.5, 0.07, 5.5, { shinyKind: 'cap' });
   add('shiny', 0, 0.5, RIM - 0.28, -1.5, { inWater: true, shinyKind: 'ring' });
-  add('shiny', 0, 8.0, 0.61, -3.5, { shinyKind: 'key' });
+  add('shiny', 0, 12.6, 1.42, -2.0, { shinyKind: 'key' });
   add('shiny', 0, -1.2, 2.47, -5.0, { shinyKind: 'foil' });
 
   // — The mackerel. Not money; the only way to move a fishmonger. —
@@ -1596,10 +1622,12 @@ function gullPlacements() {
     { x: -9.5, z: -10.2, y: 1.56 },
     { x: 1.5, z: -10.6, y: 1.46 },
     { x: 12.6, z: -2.0, y: 1.36 },
-    { x: -6.0, z: -13.2, y: 1.4 },
-    // West of the mouth. It used to be at x 6.5, which stopped being breakwater
-    // the moment the gap opened there — and a bird's y is authored, so it stood
-    // in mid-air over the channel until the deck check caught it.
+    { x: 9.5, z: -13.2, y: 1.4 },
+    // Both of these are on the arms, and both have been moved once already: a
+    // bird's y is authored, so a gull left where the breakwater used to be
+    // hovers over the channel. The deck check has caught it twice, which is the
+    // rule earning its keep — widening the mouth is exactly the kind of edit
+    // that strands one.
     { x: -17.0, z: -13.2, y: 1.4 },
     { x: -14.0, z: -6.0, y: DECK.float },
     { x: -14.0, z: 4.15, y: 4.1 },

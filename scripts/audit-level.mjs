@@ -921,7 +921,93 @@ export function auditLevel({ level, world, check, deps }) {
       && c.minX < kerb.maxX && c.maxX > kerb.minX
       && c.minZ < kerb.maxZ && c.maxZ > kerb.minZ)
       .map((c) => `(${((c.minX + c.maxX) / 2).toFixed(1)}, ${((c.minZ + c.maxZ) / 2).toFixed(1)})`);
-    check(say('nothing is standing in the edge kerb'), inKerb.length === 0, `(${inKerb.join('; ')})`);
+    /**
+   * No two solid boxes share a horizontal plane where they overlap.
+   *
+   * Two faces at *identical* depth is a coin flip per pixel, and it has now
+   * shipped three times in this project wearing three different costumes: a
+   * staircase down level 1's frontage, a shimmer along the container ship, and a
+   * flickering wheelhouse roof on the wharf's boat. `polygonOffset` cannot help,
+   * because it nudges both by the same amount and leaves them exactly as
+   * coplanar as they were.
+   *
+   * It is invisible in the source, which is the reason for checking it rather
+   * than remembering it: every one of those numbers was the *correct* height for
+   * the part. A roof whose top is the wheelhouse's top, a rubbing band whose top
+   * is the deck line — each is what you would write, and each is a face pair.
+   * The rule is that a part either overlaps what it sits on or stops short of
+   * it, never lands exactly on it.
+   *
+   * Bounded by overlap *area*, because the artifact scales with it: the boat's
+   * roof and walls shared nearly five square metres, while the nest's twigs
+   * share three hundredths of one and are the width of a line on screen.
+   */
+  {
+    /**
+     * Identified by world bounding box, **not by `geometry.type`.**
+     *
+     * The first version of this filtered on `BoxGeometry` and passed on all five
+     * blocks while the bug it was written for was sitting in front of it. `box()`
+     * runs its geometry through `tint()`, which hands back a non-indexed clone
+     * whose type is `BufferGeometry` — so the filter matched nothing at all. That
+     * is the same trap the pool-vs-decal rule fell into when pools became
+     * circles, and it is written down in CLAUDE.md, and I walked into it anyway.
+     * Hence the count assertion below: a rule that can quietly end up with
+     * nothing to check is not a rule.
+     */
+    const boxes = [];
+    world.root.traverse((o) => {
+      if (!o.isMesh) return;
+      const m = Array.isArray(o.material) ? o.material[0] : o.material;
+      if (!m || m.depthWrite === false || m.transparent) return;
+      const bb = new THREE.Box3().setFromObject(o);
+      // Solids only. A plane has zero height, so every plane at one y matches
+      // every other — and flat-on-flat is what the two decal rules above are
+      // for. This one is about things with a thickness sitting on each other.
+      if (!bb.isEmpty() && bb.max.y - bb.min.y > 0.02) boxes.push(bb);
+    });
+    check(say('the coplanar check found geometry to look at'), boxes.length > 40,
+      `(${boxes.length})`);
+
+    const MIN_AREA = 0.5;
+    const shared = [];
+    for (let i = 0; i < boxes.length; i++) {
+      for (let j = i + 1; j < boxes.length; j++) {
+        const a = boxes[i], b = boxes[j];
+        const ox = Math.min(a.max.x, b.max.x) - Math.max(a.min.x, b.min.x);
+        const oz = Math.min(a.max.z, b.max.z) - Math.max(a.min.z, b.min.z);
+        if (ox <= 0 || oz <= 0 || ox * oz < MIN_AREA) continue;
+        /**
+         * **Top against top, and only when one sits on the other.**
+         *
+         * Two solids sharing a *base* at ground level is how every building in
+         * the game stands, and it is invisible — the shared plane is under the
+         * floor. The artifact this rule is about is a lid: a roof whose upper
+         * face lands exactly on the upper face of the walls it caps, both of
+         * them pointing at a camera that looks down. So the test is `max.y`
+         * against `max.y`, and the footprints have to be *stacked* rather than
+         * merely adjacent, which is what the containment ratio says. Neighbours
+         * that happen to touch are not this bug.
+         */
+        const areaA = (a.max.x - a.min.x) * (a.max.z - a.min.z);
+        const areaB = (b.max.x - b.min.x) * (b.max.z - b.min.z);
+        const stacked = (ox * oz) / Math.min(areaA, areaB) > 0.6;
+        // A pair with the *same* vertical extent top and bottom is a shell, not
+        // a stack: the pool's outer and inner walls are concentric cylinders
+        // whose bounding boxes overlap completely and whose surfaces never
+        // meet. A lid always sits at a different height from what it caps.
+        const shell = Math.abs(a.min.y - b.min.y) < 1e-4;
+        if (stacked && !shell && Math.abs(a.max.y - b.max.y) < 1e-4) {
+          shared.push(`y=${a.max.y.toFixed(2)} over ${(ox * oz).toFixed(1)}m² near `
+            + `(${((a.min.x + a.max.x) / 2).toFixed(1)}, ${((a.min.z + a.max.z) / 2).toFixed(1)})`);
+        }
+      }
+    }
+    check(say('no two solid meshes share a horizontal face plane where they overlap'),
+      shared.length === 0, `(${[...new Set(shared)].slice(0, 4).join('; ')})`);
+  }
+
+  check(say('nothing is standing in the edge kerb'), inKerb.length === 0, `(${inKerb.join('; ')})`);
   }
 
   // ── where people stand ────────────────────────────────────────────────────

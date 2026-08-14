@@ -671,7 +671,11 @@ export function buildLevel() {
     // Plinth, shaft, and the moulded band that halves the climb.
     g.add(at(box(2.8, 0.5, 2.8, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }), 0, 0.25, 0));
     g.add(at(box(2.4, 0.22, 2.4, PAL.stone, { up: PAL.stone, down: PAL.shade }), 0, 0.61, 0));
-    g.add(at(cyl(0.78, 0.92, 2.6, 8, PAL.stone, { up: PAL.stone, down: PAL.shade }), 0, 2.0, 0));
+    // 2.56 rather than 2.6, so the shaft's top lands *inside* the band above it
+    // instead of exactly on the band's own top face. Both were at 3.30 — two
+    // coplanar faces over 3.4 m², on the one object in this room a crow lands on
+    // to bank. Found by the audit rule the wharf's flickering wheelhouse earned.
+    g.add(at(cyl(0.78, 0.92, 2.56, 8, PAL.stone, { up: PAL.stone, down: PAL.shade }), 0, 1.98, 0));
     g.add(at(cyl(1.15, 1.15, 0.28, 8, PAL.stoneMid, { up: PAL.stone, down: PAL.shade }), 0, 3.16, 0));
     g.add(at(cyl(0.7, 0.78, 1.6, 8, PAL.stone, { up: PAL.stone, down: PAL.shade }), 0, 4.1, 0));
 
