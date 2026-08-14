@@ -1146,6 +1146,74 @@
     </div>
   </section>
 
+  <section id="mounted">
+    <h2><span class="sec">§14</span> Two things that were never attached to anything</h2>
+    <div class="col">
+      <p>Both found by a playtest on 2026-08-14, both present since the block was built, and both
+      the same shape: geometry at a plausible height that touches nothing, in a room whose every
+      automated check measures the <em>floor</em>.</p>
+
+      <h3>Five wall washers, bolted to nothing</h3>
+      <p>The gallery washers sat at <span class="mono">z&nbsp;=&nbsp;&minus;7.05</span> and the
+      comment above them said <em>&ldquo;a washer bolted to a wall&rdquo;</em>. There is no wall:
+      the back one&rsquo;s near face is at <span class="mono">&minus;11.4</span>, so they hung four
+      and a third metres out in open air. Only the one at
+      <span class="mono">x&nbsp;=&nbsp;&minus;17</span> looked right, and that was luck &mdash; it
+      happens to sit 0.07 behind something unrelated.</p>
+
+      <p><strong>The obvious repair is the wrong one</strong>, and it is worth recording why,
+      because it looks correct on paper. The pools were authored for a wall mount: each spans
+      <span class="mono">z&nbsp;&minus;11.2&nbsp;to&nbsp;0</span>, its back edge 0.2 off the wall
+      face. Moving the fixtures back to match therefore <em>reads</em> as restoring an intent.
+      Raycasting to the camera says otherwise &mdash; 0 of 5 blocked where they were, <strong>5 of
+      5 blocked at the wall</strong>, hidden behind the gallery deck at 4.54. They were out there
+      because it is the only place they can be seen.</p>
+
+      <p>What they were missing was one metre of <em>x</em>. The colonnade is at
+      <span class="mono">[&minus;16,&nbsp;&minus;8,&nbsp;0,&nbsp;8,&nbsp;16]</span> and the washers
+      were at <span class="mono">[&minus;17,&nbsp;&minus;10,&nbsp;&minus;3,&nbsp;4,&nbsp;12]</span>:
+      close enough to look deliberate, never close enough to touch. Their <em>z</em> was right all
+      along &mdash; a washer 0.3 deep at &minus;7.05 embeds 27&nbsp;mm into a column whose face at
+      that height is &minus;7.1725, proud of it without sharing a plane with it, which is the
+      mounting the two free-standing columns&rsquo; sconces already used. Five columns, five
+      washers, nothing added to the room.</p>
+
+      <h3>The east column, growing out of the back bar</h3>
+      <p>Surfaced immediately by the fix above, and not caused by it: putting a light on that
+      column is simply the reason anyone looked at it. The column at
+      <span class="mono">x&nbsp;16,&nbsp;z&nbsp;&minus;7.6</span> and the back bar at
+      <span class="mono">x&nbsp;9..17,&nbsp;z&nbsp;&minus;7.65..&minus;7.15</span> had
+      interpenetrated since the block was built &mdash; through the unit, its three shelves and
+      eleven of its bottles. From most of the room the bar&rsquo;s own bulk hides it; it shows only
+      from the east.</p>
+      <p>The back unit is 6.4 wide at 12.2 now rather than 8 at 13, stopping at 15.4, a tenth clear
+      of the column&rsquo;s face. The bottle pitch tightens from 0.68 to 0.55 so the last three do
+      not walk out through the end. A bar built between two columns is what the room already
+      implied.</p>
+
+      <div class="note">
+        <span class="lbl">Still open: the reception desk crosses the colonnade</span>
+        The desk is 8&nbsp;m wide across <span class="mono">x&nbsp;&minus;14..&minus;6</span>, and
+        the column at &minus;8 stands inside that span &mdash; in the staff alley behind the
+        counter. The gap between the &minus;16 and &minus;8 columns is <strong>7.04&nbsp;m</strong>
+        and the desk needs 8, so it cannot fit between two columns at the current spacing: the desk
+        was built straight through the colonnade. Moving the column is the wrong fix, since it
+        takes its uplight and its washer with it and breaks the 8&nbsp;m rhythm. The candidate is
+        moving the <em>desk</em> back about 1.5&nbsp;m so the colonnade passes in front of it,
+        which is what a hotel lobby actually looks like. Deferred, not solved.
+      </div>
+
+      <div class="note">
+        <span class="lbl">The pattern worth keeping</span>
+        Three defects in this block have now been found by <em>making something visible</em> rather
+        than by a check: the coplanar faces, these washers, and the bar behind them. Each fix
+        revealed the next one. Every rule this block owns looks at the floor &mdash; where a crow
+        lands, where a walker goes, how bright the paving is &mdash; and none of them can see a
+        small pale box high on a dark wall, which reads as a fixture whether or not it is on one.
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <footer>

@@ -1258,6 +1258,62 @@
     </div>
   </section>
 
+  <section id="culled">
+    <h2><span class="sec">&sect;12</span> The pools were drawn all day</h2>
+    <div class="col">
+      <p>Found on 2026-08-14, chasing a reported frame-rate dip at dusk. The dip was not at dusk:
+      there is no dusk-specific rendering step at all &mdash; no shader recompiles, no new draw
+      calls, no time-of-day branch in the frame loop, and day-to-night frame times that differ by
+      noise. <strong>The lights coming on cost essentially nothing.</strong> What the measurement
+      turned up instead was worse.</p>
+
+      <p>A pool is created <span class="mono">transparent: true</span> at
+      <span class="mono">opacity: 0</span>, and three.js draws transparent materials regardless of
+      opacity. So every pool on every block was rasterised and blended across its whole disc <em>from
+      the moment the level loaded</em> &mdash; the entire daylight half of a run spent on fill that
+      adds nothing to any pixel.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Block</th><th>Pools</th><th>Additive coverage</th></tr></thead>
+          <tbody>
+            <tr><td>the block</td><td class="num">9</td><td class="num">402% of viewport</td></tr>
+            <tr><td>the park</td><td class="num">11</td><td class="num">256%</td></tr>
+            <tr><td>the hotel</td><td class="num">12</td><td class="num">279%</td></tr>
+            <tr><td>the lobby</td><td class="num">18</td><td class="num">319%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Two and a half to four screens of additive, depth-write-off overdraw, for something
+      invisible. Pools now carry a <span class="mono">mesh</span> reference and are
+      <span class="mono">visible = false</span> until their level crosses zero.</p>
+
+      <div class="note">
+        <span class="lbl">The counts are the argument, not the milliseconds</span>
+        The first version of this section quoted &ldquo;16% of the lobby&rsquo;s midday frame&rdquo;.
+        That figure came from software rasterisation on a machine two sessions were hammering, and a
+        later measurement on the same setup produced a 4&times; spread across <em>identical</em>
+        scenes with identical draw counts. Wall-clock timing here is not trustworthy for small
+        deltas. What is trustworthy is a count: 18 quads at 319% coverage drawn for something
+        nobody can see is a defect at any millisecond price, and the fix is one line.
+      </div>
+
+      <div class="note">
+        <span class="lbl">The check that guarded it passed for free</span>
+        &ldquo;No pool is drawn in daylight&rdquo; was first asserted <em>after</em> the block&rsquo;s
+        ramp had been driven up and wound back &mdash; and winding back runs
+        <span class="mono">update</span>&rsquo;s own toggle, which sets
+        <span class="mono">visible = false</span> by itself. The assertion was reading a value
+        <span class="mono">update</span> had written, so deleting the line in
+        <span class="mono">addPool</span> that it exists to guard left it green with the overdraw
+        back. It now runs before any <span class="mono">update</span> touches a fresh block, and it
+        was tested against the broken value first: with the line removed it fails on all five
+        blocks, 9/9, 11/11, 12/12, 18/18 and 14/14 drawn at build.
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <footer>
