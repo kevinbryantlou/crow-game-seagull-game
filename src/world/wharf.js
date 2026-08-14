@@ -246,9 +246,23 @@ export function buildLevel() {
   // Working boards down the middle of the quay, and the aprons in front of the
   // three buildings. Decals, in add order, four millimetres apart.
   addDecal(0, 6.0, 150, 5.0, PAL.concreteMid);
-  addDecal(MARKET.x, MARKET.z + 1.0, 13, 9.0, PAL.stone);
-  addDecal(ICEHOUSE.x, ICEHOUSE.z + 1.4, 9, 8.0, PAL.stone);
-  addDecal(OFFICE.x, OFFICE.z + 2.0, 9, 8.0, PAL.stone);
+  /**
+   * The three building aprons, and **all three share one z range.**
+   *
+   * They did not: the market's ran z 2.5–11.5, the ice house's 3.6–11.6 and the
+   * office's 4.2–12.2. Three buildings that now stand on one building line, with
+   * three aprons whose edges miss each other by 0.1 and 0.6 of a metre — which
+   * at this camera is not three buildings, it is six near-parallel lines at
+   * slightly wrong spacings. Reported as "random overlapping lines on the floor",
+   * and that is exactly what near-miss edges are.
+   *
+   * One range, so the frontage reads as one quay with gaps between the sheds
+   * rather than as three unrelated slabs.
+   */
+  const APRON = { z: 7.1, d: 9.0 };
+  addDecal(MARKET.x, APRON.z, 13, APRON.d, PAL.stone);
+  addDecal(ICEHOUSE.x, APRON.z, 9, APRON.d, PAL.stone);
+  addDecal(OFFICE.x, APRON.z, 9, APRON.d, PAL.stone);
   addDecal(-25, 3.0, 8, 7.0, PAL.stone);
   addDecal(PIER.x, 2.2, 7.0, 3.4, PAL.stone);
   addDecal(KID.x + 1.5, 3.2, 9.0, 3.6, PAL.stone);
@@ -601,16 +615,19 @@ export function buildLevel() {
      * no scale: there is nothing to measure the crow against. The park solves the
      * same problem with mown stripes and paths.
      *
-     * Four joint lines, barely a step darker, running the length of the quay. A
-     * bold line here would read as five black bands after dark — the exact
-     * mistake the park's first mower stripes made — so these are the smallest
-     * value step that survives dusk.
+     * **Two lines, and only in front of the aprons.** The first attempt put four
+     * across the quay plus two six-metre cross stubs, and it made the problem it
+     * was meant to solve worse: one of them landed 0.2 m from the working strip's
+     * own edge, another crossed the middle of one apron while sitting exactly on
+     * another's edge, and the stubs read as marks that started nowhere and
+     * stopped nowhere. **A second grid laid over an existing one at a different
+     * spacing is not texture, it is noise.** These two sit in the bare band south
+     * of every apron, where there is nothing for them to disagree with.
+     *
+     * Barely a step darker, too: a bold line here would read as black bands after
+     * dark, which is the mistake the park's first mower stripes made.
      */
-    for (const [i, jz] of [11.6, 13.0, 14.2, 8.2].entries()) {
-      addDecal(0, jz, 150, 0.16, PAL.concreteMid);
-    }
-    // And two cross joints, so the grid is not only horizontal.
-    for (const jx of [-16, 12]) addDecal(jx, 12.4, 0.16, 6.0, PAL.concreteMid);
+    for (const jz of [13.0, 14.4]) addDecal(0, jz, 150, 0.16, PAL.concreteMid);
 
     addDecal(0, 17.5, 150, 5, PAL.concrete);
     const kerb = box(150, 0.34, 1.2, PAL.concreteMid, { up: PAL.concrete, down: PAL.shade });
