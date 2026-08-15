@@ -1820,7 +1820,33 @@ function humanPlacements() {
        * point: you time him rather than learn a cone.
        */
       pos: [2, 0, 10], home: [2, 0, 10],
-      patrol: [[-22, 9], [-10, 11.5], [1, 11], [9, 9.5], [14, 3.0], [21, 11.0], [26, 8.4], [10, 2.6], [-4, 3.4], [-24, 4.0]],
+      /**
+       * He walks the promenade in front of the buildings, not the strip behind
+       * them — and the number that forced this is worth keeping.
+       *
+       * He is the block's clock: *"outside his guard radius for most of the
+       * minute, which is the point — you time him rather than learn a cone."* A
+       * clock you cannot see is furniture. Traced against the real occluder set,
+       * his lap was **31% hidden** from the fixed camera, against the park
+       * keeper's 16% and the lobby bellhop's 5% — twice the worst comparable and
+       * six times the best. The three buildings sit on one line at z 6.2, and he
+       * was walking the gap between them and the water.
+       *
+       * The first correction failed and the failure is the instructive part: I
+       * moved him from z 3.4 to z 5.6 on the theory that the visible band under
+       * the market shed starts at 4.65, and it changed nothing at all — still
+       * 31%. **The threshold is not where the roof begins, it is where the
+       * sightline leaves it.** A ray from chest height climbs 0.616 for every
+       * 0.714 it travels toward the camera, so clearing a 3.9 m eave at z 9.05
+       * needs the walker at z > 5.92 — and z 5.92 is inside the buildings. There
+       * is no strip behind them that works; the only visible route is in front.
+       *
+       * So the lap runs the open quay at z 10.4–12, passing the fronts of all
+       * three pitches close enough to matter, with one dip toward the slipway at
+       * the east end where nothing stands in the way. 0% hidden.
+       */
+      patrol: [[-25, 10.8], [-15.8, 12.0], [-2, 11.2], [10, 10.8], [20, 11.4],
+        [26, 10.0], [26, 6.0], [14, 11.0], [2, 12.0], [-10, 11.2], [-21, 10.4]],
       speed: 1.35, chaseSpeed: 4.1, viewDist: 9.5, viewCos: 0.3,
       guardRadius: 3.4, alertness: 0.95,
     },
