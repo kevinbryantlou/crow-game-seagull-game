@@ -256,7 +256,7 @@
 
 <header class="band">
   <div class="band-inner">
-    <div class="eyebrow">Level Design Brief &nbsp;·&nbsp; The Wharf &nbsp;·&nbsp; Built and verified &mdash; not yet played</div>
+    <div class="eyebrow">Level Design Brief &nbsp;·&nbsp; The Wharf &nbsp;·&nbsp; Built, played across seven rounds, shipped</div>
     <h1 class="title">The<br>Wharf<span class="thin">The Landing</span></h1>
     <p class="deck">A working fish dock at sunset, and the first block in this game whose ground
       is not continuous. Four blocks have taught you where to go. This is the one that charges
@@ -1052,11 +1052,105 @@
     </div>
   </section>
 
+  <section id="played">
+    <h2><span class="sec">§14</span> Seven playtest rounds, and what they took out</h2>
+    <div class="col">
+      <p><strong>Everything above this section describes a level that no longer exists in several
+      of its particulars.</strong> That is deliberate, and it is what the lobby brief's §8 is for:
+      the plan is left standing and the corrections are recorded under it, because the corrections
+      are the useful part. What follows is the register. Where this section and anything above it
+      disagree, <em>this section is right</em>.</p>
+
+      <div class="note">
+        <span class="lbl">The four things above that are now wrong</span>
+        The nest is on a <strong>net loft</strong>, not the beacon — there is no gallery and no
+        lamp-room crown. There are <strong>no floating docks</strong>; both went. The block starts
+        at <strong>dayStart 0.26</strong>, not 0.58. And the backdrop is <strong>open ocean with
+        one container ship</strong>, not a terminal across the water.
+      </div>
+
+      <h3>1 · The lighthouse was a wedding cake</h3>
+      <p>The nest sat on a harbour light: a tower, a 5.2 m gallery skirt, a 3.2 m lamp deck, a
+      glazed corona, and the twigs in the middle of it. Every tier had been added to fix something
+      real — the gallery was widened so a crow could rise past the crown's overhang, the crown
+      widened to clear the twig ring — and the result was absurd. <strong>A shape that grows a tier
+      every time it is corrected is telling you the shape is wrong.</strong></p>
+      <p>The nest is on a fisherman's net loft now: a hut on piles over the water, one flat roof,
+      nothing overhanging it and nothing above it. It keeps what the beacon was carrying for the
+      level — no walking route, so every bank is still a flight out and back over nothing — and it
+      cannot have the arrive-from-underneath bug, because there is open sky over the landing. The
+      lighthouse moved to the harbour mouth, where nothing has to land on it.</p>
+
+      <h3>2 · The water had stopped costing anything</h3>
+      <p>The single most useful finding of the whole round, and it was a regression introduced by
+      the fix above. Moving the nest swapped a narrow shaft for a 5.4 m platform, and it came to
+      rest <strong>0.05 m from the piling cluster, 1.15 m from the lighthouse and 1.20 m from the
+      boat.</strong> The block's entire currency is <em>footing</em>, and the nest had quietly
+      become something you hop to. The teaching five — whose task line is <em>get the five off the
+      far pilings</em> — was 0.80 m from the nest platform, so the lesson fired while the player was
+      already standing at the bank.</p>
+      <p>Nothing in the audit could see it. Every rule in that file is about <em>one object</em>;
+      adjacency is a property of a <em>pair</em>, and it is invisible in a source file where every
+      line describes one thing. There is a gap matrix printed every run now, with the nest's
+      clearance asserted — and it caught two more bad placements while the first was being fixed.</p>
+
+      <h3>3 · The floors, the yard and the corner</h3>
+      <p>Both floating docks went, over two rounds, for one reason: <strong>footing stops being a
+      cost the moment there is something to stand on every four metres.</strong> A float was the
+      least interesting of those things — a flat rectangle at knee height that asks nothing.</p>
+      <p>The east sixth of the block measured dead twice: first as a container yard, then as bare
+      concrete with two lampposts on it — $0.42 of money, nobody in the cast, and the only band of
+      the block with no water in it at all. The harbour has it now, and what remains is a working
+      corner: a slipway into the water, a dinghy hauled out on trestles, a winch, and a sailor
+      pacing it. <em>A dock is people; an empty dock is a diorama.</em></p>
+
+      <h3>4 · A message in a bottle</h3>
+      <p>Measured before it was added: getting wet — 45% speed, three seconds of soaking, the thing
+      this level is <em>about</em> — paid <strong>$1.50 of $64.20</strong>. Two point three per cent
+      of the block for its own signature cost. Six quarters on the bed is a tutorial, not a reason.</p>
+      <p>So there is a $5 bottle floating in the east harbour: at the surface rather than on the
+      bed, which makes it a swim rather than a dive, with nothing to land on within eight metres.
+      Nothing explains why a bottle is worth five dollars and nothing should. It is asserted in the
+      real engine, because every headless rule passes on a bottle nobody can reach — not buried, not
+      hidden, not too near anything, and <span class="mono">inWater</span> exempts it from resting
+      on a deck. It would simply sit there for the whole run.</p>
+
+      <h3>5 · What the frames caught that no number did</h3>
+      <ul>
+        <li><strong>The harbour was landlocked.</strong> Coped on all four sides, it read as a
+          swimming pool with boats in it. There is a 13 m mouth now, west of the loft so a moored
+          boat has a route out — <em>the player not being able to go there is fine; the water
+          looking like it stops there is not.</em></li>
+        <li><strong>Backdrop objects are constrained by height, not distance.</strong> Measured:
+          from the pier the sea is in frame to z&nbsp;=&nbsp;−28 at water level but only to −11.5 at
+          eight metres up. The container terminal's boxes were not floating — they were
+          <em>decapitated</em>, bases in frame and tops cut off.</li>
+        <li><strong>Coplanar faces, five instances across two blocks.</strong> A flickering
+          wheelhouse roof turned out to be four faults stacked, and the rule written for it found a
+          fifth in the shipped lobby. A part either overlaps what it sits on or stops short of it,
+          and never lands exactly on it.</li>
+        <li><strong>A surface can carry one grid.</strong> Three building aprons ran three different
+          z ranges on one building line, and slab joints added at a fourth spacing made it worse. A
+          second grid over an existing one at a different spacing is not texture, it is noise.</li>
+      </ul>
+
+      <h3>What did not change</h3>
+      <p>The goal is still <strong>$40</strong> and the argument in <a href="#ladder">§3</a> still
+      holds — if anything the block is looser at $40 than it was, because the nest is easier to
+      reach than the first build made it. The kid still sits and nobody else does. The market's
+      three-step gradient at one counter is untouched, and a design review called it the
+      best-shaped set piece on the block. The dusk floors were never lowered: the block ships at
+      5th percentile <strong>38 / 35 / 35</strong> on the quay and <strong>38 / 35 / 29</strong>
+      over the water against a floor of 24, with blue over red by 26 — the widest violet margin of
+      any block in the game.</p>
+    </div>
+  </section>
+
 </main>
 
 <footer>
   <span>Small Change · Level 5 · The Wharf</span>
-  <span>$40.00 · five decks · slot 5 · built &amp; verified, not played</span>
+  <span>$40.00 · five decks · slot 5 · played &amp; shipped</span>
 </footer>
 
 </body>
