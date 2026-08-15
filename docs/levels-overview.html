@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<title>Small Change — The Blocks</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  html { -webkit-text-size-adjust: 100%; }
+  :root {
+    --paper:      #E9E5DA;
+    --paper-2:    #DFDACB;
+    --ink:        #141C18;
+    --ink-soft:   #3E4A44;
+    --nickel:     #8B948F;
+    --rule:       #C3BFB1;
+    --enamel:     #1F4D3D;
+    --enamel-2:   #17392E;
+    --brass:      #A87C22;
+    --brass-lit:  #C79A34;
+    --sheen:      #4B4B7A;
+    --band-text:  #EDEAE0;
+    --band-dim:   #9FB5AB;
+    --chip-bg:    #D7D2C2;
+    --shadow:     rgba(20,28,24,.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:     #131815;
+      --paper-2:   #1A211D;
+      --ink:       #E4E2D7;
+      --ink-soft:  #A3ADA6;
+      --nickel:    #7C857F;
+      --rule:      #2C3630;
+      --enamel:    #16332A;
+      --enamel-2:  #102520;
+      --brass:     #D2A644;
+      --brass-lit: #E0B85C;
+      --sheen:     #8A8AC4;
+      --band-text: #E4E2D7;
+      --band-dim:  #7E9A8D;
+      --chip-bg:   #212925;
+      --shadow:    rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:     #131815;
+    --paper-2:   #1A211D;
+    --ink:       #E4E2D7;
+    --ink-soft:  #A3ADA6;
+    --nickel:    #7C857F;
+    --rule:      #2C3630;
+    --enamel:    #16332A;
+    --enamel-2:  #102520;
+    --brass:     #D2A644;
+    --brass-lit: #E0B85C;
+    --sheen:     #8A8AC4;
+    --band-text: #E4E2D7;
+    --band-dim:  #7E9A8D;
+    --chip-bg:   #212925;
+    --shadow:    rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .display {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold",
+                 "Arial Narrow", "Helvetica Neue", sans-serif;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-wrap: balance;
+  }
+  .mono {
+    font-family: Menlo, ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: .82em;
+    letter-spacing: .01em;
+  }
+
+  /* ---- sign band ---- */
+  .band {
+    background: var(--enamel);
+    color: var(--band-text);
+    padding: 3.2rem 1.5rem 2.4rem;
+    border-bottom: 6px solid var(--brass);
+  }
+  .band-inner { max-width: 62rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1.1rem; }
+  .band .eyebrow {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .72rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--band-dim);
+  }
+  h1.title {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: clamp(3rem, 11vw, 6.5rem);
+    line-height: .86;
+    letter-spacing: .005em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  h1.title .thin { display: block; color: var(--brass-lit); }
+  .band .deck {
+    font-size: 1.12rem; max-width: 34rem; color: var(--band-text);
+    opacity: .88; margin: 0;
+  }
+  .facts {
+    display: flex; flex-wrap: wrap; gap: 0 2.2rem;
+    border-top: 1px solid rgba(159,181,171,.28);
+    padding-top: 1rem; margin-top: .4rem;
+  }
+  .facts div { display: flex; flex-direction: column; gap: .1rem; }
+  .facts dt {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .18em; text-transform: uppercase; color: var(--band-dim);
+  }
+  .facts dd { margin: 0; font-size: .95rem; }
+
+  /* ---- document body ---- */
+  main { max-width: 62rem; margin: 0 auto; padding: 0 1.5rem 6rem; }
+  .col { max-width: 38rem; }
+
+  section { padding-top: 3.4rem; }
+  section > * + * { margin-top: 1rem; }
+
+  h2 {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase;
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+    line-height: 1.05; letter-spacing: .015em;
+    margin: 0 0 .2rem; padding-bottom: .55rem;
+    border-bottom: 2px solid var(--ink);
+    display: flex; align-items: baseline; gap: .7rem;
+  }
+  h2 .sec {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .7rem; font-weight: 400; letter-spacing: .12em;
+    color: var(--brass); flex: none;
+  }
+  h3 {
+    font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    font-size: .95rem; margin: 1.8rem 0 .3rem; color: var(--ink);
+  }
+  p { margin: 0; }
+  section p + p { margin-top: .85rem; }
+  a { color: var(--brass); }
+
+  ul, ol { margin: .2rem 0; padding-left: 1.15rem; }
+  li { margin: .3rem 0; }
+  li::marker { color: var(--nickel); }
+
+  strong { font-weight: 700; }
+  em.term { font-style: normal; font-weight: 700; color: var(--sheen); }
+
+  /* ---- exhibits (break the column) ---- */
+  .exhibit { margin: 2rem 0 0; }
+  .exhibit-cap {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--nickel); margin-top: .6rem;
+  }
+  .plate {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    padding: 1.2rem;
+    overflow-x: auto;
+  }
+  .plate svg { display: block; width: 100%; height: auto; min-width: 30rem; }
+
+  /* ---- tables ---- */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--rule); background: var(--paper-2); }
+  table { border-collapse: collapse; width: 100%; min-width: 34rem; font-size: .92rem; }
+  th, td { text-align: left; padding: .6rem .85rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); background: var(--chip-bg); border-bottom: 2px solid var(--ink);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num { font-family: Menlo, ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.val { font-family: Menlo, ui-monospace, monospace; font-variant-numeric: tabular-nums; color: var(--brass); white-space: nowrap; }
+
+  /* ---- key caps ---- */
+  kbd {
+    font-family: Menlo, ui-monospace, monospace; font-size: .74rem;
+    background: var(--chip-bg); border: 1px solid var(--rule);
+    border-bottom-width: 2px; border-radius: 3px;
+    padding: .1rem .38rem; color: var(--ink); white-space: nowrap;
+  }
+
+  /* ---- callout ---- */
+  .note {
+    border-left: 4px solid var(--brass);
+    background: var(--paper-2);
+    padding: .9rem 1.1rem;
+    font-size: .95rem;
+  }
+  .note .lbl {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--brass); display: block; margin-bottom: .25rem;
+  }
+
+  /* ---- scope columns ---- */
+  .scope { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0; border: 1px solid var(--rule); }
+  .scope > div { padding: 1rem 1.15rem; border-right: 1px solid var(--rule); }
+  .scope > div:last-child { border-right: 0; }
+  .scope h4 {
+    font-family: Menlo, ui-monospace, monospace; font-weight: 400;
+    font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+    margin: 0 0 .5rem; color: var(--ink-soft);
+  }
+  .scope ul { padding-left: 1rem; font-size: .9rem; }
+  .scope.in  > div:first-child { background: var(--paper-2); }
+
+  /* ---- milestones ---- */
+  .miles { border-top: 2px solid var(--ink); }
+  .mile {
+    display: grid; grid-template-columns: 5.5rem 1fr; gap: 1.2rem;
+    padding: .85rem 0; border-bottom: 1px solid var(--rule); align-items: baseline;
+  }
+  .mile .m-id {
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; color: var(--brass); padding-top: .15rem;
+  }
+  .mile .m-body strong { display: block; font-family: "Avenir Next Condensed","Arial Narrow",sans-serif; text-transform: uppercase; letter-spacing: .04em; font-size: 1rem; }
+  .mile .m-body span { font-size: .9rem; color: var(--ink-soft); }
+
+  footer {
+    border-top: 2px solid var(--ink); margin-top: 4rem; padding-top: 1rem;
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--nickel);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+  }
+
+  @media (max-width: 40rem) {
+    body { font-size: 16px; }
+    .mile { grid-template-columns: 1fr; gap: .1rem; }
+    .plate svg { min-width: 26rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="band">
+  <div class="band-inner">
+    <div class="eyebrow">Master Outline &nbsp;·&nbsp; Every Block &nbsp;·&nbsp; Five shipped, three proposed</div>
+    <h1 class="title">The<br>Blocks<span class="thin">One crow, eight places</span></h1>
+    <p class="deck">Every level in one document: what it is, what it charges you in, and what it
+      cost to build. Then three that do not exist yet, with the argument for each and an honest
+      note on what would be expensive.</p>
+    <dl class="facts">
+      <div><dt>Shipped</dt><dd>Five · $20 → $40</dd></div>
+      <div><dt>Proposed</dt><dd>Three · not built</dd></div>
+      <div><dt>Session</dt><dd>8 min, every block</dd></div>
+      <div><dt>Live at</dt><dd>beacon2.com/small-change-crow-game</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main>
+
+  <section id="shape">
+    <h2><span class="sec">§0</span> The shape of the set</h2>
+    <div class="col">
+      <p>Eight minutes, one crow, one nest, and a sum of money before the light goes. That loop has
+      not changed since the first block and it is not going to. What changes between levels is the
+      <em>geography</em>, and what the geography charges you for.</p>
+
+      <p>The goal rises five dollars a block. That is deliberately a small step — one you feel in
+      the last minute of a run and never in the first — because the difficulty is not meant to live
+      in the number. It lives in what the level makes expensive.</p>
+
+      <div class="note">
+        <span class="lbl">A description, not a rule</span>
+        Each block so far has charged for something the earlier ones did not: nothing, then being
+        watched, then altitude, then enclosure, then footing. That is an observation about the five
+        that got built. It is <strong>not</strong> a constraint a sixth block has to satisfy, and it
+        would be a bad rule — it would rule out a good level on a technicality.
+      </div>
+    </div>
+
+    <div class="exhibit">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Block</th><th>District</th><th>Goal</th><th>Decks</th><th>Starts</th><th>Charges you in</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td><strong>Small Change</strong></td><td>The block</td><td class="val">$20</td><td class="num">1</td><td class="num">t=0</td><td>nothing — it is the tutorial with a sunset on it</td></tr>
+            <tr><td class="num">2</td><td><strong>The Park</strong></td><td>The Green</td><td class="val">$25</td><td class="num">2</td><td class="num">t=0.20</td><td>social pressure</td></tr>
+            <tr><td class="num">3</td><td><strong>The Hotel (Outside)</strong></td><td>The Vantage</td><td class="val">$30</td><td class="num">4</td><td class="num">t=0.42</td><td>altitude</td></tr>
+            <tr><td class="num">4</td><td><strong>The Hotel (Inside)</strong></td><td>The Atrium</td><td class="val">$35</td><td class="num">3</td><td class="num">t=0.55</td><td>enclosure</td></tr>
+            <tr><td class="num">5</td><td><strong>The Wharf</strong></td><td>The Landing</td><td class="val">$40</td><td class="num">5</td><td class="num">t=0.26</td><td>footing</td></tr>
+            <tr><td class="num">6</td><td>The Night Market <em>(proposed)</em></td><td>—</td><td class="val">$45?</td><td class="num">2?</td><td>—</td><td>schedule</td></tr>
+            <tr><td class="num">7</td><td>The Basin <em>(proposed)</em></td><td>—</td><td class="val">$50?</td><td class="num">4?</td><td>—</td><td>descent</td></tr>
+            <tr><td class="num">8</td><td>Company <em>(proposed)</em></td><td>—</td><td class="val">$55?</td><td class="num">?</td><td>—</td><td>competition</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="exhibit-cap">Exhibit A — the set. Rows 1–5 are shipped and live; 6–8 are
+        arguments, not plans.</div>
+    </div>
+
+    <div class="col">
+      <p>Measured, for scale — these are the numbers <span class="mono">smoke</span> prints every
+      run:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Block</th><th>Meshes</th><th>Colliders</th><th>Money on it</th><th>Unguarded</th><th>Tallest climb</th></tr></thead>
+          <tbody>
+            <tr><td>1 · Small Change</td><td class="num">372</td><td class="num">52</td><td class="num">$33.95</td><td class="num">$0.75</td><td class="num">0.4 m</td></tr>
+            <tr><td>2 · The Park</td><td class="num">454</td><td class="num">57</td><td class="num">$32.00</td><td class="num">$3.85</td><td class="num">1.0 m</td></tr>
+            <tr><td>3 · The Hotel (Outside)</td><td class="num">498</td><td class="num">62</td><td class="num">$54.45</td><td class="num">$7.05</td><td class="num">2.6 m</td></tr>
+            <tr><td>4 · The Hotel (Inside)</td><td class="num">621</td><td class="num">62</td><td class="num">$57.05</td><td class="num">$5.40</td><td class="num">1.7 m</td></tr>
+            <tr><td>5 · The Wharf</td><td class="num">322</td><td class="num">64</td><td class="num">$69.20</td><td class="num">$12.50</td><td class="num">2.5 m</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="exhibit-cap">Exhibit B — the blocks, side by side. The wharf is the smallest in
+        meshes and the richest in money, because a third of it is water.</div>
+    </div>
+  </section>
+
+  <section id="shipped">
+    <h2><span class="sec">§1</span> The five that exist</h2>
+    <div class="col">
+
+      <h3>1 · Small Change — The block · $20 · one deck</h3>
+      <p>A plaza, a café row and a cart corner, flat, starting at the top of the afternoon with the
+      whole sunset ahead. It charges you nothing: every mechanic in the game is taught here and
+      every district has a softer one next door. The nest is on a war memorial you have no business
+      being on.</p>
+      <p><strong>What it cost:</strong> the black-mesh bug that started the whole harness, and the
+      fountain that could be walked into at three headings and climbed out of at none. Its water is
+      still the object every later basin is a copy of.
+      <span class="mono">docs/design-brief.html</span></p>
+
+      <h3>2 · The Park — The Green · $25 · two decks</h3>
+      <p>Written <em>third</em> and slotted second, because the roofline read as too big a leap from
+      the block. Its entire design constraint was to be a small step: one pavilion roof, 1.0 m of
+      unbroken climb, no new verbs. What it spends instead of altitude is <strong>social
+      pressure</strong> — three people standing round one cooler with $10 on and beside it, and no
+      district next door to work instead.</p>
+      <p><strong>What it cost:</strong> the lawn, three times. Painted in tree greens it failed dusk
+      twice over; corrected to pale sage the <em>daylight</em> became a beach. It is the block that
+      proved a large surface must be checked at both ends of the light ramp.
+      <span class="mono">docs/park-brief.html</span></p>
+
+      <h3>3 · The Hotel (Outside) — The Vantage · $30 · four decks</h3>
+      <p>Forecourt, balconies, terrace, roof — a staircase of decks with the nest twelve metres up on
+      a water tank. It spends <strong>altitude</strong>: money is priced by the climb, and a penny in
+      the forecourt costs more to bank than it is worth. One new entity, the gull, because a roof has
+      no cover on it and the danger has to be authored as something.</p>
+      <p><strong>What it cost:</strong> shadow acne read as z-fighting for a week, and the kid became
+      invisible among adults until she was made to <em>sit</em> — which is the silhouette rule every
+      later block has had to defend. <span class="mono">docs/level-2-brief.html</span></p>
+
+      <h3>4 · The Hotel (Inside) — The Atrium · $35 · three decks</h3>
+      <p>The same building through a different door, and the only repeat setting in the game. One
+      room, 44 × 24 m, four walls, every guard sharing it. It spends <strong>enclosure</strong> —
+      and it is only playable because of the trade it pairs with: <em>laterally there is nowhere to
+      run, vertically nobody can follow.</em> The nest sits over the middle of the room, so the
+      safest place is also the most conspicuous.</p>
+      <p><strong>What it cost:</strong> a playtest removed the ceiling, the chandelier and the front
+      door in one round — all three the same note, that this camera sits above the room. It also has
+      the game's only easter egg: a pianist who takes any coin and plays one of three pieces.
+      <span class="mono">docs/lobby-brief.html</span></p>
+
+      <h3>5 · The Wharf — The Landing · $40 · five decks</h3>
+      <p>A quay, one pier, and a scatter of things that float. The first block whose ground is not
+      continuous, so it spends <strong>footing</strong>: water is not a wall and not a fail state, it
+      is a cost — 45% speed, three seconds wet, and a wingbeat you had not planned. The nest is on a
+      net loft standing in open water with no walking route to it.</p>
+      <p><strong>What it cost:</strong> seven playtest rounds. It also pays off the joke the project
+      is named for — the pier belongs to gulls, there are more of them than people, and the seagull
+      option from the original "would you rather" turns up as the setting of the last block.
+      <span class="mono">docs/wharf-brief.html</span></p>
+    </div>
+  </section>
+
+  <section id="proposed">
+    <h2><span class="sec">§2</span> Three that do not exist</h2>
+    <div class="col">
+      <p>Arguments rather than plans. Each is written the way the briefs are: what it charges for,
+      what it would cost, and the thing most likely to be wrong. The mocks are plan sketches for
+      mood and layout — none of this is built, and the numbers are guesses.</p>
+    </div>
+
+    <!-- ─────────────── 6 · THE NIGHT MARKET ─────────────── -->
+    <div class="exhibit">
+      <div class="plate">
+        <svg viewBox="0 0 900 300" role="img" aria-label="The Night Market, in plan">
+          <defs>
+            <linearGradient id="nmsky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#2b2440"/><stop offset="1" stop-color="#6e4a4a"/>
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="900" height="300" fill="url(#nmsky)"/>
+          <rect x="0" y="150" width="900" height="150" fill="#c9bda8" fill-opacity=".55"/>
+          <!-- standing stalls, warm -->
+          <g>
+            <rect x="40" y="120" width="120" height="46" fill="#d95f4c" fill-opacity=".85"/>
+            <rect x="40" y="112" width="120" height="10" fill="#e8ce6e"/>
+            <text x="100" y="150" font-family="Menlo,monospace" font-size="10" fill="#141C18" text-anchor="middle">OPEN</text>
+            <rect x="190" y="120" width="120" height="46" fill="#4a8c6a" fill-opacity=".85"/>
+            <rect x="190" y="112" width="120" height="10" fill="#e8ce6e"/>
+            <text x="250" y="150" font-family="Menlo,monospace" font-size="10" fill="#141C18" text-anchor="middle">OPEN</text>
+            <rect x="340" y="120" width="120" height="46" fill="#8c5fa8" fill-opacity=".85"/>
+            <rect x="340" y="112" width="120" height="10" fill="#e8ce6e"/>
+            <text x="400" y="150" font-family="Menlo,monospace" font-size="10" fill="#141C18" text-anchor="middle">OPEN</text>
+          </g>
+          <!-- half-struck -->
+          <g opacity=".55">
+            <rect x="500" y="140" width="120" height="26" fill="#3f5f8c"/>
+            <text x="560" y="158" font-family="Menlo,monospace" font-size="9" fill="#EDEAE0" text-anchor="middle">STRIKING…</text>
+          </g>
+          <!-- gone: bare trestles -->
+          <g opacity=".38">
+            <rect x="660" y="158" width="120" height="8" fill="#6b5136"/>
+            <text x="720" y="180" font-family="Menlo,monospace" font-size="9" fill="#EDEAE0" text-anchor="middle">GONE — 4m30s</text>
+            <rect x="810" y="158" width="70" height="8" fill="#6b5136"/>
+          </g>
+          <!-- lamps -->
+          <g fill="#f2cf74">
+            <circle cx="175" cy="100" r="6"/><circle cx="325" cy="100" r="6"/><circle cx="475" cy="100" r="6"/>
+            <circle cx="640" cy="106" r="5" fill-opacity=".5"/><circle cx="800" cy="112" r="4" fill-opacity=".25"/>
+          </g>
+          <text x="30" y="230" font-family="Menlo,monospace" font-size="11" fill="#141C18">THE MAP SHRINKS AS THE RUN DOES — west end packs first, east end last</text>
+          <text x="30" y="252" font-family="Menlo,monospace" font-size="10" fill="#3E4A44">the nest is on the clocktower over the square · the richest pitch is the first to fold</text>
+          <path d="M860 285 l-14 -22 h28 z" fill="#141C18"/>
+          <text x="860" y="279" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">CAMERA</text>
+        </svg>
+      </div>
+      <div class="exhibit-cap">Mock — Level 6, The Night Market. Warm stalls still trading, one
+        striking, two already down to bare trestles.</div>
+    </div>
+
+    <div class="col">
+      <h3>6 · The Night Market — currency: <em>schedule</em></h3>
+      <p>A street market at closing time. Stalls come <em>down</em> on a timer — canvas off,
+      trestles folded, the pitch simply gone — so the map shrinks as the run does, and money left on
+      a stall leaves with it. Right now the only thing the clock does is change the light; here it
+      owns the geography. The run stops being a route and becomes an <strong>ordering
+      problem</strong>: the richest pitch is also the first to pack, so the opening decision is
+      which money you are choosing not to get.</p>
+      <p><strong>Why I would build this one first.</strong> It is cheap and it changes something
+      structural. No new verbs, no new entity, and — crucially — no moving colliders: a stall closing
+      is meshes hidden and colliders dropped at a timestamp, which the night-light system already
+      proves is safe to do mid-run. Two risks. Legibility: a player must see a stall <em>going</em>
+      with enough warning to choose, so it wants a visible two-stage tear-down rather than a pop.
+      And it breaks an assumption the harness leans on hard — every rule runs against the world
+      <em>as built</em>, and this is the first block where "as built" is not a fixed thing. The
+      audit would have to run at several times of day, which is a real change to
+      <span class="mono">audit-level.mjs</span> rather than a level-data one.</p>
+    </div>
+
+    <!-- ─────────────── 7 · THE BASIN ─────────────── -->
+    <div class="exhibit">
+      <div class="plate">
+        <svg viewBox="0 0 900 320" role="img" aria-label="The Basin, in section">
+          <rect x="0" y="0" width="900" height="320" fill="#8fb4c4" fill-opacity=".25"/>
+          <!-- terraces, in section -->
+          <rect x="0" y="70" width="900" height="40" fill="#d0c9be"/>
+          <rect x="120" y="110" width="660" height="40" fill="#b8b1a6"/>
+          <rect x="220" y="150" width="460" height="40" fill="#a39c92"/>
+          <rect x="310" y="190" width="280" height="45" fill="#8e877e"/>
+          <rect x="310" y="235" width="280" height="55" fill="#6e6478" fill-opacity=".55"/>
+          <!-- nest at the bottom -->
+          <ellipse cx="450" cy="238" rx="26" ry="8" fill="none" stroke="#8c6e4a" stroke-width="4"/>
+          <text x="450" y="262" font-family="Menlo,monospace" font-size="10" fill="#EDEAE0" text-anchor="middle">NEST — the floor of the dock</text>
+          <!-- money high -->
+          <g fill="#e0b348">
+            <circle cx="80" cy="64" r="5"/><circle cx="180" cy="104" r="5"/><circle cx="700" cy="104" r="5"/>
+            <circle cx="280" cy="144" r="5"/><circle cx="620" cy="144" r="5"/><circle cx="380" cy="184" r="4"/>
+          </g>
+          <text x="30" y="45" font-family="Menlo,monospace" font-size="11" fill="#141C18">EVERYTHING WORTH TAKING IS ABOVE YOU</text>
+          <text x="30" y="300" font-family="Menlo,monospace" font-size="10" fill="#3E4A44">falling is free and uncontrolled · climbing back out costs the bar · every bank is a committed drop</text>
+          <path d="M60 250 l0 -150" stroke="#1e1a24" stroke-width="2" stroke-dasharray="5 5"/>
+          <path d="M60 250 l-5 -12 h10 z" fill="#1e1a24"/>
+          <text x="60" y="272" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">drop</text>
+        </svg>
+      </div>
+      <div class="exhibit-cap">Mock — Level 7, The Basin, drawn in section rather than plan
+        because the section <em>is</em> the level.</div>
+    </div>
+
+    <div class="col">
+      <h3>7 · The Basin — currency: <em>descent</em></h3>
+      <p>A drained dry dock, or a quarry. The nest is at the <em>bottom</em> and everything worth
+      taking is on the terraces above it. Every tool the crow has is built for going up — flapping
+      costs stamina, gliding is cheap, falling is free and uncontrollable — so inverting the shape
+      makes <strong>landing accuracy</strong> the skill instead of climbing endurance. Banking
+      becomes a committed act: you drop into a hole you then have to climb back out of, with the bar
+      to do it or without.</p>
+      <p><strong>The thing most likely to be wrong is the camera</strong>, and it is the lobby's
+      ceiling problem upside down. A pit's floor is hidden by its own near rim: the sightline rises
+      0.616 for every 0.714 it travels toward the camera, so a 4 m-deep hole needs roughly 4.6 m of
+      clear depth in front of it before its floor is visible at all. That rules out a shaft
+      completely and forces a wide, stepped basin — which is fine, because that is what a dry dock
+      looks like, but it means the <em>silhouette</em> has to be prototyped against a real frame
+      before any geometry is drawn. Get that wrong and the nest is invisible from every position a
+      player stands in.</p>
+    </div>
+
+    <!-- ─────────────── 8 · COMPANY ─────────────── -->
+    <div class="exhibit">
+      <div class="plate">
+        <svg viewBox="0 0 900 280" role="img" aria-label="Company — a rival crow">
+          <rect x="0" y="0" width="900" height="280" fill="#e4dacb" fill-opacity=".5"/>
+          <!-- two nests -->
+          <ellipse cx="150" cy="70" rx="34" ry="11" fill="none" stroke="#8c6e4a" stroke-width="5"/>
+          <text x="150" y="46" font-family="Menlo,monospace" font-size="10" fill="#141C18" text-anchor="middle">YOUR NEST</text>
+          <ellipse cx="750" cy="70" rx="34" ry="11" fill="none" stroke="#3c3a63" stroke-width="5"/>
+          <text x="750" y="46" font-family="Menlo,monospace" font-size="10" fill="#3c3a63" text-anchor="middle">ITS NEST</text>
+          <!-- the money in the middle -->
+          <g fill="#e0b348">
+            <circle cx="380" cy="160" r="7"/><circle cx="450" cy="185" r="7"/><circle cx="520" cy="155" r="7"/>
+            <circle cx="420" cy="215" r="6"/><circle cx="490" cy="220" r="6"/>
+          </g>
+          <text x="450" y="255" font-family="Menlo,monospace" font-size="11" fill="#141C18" text-anchor="middle">THE SAME MONEY, AND IT WANTS IT TOO</text>
+          <!-- two birds converging -->
+          <path d="M250 110 L370 155" stroke="#1e1a24" stroke-width="2.5"/>
+          <path d="M370 155 l-13 -3 l4 -11 z" fill="#1e1a24"/>
+          <path d="M650 110 L530 152" stroke="#3c3a63" stroke-width="2.5" stroke-dasharray="6 4"/>
+          <path d="M530 152 l13 -3 l-4 -11 z" fill="#3c3a63"/>
+          <g fill="#1e1a24"><path d="M235 96 l24 0 l-12 16 z"/></g>
+          <g fill="#3c3a63"><path d="M641 96 l24 0 l-12 16 z"/></g>
+          <text x="120" y="200" font-family="Menlo,monospace" font-size="10" fill="#3E4A44">it takes what you leave · it follows what you carry · it is beatable and slightly stupid</text>
+        </svg>
+      </div>
+      <div class="exhibit-cap">Mock — Level 8, Company. The first block where something else on the
+        map has goals rather than a patrol and a cone.</div>
+    </div>
+
+    <div class="col">
+      <h3>8 · Company — currency: <em>competition</em></h3>
+      <p>Another crow, and it wants the same money. It has its own nest, it takes what you leave on
+      the ground, and it follows you when you are carrying. This is the first level where something
+      on the map has <strong>goals</strong> rather than a patrol and a cone, and it makes every
+      earlier mechanic re-read: bait becomes something you can use on a rival, the kid's trade
+      becomes contested, and putting a coin down to do something else stops being safe.</p>
+      <p><strong>This is much more expensive than the other two, and it is the one that could make
+      the game worse.</strong> Every human in this game has an authored <span class="mono">floorY</span>
+      and never leaves it — that is exactly what makes them cheap, predictable and fair. A rival crow
+      needs the crow's own locomotion, pathing in three dimensions, and a decision layer about what
+      to chase. Worse, the block's whole tone is that nothing can really hurt you: there is no fail
+      state and there is not going to be one. A rival that reliably beats you to things would break
+      that, so it would have to be a <em>thief</em> and not an opponent — beatable, a little stupid,
+      and funnier than it is threatening. I would build it last, and I would be prepared to cut it.</p>
+    </div>
+  </section>
+
+  <section id="constraints">
+    <h2><span class="sec">§3</span> What any new block inherits</h2>
+    <div class="col">
+      <p>Whatever gets built next, these are true of it on day one. They are the expensive lessons,
+      and every one of them is in <span class="mono">CLAUDE.md</span> because something broke.</p>
+      <ul>
+        <li><strong>The camera never moves.</strong> 38° down, 25° of yaw, 20° lens. The sightline
+          travels toward +x, +y and +z from every point, so <em>the taller a thing is, the nearer it
+          must be to stay in frame</em>. A great many level-design mistakes are that one fact in
+          disguise.</li>
+        <li><strong>Humans never leave the deck they are authored on.</strong> Cheap, predictable,
+          and the thing the lobby's entire design is built on.</li>
+        <li><strong>Shade is violet, never grey</strong>, flat shading everywhere, three tones per
+          object, no textures, the crow is the darkest thing on screen, nothing is outlined.</li>
+        <li><strong>A large surface is a light-rig decision before it is a colour one</strong>, and
+          a saturated one is too — a saturated hue has two low channels and renders near-black in
+          shade.</li>
+        <li><strong>A surface can carry one grid.</strong> A second at a different spacing is not
+          texture, it is noise.</li>
+        <li><strong>Every water body is the same object</strong> with different numbers: coping at
+          0.62, surface 0.20 below it. Those two are fixed by a pair of assertions that hold hands,
+          not by taste.</li>
+        <li><strong>The dusk floors are floors.</strong> Median 48, 5th percentile 24. They have
+          never been lowered to make a block pass and must not be.</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>Small Change · every block</span>
+  <span>Five shipped · three arguments</span>
+</footer>
+
+</body>
+</html>

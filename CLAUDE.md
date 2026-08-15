@@ -121,7 +121,9 @@ docs/                  design brief + style guide — the spec, written to be ch
                        level-2-brief.html — level 3, the roofline (filename predates the slot)
                        menu-brief.html    — progress, level select and pause: PROPOSED, not built
                        lobby-brief.html   — level 4, the lobby: built, played, revised once
-                       wharf-brief.html   — level 5, the wharf: built and verified, not yet played
+                       wharf-brief.html   — level 5, the wharf: built, played over seven rounds
+                       levels-overview.html — MASTER OUTLINE: all five blocks plus three proposed
+                       harness-brief.html — how smoke and shoot work, and what neither can see
 ```
 
 Pure logic goes in its own module so `smoke.mjs` can test it without a DOM.

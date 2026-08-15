@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<title>Small Change — The Harness</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  html { -webkit-text-size-adjust: 100%; }
+  :root {
+    --paper:      #E9E5DA;
+    --paper-2:    #DFDACB;
+    --ink:        #141C18;
+    --ink-soft:   #3E4A44;
+    --nickel:     #8B948F;
+    --rule:       #C3BFB1;
+    --enamel:     #1F4D3D;
+    --enamel-2:   #17392E;
+    --brass:      #A87C22;
+    --brass-lit:  #C79A34;
+    --sheen:      #4B4B7A;
+    --band-text:  #EDEAE0;
+    --band-dim:   #9FB5AB;
+    --chip-bg:    #D7D2C2;
+    --shadow:     rgba(20,28,24,.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:     #131815;
+      --paper-2:   #1A211D;
+      --ink:       #E4E2D7;
+      --ink-soft:  #A3ADA6;
+      --nickel:    #7C857F;
+      --rule:      #2C3630;
+      --enamel:    #16332A;
+      --enamel-2:  #102520;
+      --brass:     #D2A644;
+      --brass-lit: #E0B85C;
+      --sheen:     #8A8AC4;
+      --band-text: #E4E2D7;
+      --band-dim:  #7E9A8D;
+      --chip-bg:   #212925;
+      --shadow:    rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:     #131815;
+    --paper-2:   #1A211D;
+    --ink:       #E4E2D7;
+    --ink-soft:  #A3ADA6;
+    --nickel:    #7C857F;
+    --rule:      #2C3630;
+    --enamel:    #16332A;
+    --enamel-2:  #102520;
+    --brass:     #D2A644;
+    --brass-lit: #E0B85C;
+    --sheen:     #8A8AC4;
+    --band-text: #E4E2D7;
+    --band-dim:  #7E9A8D;
+    --chip-bg:   #212925;
+    --shadow:    rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .display {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold",
+                 "Arial Narrow", "Helvetica Neue", sans-serif;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-wrap: balance;
+  }
+  .mono {
+    font-family: Menlo, ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: .82em;
+    letter-spacing: .01em;
+  }
+
+  /* ---- sign band ---- */
+  .band {
+    background: var(--enamel);
+    color: var(--band-text);
+    padding: 3.2rem 1.5rem 2.4rem;
+    border-bottom: 6px solid var(--brass);
+  }
+  .band-inner { max-width: 62rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1.1rem; }
+  .band .eyebrow {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .72rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--band-dim);
+  }
+  h1.title {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: clamp(3rem, 11vw, 6.5rem);
+    line-height: .86;
+    letter-spacing: .005em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  h1.title .thin { display: block; color: var(--brass-lit); }
+  .band .deck {
+    font-size: 1.12rem; max-width: 34rem; color: var(--band-text);
+    opacity: .88; margin: 0;
+  }
+  .facts {
+    display: flex; flex-wrap: wrap; gap: 0 2.2rem;
+    border-top: 1px solid rgba(159,181,171,.28);
+    padding-top: 1rem; margin-top: .4rem;
+  }
+  .facts div { display: flex; flex-direction: column; gap: .1rem; }
+  .facts dt {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .18em; text-transform: uppercase; color: var(--band-dim);
+  }
+  .facts dd { margin: 0; font-size: .95rem; }
+
+  /* ---- document body ---- */
+  main { max-width: 62rem; margin: 0 auto; padding: 0 1.5rem 6rem; }
+  .col { max-width: 38rem; }
+
+  section { padding-top: 3.4rem; }
+  section > * + * { margin-top: 1rem; }
+
+  h2 {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase;
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+    line-height: 1.05; letter-spacing: .015em;
+    margin: 0 0 .2rem; padding-bottom: .55rem;
+    border-bottom: 2px solid var(--ink);
+    display: flex; align-items: baseline; gap: .7rem;
+  }
+  h2 .sec {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .7rem; font-weight: 400; letter-spacing: .12em;
+    color: var(--brass); flex: none;
+  }
+  h3 {
+    font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    font-size: .95rem; margin: 1.8rem 0 .3rem; color: var(--ink);
+  }
+  p { margin: 0; }
+  section p + p { margin-top: .85rem; }
+  a { color: var(--brass); }
+
+  ul, ol { margin: .2rem 0; padding-left: 1.15rem; }
+  li { margin: .3rem 0; }
+  li::marker { color: var(--nickel); }
+
+  strong { font-weight: 700; }
+  em.term { font-style: normal; font-weight: 700; color: var(--sheen); }
+
+  /* ---- exhibits (break the column) ---- */
+  .exhibit { margin: 2rem 0 0; }
+  .exhibit-cap {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--nickel); margin-top: .6rem;
+  }
+  .plate {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    padding: 1.2rem;
+    overflow-x: auto;
+  }
+  .plate svg { display: block; width: 100%; height: auto; min-width: 30rem; }
+
+  /* ---- tables ---- */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--rule); background: var(--paper-2); }
+  table { border-collapse: collapse; width: 100%; min-width: 34rem; font-size: .92rem; }
+  th, td { text-align: left; padding: .6rem .85rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); background: var(--chip-bg); border-bottom: 2px solid var(--ink);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num { font-family: Menlo, ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.val { font-family: Menlo, ui-monospace, monospace; font-variant-numeric: tabular-nums; color: var(--brass); white-space: nowrap; }
+
+  /* ---- key caps ---- */
+  kbd {
+    font-family: Menlo, ui-monospace, monospace; font-size: .74rem;
+    background: var(--chip-bg); border: 1px solid var(--rule);
+    border-bottom-width: 2px; border-radius: 3px;
+    padding: .1rem .38rem; color: var(--ink); white-space: nowrap;
+  }
+
+  /* ---- callout ---- */
+  .note {
+    border-left: 4px solid var(--brass);
+    background: var(--paper-2);
+    padding: .9rem 1.1rem;
+    font-size: .95rem;
+  }
+  .note .lbl {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--brass); display: block; margin-bottom: .25rem;
+  }
+
+  /* ---- scope columns ---- */
+  .scope { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0; border: 1px solid var(--rule); }
+  .scope > div { padding: 1rem 1.15rem; border-right: 1px solid var(--rule); }
+  .scope > div:last-child { border-right: 0; }
+  .scope h4 {
+    font-family: Menlo, ui-monospace, monospace; font-weight: 400;
+    font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+    margin: 0 0 .5rem; color: var(--ink-soft);
+  }
+  .scope ul { padding-left: 1rem; font-size: .9rem; }
+  .scope.in  > div:first-child { background: var(--paper-2); }
+
+  /* ---- milestones ---- */
+  .miles { border-top: 2px solid var(--ink); }
+  .mile {
+    display: grid; grid-template-columns: 5.5rem 1fr; gap: 1.2rem;
+    padding: .85rem 0; border-bottom: 1px solid var(--rule); align-items: baseline;
+  }
+  .mile .m-id {
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; color: var(--brass); padding-top: .15rem;
+  }
+  .mile .m-body strong { display: block; font-family: "Avenir Next Condensed","Arial Narrow",sans-serif; text-transform: uppercase; letter-spacing: .04em; font-size: 1rem; }
+  .mile .m-body span { font-size: .9rem; color: var(--ink-soft); }
+
+  footer {
+    border-top: 2px solid var(--ink); margin-top: 4rem; padding-top: 1rem;
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--nickel);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+  }
+
+  @media (max-width: 40rem) {
+    body { font-size: 16px; }
+    .mile { grid-template-columns: 1fr; gap: .1rem; }
+    .plate svg { min-width: 26rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="band">
+  <div class="band-inner">
+    <div class="eyebrow">Engineering Note &nbsp;·&nbsp; The Harness &nbsp;·&nbsp; How this game checks itself</div>
+    <h1 class="title">The<br>Harness<span class="thin">Verify, don't assume</span></h1>
+    <p class="deck">Two scripts, 547 assertions and 18 photographs a run. One of them never
+      draws a pixel and the other drives a real GPU. What each is for, what neither can see, and
+      the bugs that bought every rule in them.</p>
+    <dl class="facts">
+      <div><dt>smoke</dt><dd>651 + 1277 lines · ~2 s · no browser</dd></div>
+      <div><dt>shoot</dt><dd>2835 lines · ~4 min · headless Chrome</dd></div>
+      <div><dt>Assertions</dt><dd>547 per run, across five blocks</dd></div>
+      <div><dt>Frames</dt><dd>18 PNGs, 4 of them measured</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main>
+
+  <section id="why">
+    <h2><span class="sec">§0</span> Why there is a harness at all</h2>
+    <div class="col">
+      <p>It exists because of one bug. Early on, <strong>100 of 351 meshes rendered pure
+      black</strong> and shipped that way, because the game had never actually been looked at. The
+      cause was a single missed return value — <span class="mono">tint()</span> hands back a
+      non-indexed <em>clone</em> for indexed geometry, so a caller that ignores it leaves
+      <span class="mono">vertexColors: true</span> on a mesh with no colour attribute. Every unit
+      test passed. The block was a third black.</p>
+
+      <p>Both scripts exist to close that gap from opposite ends, and the division between them is
+      the whole design: <strong><span class="mono">smoke</span> asks questions that have answers in
+      the data, and <span class="mono">shoot</span> asks questions that only have answers on a
+      screen.</strong></p>
+
+      <div class="note">
+        <span class="lbl">The convention that matters more than either script</span>
+        When a bug is found, <strong>turn it into an assertion rather than just fixing it</strong>.
+        Almost every check described here exists because something real broke. That is why the list
+        is so specific and so strange — it is a scar map, not a test plan.
+      </div>
+    </div>
+  </section>
+
+  <section id="smoke">
+    <h2><span class="sec">§1</span> smoke — the one that never draws</h2>
+    <div class="col">
+      <p><span class="mono">npm run smoke</span>. About two seconds, no browser, no GPU, no
+      renderer. It imports the real game modules under Node with a <strong>twenty-line stub of
+      <span class="mono">document</span></strong> — just enough <span class="mono">canvas</span> for
+      the one place that builds a texture — and then runs the actual physics, collision and level
+      code as plain three.js maths.</p>
+
+      <p>That constraint is deliberate and it is why the file is worth having. Anything it can
+      check, it checks in two seconds with no flake, no timing and no rendering. So the rule for
+      what belongs here is: <em>if it can be answered without pixels, it must be.</em></p>
+
+      <h3>What it covers</h3>
+      <ul>
+        <li><strong>Pure logic suites</strong> — money spelled out in words, the end-of-run rank
+          ladder, saved progress, the sky ramp, the HUD's position filter, and the pianist's
+          rotation. These live in their own modules (<span class="mono">words.js</span>,
+          <span class="mono">rank.js</span>, <span class="mono">save.js</span>) precisely
+          <em>so</em> they can be tested without a DOM.</li>
+        <li><strong>Every level-design rule</strong>, via
+          <span class="mono">audit-level.mjs</span> — 73 checks, run once per entry in
+          <span class="mono">LEVELS</span>. That per-level loop is the single most valuable thing
+          in the harness, and §3 is about why.</li>
+        <li><strong>A simulated minute</strong> of every block: the crow, every human, every bird,
+          stepped at a fixed 60 Hz. It catches NaN, falling through geometry, walkers deadlocked
+          against walls, and birds standing on decks that do not exist.</li>
+      </ul>
+
+      <h3>Things it found that no amount of reading would</h3>
+      <ul>
+        <li>A crow that could enter the fountain at three headings out of 180 and never get out —
+          the basin was twelve boxes approximating a circle, and they met only at their corners.</li>
+        <li>A dollar bill inside a noticeboard, because the ledge's collider sat where the
+          <em>board</em> was rather than where the ledge mesh was. The 0.12 m the ledge stands
+          proud is the entire clearance that bill has.</li>
+        <li>A 4.6 m lamppost standing exactly on the one sightline a coin had to the camera.</li>
+        <li>Two patrol waypoints inside solids, each by less than half a metre, both invisible in
+          the source.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="audit">
+    <h2><span class="sec">§2</span> audit-level — the contract every block signs</h2>
+    <div class="col">
+      <p>This is the middle of <span class="mono">smoke</span>, extracted into its own file when
+      the second block existed. The numbers it closes over — the goal, the water's shape, the
+      nest's footprint — come from the level rather than from a literal, so a rule written for one
+      block is enforced on all of them.</p>
+
+      <p><strong>That last property is where most of its value comes from.</strong> Rule 11 was
+      written for the roofline and caught a real defect on level 1 the same day. The coplanar-face
+      rule was written for the wharf's flickering boat and immediately found a fifth instance on the
+      shipped lobby clock — the object that block banks on.</p>
+
+      <h3>The rules, in the order a level meets them</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Rule</th><th>What it actually prevents</th></tr></thead>
+          <tbody>
+            <tr><td>Nest landing ≥ 2× the nest footprint</td><td>Banking happens under pressure. The last obstacle should never be a pixel-accurate landing.</td></tr>
+            <tr><td>Nothing overlaps the nest</td><td>A wheel's spokes laid eight brass bars across the twig ring. It samples triangle edges, not bounding boxes — a torus's box covers its own hole.</td></tr>
+            <tr><td>No two pickups within a beak-length</td><td>The beak takes the nearest, so closer than 1.2 m is one ambiguous target, not two.</td></tr>
+            <tr><td>Nothing built inside the water</td><td>Relaxed for the wharf to a <em>declared</em> exemption — and the escape test got stronger in the same edit to pay for it.</td></tr>
+            <tr><td>No pickup buried, none hidden from the camera</td><td>A raycast along the one sightline the game ever uses. The camera never rotates, so visibility is a fixed property of position.</td></tr>
+            <tr><td>Everything takeable carries a glint</td><td>The game's only "you can take this" signal. There is no outline shader.</td></tr>
+            <tr><td>Every volume the crow can enter, it can leave</td><td>A grid across the whole basin, four input patterns, from a full bar and an empty one.</td></tr>
+            <tr><td>Nobody stands or walks through solids</td><td>Spawns and patrol legs, checked against the real collision code.</td></tr>
+            <tr><td>A chase can get round every large solid</td><td>Cannot be authored — shooing steers straight at a crow that can stand anywhere. It has to be pathing.</td></tr>
+            <tr><td>No climb longer than 9 m unbroken</td><td>60% of a full stamina bar, because nobody arrives at a climb with a full bar.</td></tr>
+            <tr><td>Everything rests on a deck that exists</td><td>Unfalsifiable on a flat block; the easiest mistake in the file once there are four.</td></tr>
+            <tr><td>Nothing shoves the crow &gt; 0.55 m in a frame</td><td>A clipping report made falsifiable: every collider with air under it, eight headings, three heights.</td></tr>
+            <tr><td>Decals stack, and no two are coplanar</td><td>Identical depth is a coin flip per pixel. <span class="mono">polygonOffset</span> cannot fix it — it nudges both equally.</td></tr>
+            <tr><td>No two solids share a horizontal face plane</td><td>The newest. Invisible in source, because every number involved is the <em>correct</em> height for that part.</td></tr>
+            <tr><td>The nest platform is a flight from everything else</td><td>Also new. Adjacency is a property of a <em>pair</em>, and every line of a level file describes one object.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="shoot">
+    <h2><span class="sec">§3</span> shoot — the one that draws</h2>
+    <div class="col">
+      <p><span class="mono">npm run shoot</span>, with <span class="mono">npm run dev</span> in
+      another shell. Roughly four minutes. It launches headless Chrome with software WebGL
+      (SwiftShader), loads the real page, plays the real game, and writes <strong>18 PNGs</strong>
+      into <span class="mono">shots/</span>.</p>
+
+      <p>It fails on any console error or failed request, which is the cheapest and most valuable
+      thing it does. Beyond that it splits into two kinds of work:</p>
+
+      <h3>Behaviour, in the real engine</h3>
+      <p>Things that need a running game rather than a simulated one. It can place the crow anywhere
+      via <span class="mono">window.__game</span> — dev builds only — and then assert what happens:
+      that a swimming crow can take the bottle floating in the harbour; that the whole of a nest
+      platform is a floor, edges included; that all six legs of the wharf's intended flight path
+      land on a half-empty bar; that trading auto-equips; that a croissant dropped on the mezzanine
+      moves nobody, because birds do not use stairs. It also swaps levels eight times
+      <em>through the menu</em> and asserts the GPU gets its memory back.</p>
+
+      <h3>Pixels, and only three numbers of them</h3>
+      <p>This is the part worth being precise about, because it is the harness's real boundary.
+      Of the 18 frames it writes, <strong>four are measured</strong>, and on those it computes
+      exactly three things over the lower 58% of the frame:</p>
+      <ul>
+        <li><strong>median luminance</strong> — must clear <span class="mono">duskMedianFloor</span> (48)</li>
+        <li><strong>5th-percentile luminance</strong> — must clear <span class="mono">duskShadowFloor</span> (24)</li>
+        <li><strong>average RGB</strong> — only to assert blue beats red, i.e. that shade is still violet</li>
+      </ul>
+      <p>Those three numbers have done a great deal of work. They caught a lawn that was the darkest
+      thing on screen, a navy runner that no amount of lamps could rescue, a road darker than the
+      grass in front of it, and a ninth lamppost that bought two points of median and cost four of
+      5th percentile. They are also the whole of what any frame is <em>tested</em> for.</p>
+
+      <div class="note">
+        <span class="lbl">Two harness bugs worth knowing about, because both printed real numbers</span>
+        <strong>The day was hardcoded.</strong> <span class="mono">shoot</span> computed "60% of the
+        day" from a literal 18 minutes while the test session was 60 seconds, and measured four
+        identical frames at t=1. A harness must ask the game how long the day is.<br><br>
+        <strong>Four blocks of five were photographing dusk before the lights came on.</strong> The
+        ramp takes ~8 s and its clock resets whenever the day is wound back below the trigger; the
+        long settle sat on the <em>middle</em> sample, which is only past the trigger on one block.
+        So the final frame was caught 700 ms into an eight-second fade. It passed for years because
+        four blocks are bright enough unlit.
+      </div>
+    </div>
+  </section>
+
+  <section id="cannot">
+    <h2><span class="sec">§4</span> What neither script can see</h2>
+    <div class="col">
+      <p>The harness captures composition faithfully and <strong>asserts nothing about it</strong>.
+      A frame is checked for brightness, not for whether it looks right. Everything below passed a
+      full green run and was caught by a person:</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fault</th><th>Why the numbers did not move</th></tr></thead>
+          <tbody>
+            <tr><td>A flickering wheelhouse roof</td><td>Two coplanar faces of near-identical brightness. Swapping which wins changes the median by nothing.</td></tr>
+            <tr><td>Two seams at the harbour mouth</td><td>Same — a hairline of near-identical colour.</td></tr>
+            <tr><td>A lamp post hovering 0.8 m off the ground</td><td>Perfectly lit either way. It is a <em>position</em>, and no rule measured that position.</td></tr>
+            <tr><td>A lighthouse plinth overhanging its wall</td><td>Valid geometry, fine luminance, simply wrong-looking.</td></tr>
+            <tr><td>Three floor grids at three spacings</td><td>Every line was a legal, correctly stacked decal. The <em>set</em> was the problem.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p><strong>And two of those are worse than merely unmeasured.</strong> Z-fighting is decided
+      per pixel per frame by depth precision, so a still may show it or may not, and the same scene
+      screenshots differently twice. The flickering roof was invisible in every frame that was read
+      and unmissable the moment the camera moved. <em>A still cannot show a thing that only exists
+      between stills.</em></p>
+
+      <p>This is exactly why <span class="mono">CLAUDE.md</span> says <strong>read the PNGs</strong>:
+      the harness writes evidence it is not able to interpret. The honest summary of the division of
+      labour is that the scripts prove the level is <em>correct</em>, and only a person can tell you
+      it is <em>good</em> — or that it is quietly shimmering.</p>
+
+      <div class="note">
+        <span class="lbl">The one gap with an obvious fix, not yet built</span>
+        A short video capture, or two frames of the same scene diffed against each other, would
+        catch z-fighting mechanically — it is the one fault class that is <em>defined</em> by
+        changing between frames. Everything else on that list needs an eye.
+      </div>
+    </div>
+  </section>
+
+  <section id="tripwires">
+    <h2><span class="sec">§5</span> The cheats, and the three tripwires on each</h2>
+    <div class="col">
+      <p>Three constants at the top of <span class="mono">main.js</span>, all
+      <span class="mono">null</span> in normal play. They exist because some things cannot be
+      checked at full speed: <span class="mono">TEST_TRADE_PAYOUT</span> makes one trade clear the
+      goal, <span class="mono">TEST_SESSION_SECONDS</span> shortens the day so a full dusk fits in a
+      minute, and <span class="mono">TEST_TIME_OF_DAY</span> <em>pins</em> the light so one hour of
+      the evening can be walked around.</p>
+
+      <p>Any of them shows a red <strong>TEST MODE</strong> badge, prints a banner in
+      <span class="mono">smoke</span>, and logs a startup warning — three independent tripwires, and
+      the banner matches any <span class="mono">TEST_</span> prefix so a fourth cheat is covered
+      automatically. <span class="mono">shoot</span> additionally <strong>refuses to run</strong>
+      while the clock is pinned, because every dusk sample would otherwise photograph one hour and
+      report it as three. A green run with no dusk coverage is worse than a red one.</p>
+
+      <p>One consequence worth stating for anyone verifying a deploy: <strong>the TEST MODE strings
+      are always compiled into the bundle</strong> and only fire when a constant is non-null. So
+      grepping a production bundle for them reports a false alarm every time. Load the page and read
+      <span class="mono">#testmode.hidden</span> instead.</p>
+    </div>
+  </section>
+
+  <section id="using">
+    <h2><span class="sec">§6</span> Using it</h2>
+    <div class="col">
+      <div class="miles">
+        <div class="mile"><div class="m-id">constantly</div><div class="m-body"><strong>npm run smoke</strong><span>Two seconds, no browser. Run it after every edit — it is cheap enough that there is no reason not to.</span></div></div>
+        <div class="mile"><div class="m-id">milestones</div><div class="m-body"><strong>npm run shoot</strong><span>Four minutes, needs <span class="mono">npm run dev</span> alongside. Then <em>read the PNGs</em> — that is not optional, it is the half of the job the script cannot do.</span></div></div>
+        <div class="mile"><div class="m-id">before shipping</div><div class="m-body"><strong>shoot against the deployed bundle</strong><span>Built from a detached worktree, served Vercel-style at the <strong>no-slash</strong> URL. That run has no <span class="mono">window.__game</span>, so it exercises the shipped code path — and the no-slash form is the one that catches relative asset paths 404ing.</span></div></div>
+      </div>
+
+      <p>Two failure modes to recognise rather than debug. A run where every dusk sample reports a
+      median of exactly <strong>40</strong> is a frozen loading screen — that is
+      <span class="mono">#16332a</span>, the loading card's own colour — and it means the page never
+      booted; re-run it. And wall-clock timing on a machine also running a browser game is not
+      trustworthy: identical scenes have measured a 4× spread, once reporting a median above its own
+      p90. Draw calls and triangle counts are deterministic; milliseconds are not.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>Small Change · The Harness</span>
+  <span>547 assertions · 18 frames · 4 measured</span>
+</footer>
+
+</body>
+</html>
