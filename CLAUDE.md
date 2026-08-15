@@ -624,6 +624,16 @@ once per entry in `LEVELS`:
   eyeballed.
 - **Nothing is standing in the edge kerb.**
 
+- **A surface can carry one grid.** The wharf's three building aprons ran three
+  different z ranges on one building line, so their edges missed each other by
+  0.1 and 0.6 of a metre — and slab joints added later at a fourth spacing made
+  it worse rather than better. Reported as "random overlapping lines on the
+  floor", which is exactly what near-miss edges are: exact alignment reads as one
+  line and a clear gap reads as two, but a tenth of a metre apart reads as a
+  mistake, because it is one. **A second grid laid over an existing one at a
+  different spacing is not texture, it is noise.** Align the edges or do not draw
+  the second one.
+
 - **Two solids must never share a horizontal face plane where they overlap.** A
   roof whose top lands exactly on the top of the walls it caps is two faces at
   identical depth, which is a coin flip per pixel — reported three times now as a
