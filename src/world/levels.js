@@ -586,7 +586,7 @@ export const LEVELS = [
      *
      * $64.20 exists here, so $40 is 62% of it: looser than the park's 76%, a
      * shade tighter than the block's and the lobby's 61%. If it grinds, it will
-     * grind because a round trip to the beacon is longer than a climb to a
+     * grind because a round trip to the loft is longer than a climb to a
      * chandelier and you pay it on every bank — which is the counter-argument,
      * and it is one line to reverse.
      */
@@ -616,7 +616,7 @@ export const LEVELS = [
      * On the quay by the kid, looking straight out over the water.
      *
      * The opening frame has to carry the block in one picture: the harbour, the
-     * boats on it, the beacon with the nest standing in open water, the kid on
+     * boats on it, the net loft with the nest on its roof out in open water, the kid on
      * her crate at the edge of it, and no way to walk to the middle of any of
      * that. It took a screenshot to get right. At [6, 0, 10] the whole frame
      * was the ice house — the building sat between the crow and the camera and
@@ -642,8 +642,8 @@ export const LEVELS = [
        *
        * Observed rather than banked, like the park's cooler and the lobby's
        * bell: the risk is in the getting there. Whether you make it back to the
-       * beacon carrying it is a separate problem and the level is happy to let
-       * you find that out.
+       * loft carrying it is a separate problem and the level is happy to let you
+       * find that out.
        */
       { id: 'piling', text: 'Get the five off the far pilings', when: (g) => !!g.crow.carried?.onPiling },
       { id: 'trade', text: 'Trade something shiny' },

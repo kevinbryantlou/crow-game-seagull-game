@@ -690,12 +690,9 @@ once per entry in `LEVELS`:
   peak 0.06 through at 5% of its fade while peak 1.0 was correct by coincidence,
   which is backwards: the dim ones are the ground pools carrying the median. It
   had no measurable effect only because the rest of the ramp completes during the
-  screenshot round-trip. Three bugs of this family landed in one week — a check
-  reading a value something else had already written, one reading a value not
-  written yet, and one reading the right value against the wrong yardstick. **All
-  three print a real number that means nothing**, which is what makes them
-  survive review; the tell in each case was deleting the guarded line and
-  watching the check stay green.
+  screenshot round-trip. **A check like this prints a real number that means
+  nothing**, which is what lets it survive review; the tell is deleting the line
+  the check guards and watching it stay green.
 - **Fix the measurement, then tune.** The wharf's water emissive was set to 0.72
   against the broken measurement above; with it fixed, that rendered the harbour
   as milky near-white and cost 14 points of blue-over-red. It is 0.30. This is

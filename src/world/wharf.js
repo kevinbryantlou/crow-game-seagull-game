@@ -79,7 +79,7 @@ const MOLE = { x: -2, z: -13.25, w: 64, d: 1.4 };
  *
  * Kept inside the basin's own width (x -18..14) so the opening is a gap in the
  * *basin's* north edge rather than a notch beyond the corner of it, and east of
- * the beacon so the block's focal object is not standing in front of the hole.
+ * the loft so the block's focal object is not standing in front of the hole.
  */
 const MOUTH = { minX: -10, maxX: 3 };
 const RIM = 0.62;          // coping top, and the pier deck
@@ -93,7 +93,7 @@ const BED = 0.06;
  * and the climbing is the difficulty; these are close together — the tallest
  * unbroken climb to the nest is 3.1 m against a 9 m rule — because they are
  * *boats*, and what is hard about them is the water in between. You climb this
- * block by hopping: pier, boat, wheelhouse, beacon.
+ * block by hopping: pier, boat, wheelhouse, loft.
  */
 export const DECK = {
   quay: 0,
@@ -669,7 +669,7 @@ export function buildLevel() {
      * Two deck lights, and they are 0.95 m tall on purpose.
      *
      * The pier needs light of its own — it is the one walkable thing out over
-     * the water and the beacon is nine metres away — but a lamppost at this
+     * the water and the loft is nine metres away — but a lamppost at this
      * camera is a pool on the ground *plus* 4.6 m of opaque column and its
      * shadow standing in the frame, which is what cost the park's ninth lamp
      * more than it bought. A knee-high post occludes nothing and lights the
@@ -1483,7 +1483,7 @@ export function buildLevel() {
    * At this camera a lamp is a pool on the ground *plus* a 4.6 m opaque column
    * and its shadow standing in the frame — the park's ninth lamppost bought two
    * points of median and cost four of 5th percentile. The market strip, the ice
-   * house door, the boat's deck light and the beacon do most of the work here;
+   * house door, the boat's deck light and the loft's lamp do most of the work here;
    * these fill the gaps between them.
    */
   addLamp(-27.5, 9.5);
@@ -1661,7 +1661,7 @@ function addFarShore({ root, night }) {
    * **The height is the constraint, not the distance, and that is the whole
    * lesson of this backdrop.** Measured from the running game: from the pier the
    * sea is in frame out to z = −28 at water level but only to z = −11.5 at eight
-   * metres up; from the beacon, −36.5 and −20. So *the taller a thing is, the
+   * metres up; from the loft, −36.5 and −20. So *the taller a thing is, the
    * nearer it must be to stay in frame* — and anything that breaks that rule has
    * its base visible and its top cut off, which is precisely why the container
    * terminal read as boxes floating on the water. It was not floating. It was
@@ -1669,7 +1669,7 @@ function addFarShore({ root, night }) {
    *
    * Hence a **low** ship rather than a distant one: hull, a single tier of
    * containers, a short house, nothing above about 7.6 m. At z = −19.5 that is
-   * inside the frame from the beacon, which is where a player goes on every trip
+   * inside the frame from the loft, which is where a player goes on every trip
    * to the nest, and partly cut from the pier — which is what a backdrop is
    * allowed to be. It was 74 m long and 13 m tall first, and it read as a wall
    * with its head off.
@@ -1698,9 +1698,9 @@ function addFarShore({ root, night }) {
  *
  * $64.20 against a $40 goal, so you have to land 62% of it. What is new here is
  * a column the other four blocks do not have: money that **nobody owns and you
- * still cannot walk to**. $8.50 of it sits out over the water on a piling cap,
- * a float, a dinghy and the beacon's own gallery, guarded by nothing but the
- * fact that there is no floor between you and it.
+ * still cannot walk to**. It sits out over the water on a piling cap, in the
+ * dinghy, on the loft's own stage and floating in the east harbour, guarded by
+ * nothing but the fact that there is no floor between you and it.
  *
  * That money is what makes the block teachable. A player who has not worked out
  * what this level is about can see a five glinting on a post nine metres out,
