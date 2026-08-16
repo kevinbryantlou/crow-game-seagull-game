@@ -302,8 +302,8 @@
             <tr><td class="num">3</td><td><strong>The Hotel (Outside)</strong></td><td>The Vantage</td><td class="val">$30</td><td class="num">4</td><td class="num">t=0.42</td><td>altitude</td></tr>
             <tr><td class="num">4</td><td><strong>The Hotel (Inside)</strong></td><td>The Atrium</td><td class="val">$35</td><td class="num">3</td><td class="num">t=0.55</td><td>enclosure</td></tr>
             <tr><td class="num">5</td><td><strong>The Wharf</strong></td><td>The Landing</td><td class="val">$40</td><td class="num">5</td><td class="num">t=0.26</td><td>footing</td></tr>
-            <tr><td class="num">6</td><td>The Night Market <em>(proposed)</em></td><td>—</td><td class="val">$45?</td><td class="num">2?</td><td>—</td><td>schedule</td></tr>
-            <tr><td class="num">7</td><td>The Basin <em>(proposed)</em></td><td>—</td><td class="val">$50?</td><td class="num">4?</td><td>—</td><td>descent</td></tr>
+            <tr><td class="num">6</td><td>The Container Ship <em>(proposed)</em></td><td>—</td><td class="val">$45?</td><td class="num">3?</td><td>—</td><td>sightlines</td></tr>
+            <tr><td class="num">7</td><td>The Cruise Terminal <em>(proposed)</em></td><td>—</td><td class="val">$50?</td><td class="num">3?</td><td>—</td><td>traffic</td></tr>
             <tr><td class="num">8</td><td>Company <em>(proposed)</em></td><td>—</td><td class="val">$55?</td><td class="num">?</td><td>—</td><td>competition</td></tr>
           </tbody>
         </table>
@@ -393,171 +393,188 @@
     <h2><span class="sec">§2</span> Three that do not exist</h2>
     <div class="col">
       <p>Arguments rather than plans. Each is written the way the briefs are: what it charges for,
-      what it would cost, and the thing most likely to be wrong. The mocks are plan sketches for
-      mood and layout — none of this is built, and the numbers are guesses.</p>
+      what it would cost, and the thing most likely to be wrong. The mocks are sketches for mood and
+      layout — none of this is built, and the numbers are guesses.</p>
+
+      <div class="note">
+        <span class="lbl">The device the next two blocks are built on</span>
+        <strong>Each block's backdrop contains the next block.</strong> The hotel proved it by
+        accident — level 3 is the building from outside, level 4 is the same building from within —
+        and the wharf set it up again on purpose: there is a container ship sitting in its
+        backdrop, out past the breakwater, for a whole level. Going aboard it is <em>earned</em>
+        rather than arbitrary. Do it twice and it stops being a coincidence and starts being how
+        this game moves: <em>you go to the thing you have been looking at.</em>
+      </div>
     </div>
 
-    <!-- ─────────────── 6 · THE NIGHT MARKET ─────────────── -->
+    <!-- ─────────────── 6 · THE CONTAINER SHIP ─────────────── -->
     <div class="exhibit">
       <div class="plate">
-        <svg viewBox="0 0 900 300" role="img" aria-label="The Night Market, in plan">
-          <defs>
-            <linearGradient id="nmsky" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#2b2440"/><stop offset="1" stop-color="#6e4a4a"/>
-            </linearGradient>
-          </defs>
-          <rect x="0" y="0" width="900" height="300" fill="url(#nmsky)"/>
-          <rect x="0" y="150" width="900" height="150" fill="#c9bda8" fill-opacity=".55"/>
-          <!-- standing stalls, warm -->
+        <svg viewBox="0 0 900 300" role="img" aria-label="The Container Ship, in plan">
+          <rect x="0" y="0" width="900" height="300" fill="#7ba6c2" fill-opacity=".35"/>
+          <rect x="60" y="40" width="800" height="215" rx="26" fill="#4a4458"/>
+          <rect x="60" y="40" width="800" height="14" fill="#e4dacb"/>
+          <rect x="60" y="241" width="800" height="14" fill="#e4dacb"/>
           <g>
-            <rect x="40" y="120" width="120" height="46" fill="#d95f4c" fill-opacity=".85"/>
-            <rect x="40" y="112" width="120" height="10" fill="#e8ce6e"/>
-            <text x="100" y="150" font-family="Menlo,monospace" font-size="10" fill="#141C18" text-anchor="middle">OPEN</text>
-            <rect x="190" y="120" width="120" height="46" fill="#4a8c6a" fill-opacity=".85"/>
-            <rect x="190" y="112" width="120" height="10" fill="#e8ce6e"/>
-            <text x="250" y="150" font-family="Menlo,monospace" font-size="10" fill="#141C18" text-anchor="middle">OPEN</text>
-            <rect x="340" y="120" width="120" height="46" fill="#8c5fa8" fill-opacity=".85"/>
-            <rect x="340" y="112" width="120" height="10" fill="#e8ce6e"/>
-            <text x="400" y="150" font-family="Menlo,monospace" font-size="10" fill="#141C18" text-anchor="middle">OPEN</text>
+            <rect x="120" y="70" width="150" height="46" fill="#d07a63"/>
+            <rect x="120" y="126" width="150" height="46" fill="#6f9fc0"/>
+            <rect x="120" y="182" width="150" height="46" fill="#7fb392"/>
+            <rect x="330" y="70" width="150" height="46" fill="#dfb662"/>
+            <rect x="330" y="182" width="150" height="46" fill="#d07a63"/>
+            <rect x="540" y="70" width="150" height="46" fill="#7fb392"/>
+            <rect x="540" y="126" width="150" height="46" fill="#dfb662"/>
+            <rect x="540" y="182" width="150" height="46" fill="#6f9fc0"/>
           </g>
-          <!-- half-struck -->
-          <g opacity=".55">
-            <rect x="500" y="140" width="120" height="26" fill="#3f5f8c"/>
-            <text x="560" y="158" font-family="Menlo,monospace" font-size="9" fill="#EDEAE0" text-anchor="middle">STRIKING…</text>
-          </g>
-          <!-- gone: bare trestles -->
-          <g opacity=".38">
-            <rect x="660" y="158" width="120" height="8" fill="#6b5136"/>
-            <text x="720" y="180" font-family="Menlo,monospace" font-size="9" fill="#EDEAE0" text-anchor="middle">GONE — 4m30s</text>
-            <rect x="810" y="158" width="70" height="8" fill="#6b5136"/>
-          </g>
-          <!-- lamps -->
-          <g fill="#f2cf74">
-            <circle cx="175" cy="100" r="6"/><circle cx="325" cy="100" r="6"/><circle cx="475" cy="100" r="6"/>
-            <circle cx="640" cy="106" r="5" fill-opacity=".5"/><circle cx="800" cy="112" r="4" fill-opacity=".25"/>
-          </g>
-          <text x="30" y="230" font-family="Menlo,monospace" font-size="11" fill="#141C18">THE MAP SHRINKS AS THE RUN DOES — west end packs first, east end last</text>
-          <text x="30" y="252" font-family="Menlo,monospace" font-size="10" fill="#3E4A44">the nest is on the clocktower over the square · the richest pitch is the first to fold</text>
-          <path d="M860 285 l-14 -22 h28 z" fill="#141C18"/>
-          <text x="860" y="279" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">CAMERA</text>
+          <rect x="120" y="116" width="570" height="10" fill="#2b2440" fill-opacity=".55"/>
+          <rect x="120" y="172" width="570" height="10" fill="#2b2440" fill-opacity=".55"/>
+          <rect x="300" y="70" width="10" height="158" fill="#2b2440" fill-opacity=".55"/>
+          <rect x="510" y="70" width="10" height="158" fill="#2b2440" fill-opacity=".55"/>
+          <text x="405" y="124" font-family="Menlo,monospace" font-size="10" fill="#EDEAE0" text-anchor="middle">CANYONS — you cannot see along them</text>
+          <rect x="720" y="70" width="110" height="158" fill="#e4dacb"/>
+          <rect x="726" y="86" width="98" height="16" fill="#f2cf74"/>
+          <text x="775" y="160" font-family="Menlo,monospace" font-size="10" fill="#141C18" text-anchor="middle">THE HOUSE</text>
+          <text x="775" y="176" font-family="Menlo,monospace" font-size="9" fill="#3E4A44" text-anchor="middle">NEST on the funnel</text>
+          <text x="70" y="285" font-family="Menlo,monospace" font-size="11" fill="#141C18">ALTITUDE BUYS INFORMATION, NOT ACCESS — flying up is how you find out where you are</text>
+          <path d="M860 292 l-13 -21 h26 z" fill="#141C18"/>
         </svg>
       </div>
-      <div class="exhibit-cap">Mock — Level 6, The Night Market. Warm stalls still trading, one
-        striking, two already down to bare trestles.</div>
+      <div class="exhibit-cap">Mock — Level 6, aboard the container ship. Stacks make canyons; the
+        gaps between them are the map.</div>
     </div>
 
     <div class="col">
-      <h3>6 · The Night Market — currency: <em>schedule</em></h3>
-      <p>A street market at closing time. Stalls come <em>down</em> on a timer — canvas off,
-      trestles folded, the pitch simply gone — so the map shrinks as the run does, and money left on
-      a stall leaves with it. Right now the only thing the clock does is change the light; here it
-      owns the geography. The run stops being a route and becomes an <strong>ordering
-      problem</strong>: the richest pitch is also the first to pack, so the opening decision is
-      which money you are choosing not to get.</p>
-      <p><strong>Why I would build this one first.</strong> It is cheap and it changes something
-      structural. No new verbs, no new entity, and — crucially — no moving colliders: a stall closing
-      is meshes hidden and colliders dropped at a timestamp, which the night-light system already
-      proves is safe to do mid-run. Two risks. Legibility: a player must see a stall <em>going</em>
-      with enough warning to choose, so it wants a visible two-stage tear-down rather than a pop.
-      And it breaks an assumption the harness leans on hard — every rule runs against the world
-      <em>as built</em>, and this is the first block where "as built" is not a fixed thing. The
-      audit would have to run at several times of day, which is a real change to
-      <span class="mono">audit-level.mjs</span> rather than a level-data one.</p>
+      <h3>6 · The Container Ship — currency: <em>sightlines</em></h3>
+      <p>The ship that has been sitting in the wharf's backdrop all along, boarded. The deck is a
+      grid of stacked containers with alleys between them, and the alleys <em>are</em> the level:
+      the ground is perfectly continuous and you still cannot see where anything is. Flying up
+      shows you the whole board at once — and costs stamina, and puts you above the only cover
+      there is. So the currency is <strong>information</strong>. Every other block has spent
+      something about getting <em>to</em> the money; this one spends knowing where it is.</p>
+      <p><strong>Why it works here and would not work anywhere else:</strong> this camera looks down
+      at 38°, so tall geometry hides the floor behind it. On every previous block that has been a
+      defect to design around — it is what took the lobby's ceiling out and what made the wharf's
+      first backdrop read as floating containers. Here it is the mechanic. The risk is the same
+      fact pointed the other way: canyons deep enough to hide the money will also hide the
+      <em>crow</em>, and a player who cannot see their own bird has stopped playing. The honest
+      guess is stacks two high, not four, with the third tier used only where the alley is wide
+      enough to see into — and that wants a real frame before any geometry is drawn.</p>
     </div>
 
-    <!-- ─────────────── 7 · THE BASIN ─────────────── -->
+    <!-- ─────────────── 7 · THE CRUISE TERMINAL ─────────────── -->
     <div class="exhibit">
       <div class="plate">
-        <svg viewBox="0 0 900 320" role="img" aria-label="The Basin, in section">
-          <rect x="0" y="0" width="900" height="320" fill="#8fb4c4" fill-opacity=".25"/>
-          <!-- terraces, in section -->
-          <rect x="0" y="70" width="900" height="40" fill="#d0c9be"/>
-          <rect x="120" y="110" width="660" height="40" fill="#b8b1a6"/>
-          <rect x="220" y="150" width="460" height="40" fill="#a39c92"/>
-          <rect x="310" y="190" width="280" height="45" fill="#8e877e"/>
-          <rect x="310" y="235" width="280" height="55" fill="#6e6478" fill-opacity=".55"/>
-          <!-- nest at the bottom -->
-          <ellipse cx="450" cy="238" rx="26" ry="8" fill="none" stroke="#8c6e4a" stroke-width="4"/>
-          <text x="450" y="262" font-family="Menlo,monospace" font-size="10" fill="#EDEAE0" text-anchor="middle">NEST — the floor of the dock</text>
-          <!-- money high -->
-          <g fill="#e0b348">
-            <circle cx="80" cy="64" r="5"/><circle cx="180" cy="104" r="5"/><circle cx="700" cy="104" r="5"/>
-            <circle cx="280" cy="144" r="5"/><circle cx="620" cy="144" r="5"/><circle cx="380" cy="184" r="4"/>
+        <svg viewBox="0 0 900 320" role="img" aria-label="The Cruise Terminal, in plan">
+          <rect x="0" y="0" width="900" height="320" fill="#8ab6d8" fill-opacity=".30"/>
+          <rect x="0" y="150" width="900" height="170" fill="#d0c9be" fill-opacity=".85"/>
+          <rect x="0" y="18" width="640" height="120" rx="10" fill="#e4dacb"/>
+          <rect x="0" y="18" width="640" height="16" fill="#3f5f8c"/>
+          <rect x="0" y="122" width="640" height="16" fill="#3f5f8c"/>
+          <g fill="#8fb4c4">
+            <rect x="40" y="48" width="46" height="24"/><rect x="110" y="48" width="46" height="24"/>
+            <rect x="180" y="48" width="46" height="24"/><rect x="250" y="48" width="46" height="24"/>
+            <rect x="320" y="48" width="46" height="24"/><rect x="390" y="48" width="46" height="24"/>
+            <rect x="460" y="48" width="46" height="24"/><rect x="530" y="48" width="46" height="24"/>
           </g>
-          <text x="30" y="45" font-family="Menlo,monospace" font-size="11" fill="#141C18">EVERYTHING WORTH TAKING IS ABOVE YOU</text>
-          <text x="30" y="300" font-family="Menlo,monospace" font-size="10" fill="#3E4A44">falling is free and uncontrolled · climbing back out costs the bar · every bank is a committed drop</text>
-          <path d="M60 250 l0 -150" stroke="#1e1a24" stroke-width="2" stroke-dasharray="5 5"/>
-          <path d="M60 250 l-5 -12 h10 z" fill="#1e1a24"/>
-          <text x="60" y="272" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">drop</text>
+          <rect x="120" y="82" width="380" height="34" fill="#8fb4c4" fill-opacity=".6"/>
+          <text x="310" y="104" font-family="Menlo,monospace" font-size="11" fill="#141C18" text-anchor="middle">POOL DECK · BUFFET · SUN LOUNGERS</text>
+          <text x="580" y="112" font-family="Menlo,monospace" font-size="9" fill="#3E4A44" text-anchor="middle">NEST</text>
+          <circle cx="580" cy="96" r="9" fill="none" stroke="#8c6e4a" stroke-width="3"/>
+          <!-- gangway -->
+          <path d="M300 138 L340 210" stroke="#b8b1a6" stroke-width="22" stroke-linecap="round"/>
+          <text x="390" y="192" font-family="Menlo,monospace" font-size="10" fill="#141C18">THE GANGWAY — everybody funnels here</text>
+          <!-- crowd -->
+          <g fill="#3a2e28">
+            <circle cx="250" cy="230" r="7"/><circle cx="278" cy="244" r="7"/><circle cx="306" cy="232" r="7"/>
+            <circle cx="332" cy="250" r="7"/><circle cx="360" cy="236" r="7"/><circle cx="388" cy="252" r="7"/>
+            <circle cx="220" cy="252" r="7"/><circle cx="416" cy="238" r="7"/><circle cx="180" cy="238" r="7"/>
+          </g>
+          <g fill="#d95f4c"><rect x="470" y="238" width="26" height="18"/><rect x="506" y="244" width="22" height="16"/><rect x="540" y="236" width="24" height="20"/></g>
+          <text x="520" y="278" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">luggage — the only cover on the quay</text>
+          <!-- the container ship, out of bounds -->
+          <rect x="640" y="8" width="260" height="30" fill="#4a4458" fill-opacity=".8"/>
+          <g fill-opacity=".8"><rect x="660" y="0" width="34" height="10" fill="#d07a63"/><rect x="700" y="0" width="34" height="10" fill="#6f9fc0"/><rect x="740" y="0" width="34" height="10" fill="#dfb662"/><rect x="780" y="0" width="34" height="10" fill="#7fb392"/></g>
+          <text x="770" y="52" font-family="Menlo,monospace" font-size="9" fill="#3E4A44" text-anchor="middle">the ship you came in on, two docks over — out of bounds</text>
+          <path d="M860 310 l-13 -21 h26 z" fill="#141C18"/>
         </svg>
       </div>
-      <div class="exhibit-cap">Mock — Level 7, The Basin, drawn in section rather than plan
-        because the section <em>is</em> the level.</div>
+      <div class="exhibit-cap">Mock — Level 7, the cruise terminal. The container ship sits in the
+        backdrop, two docks over: where you were last level, now scenery.</div>
     </div>
 
     <div class="col">
-      <h3>7 · The Basin — currency: <em>descent</em></h3>
-      <p>A drained dry dock, or a quarry. The nest is at the <em>bottom</em> and everything worth
-      taking is on the terraces above it. Every tool the crow has is built for going up — flapping
-      costs stamina, gliding is cheap, falling is free and uncontrollable — so inverting the shape
-      makes <strong>landing accuracy</strong> the skill instead of climbing endurance. Banking
-      becomes a committed act: you drop into a hole you then have to climb back out of, with the bar
-      to do it or without.</p>
-      <p><strong>The thing most likely to be wrong is the camera</strong>, and it is the lobby's
-      ceiling problem upside down. A pit's floor is hidden by its own near rim: the sightline rises
-      0.616 for every 0.714 it travels toward the camera, so a 4 m-deep hole needs roughly 4.6 m of
-      clear depth in front of it before its floor is visible at all. That rules out a shaft
-      completely and forces a wide, stepped basin — which is fine, because that is what a dry dock
-      looks like, but it means the <em>silhouette</em> has to be prototyped against a real frame
-      before any geometry is drawn. Get that wrong and the nest is invisible from every position a
-      player stands in.</p>
+      <h3>7 · The Cruise Terminal — currency: <em>traffic</em></h3>
+      <p>Where the ship sails to, and the most improbable place the crow has been yet: a pool deck.
+      Sun loungers, a buffet nobody is watching, a queue at the gangway, luggage stacked on the
+      quay. The park spent <em>social pressure</em> with three people all looking at one cooler;
+      this is the opposite number — <strong>thirty people looking at nothing</strong>, moving
+      constantly, and money left on every surface because everybody here is on holiday and nothing
+      has been stolen from them in their lives.</p>
+      <p>So the crowd is cover and obstacle at once, and it <em>moves</em>: a route that was clear
+      ten seconds ago is a wall of people now, and the luggage is the only thing on the quay that
+      stays put. That flips the guard model the whole game has run on — for four blocks a person
+      has been a cone to avoid, and here a person is somewhere to hide. The cost is in
+      <span class="mono">stepAround</span>: thirty walkers steering round each other is a great
+      deal more pathing than any block has asked for, and the honest flag is that crowd density is
+      a performance question before it is a design one. <strong>And the container ship sits two
+      docks over in the backdrop</strong> — out of bounds, unreachable, and the place you spent the
+      last level.</p>
     </div>
 
     <!-- ─────────────── 8 · COMPANY ─────────────── -->
     <div class="exhibit">
       <div class="plate">
-        <svg viewBox="0 0 900 280" role="img" aria-label="Company — a rival crow">
-          <rect x="0" y="0" width="900" height="280" fill="#e4dacb" fill-opacity=".5"/>
-          <!-- two nests -->
-          <ellipse cx="150" cy="70" rx="34" ry="11" fill="none" stroke="#8c6e4a" stroke-width="5"/>
-          <text x="150" y="46" font-family="Menlo,monospace" font-size="10" fill="#141C18" text-anchor="middle">YOUR NEST</text>
-          <ellipse cx="750" cy="70" rx="34" ry="11" fill="none" stroke="#3c3a63" stroke-width="5"/>
-          <text x="750" y="46" font-family="Menlo,monospace" font-size="10" fill="#3c3a63" text-anchor="middle">ITS NEST</text>
-          <!-- the money in the middle -->
+        <svg viewBox="0 0 900 260" role="img" aria-label="Company — a rival crow">
+          <rect x="0" y="0" width="900" height="260" fill="#e4dacb" fill-opacity=".5"/>
+          <ellipse cx="150" cy="66" rx="34" ry="11" fill="none" stroke="#8c6e4a" stroke-width="5"/>
+          <text x="150" y="42" font-family="Menlo,monospace" font-size="10" fill="#141C18" text-anchor="middle">YOUR NEST</text>
+          <ellipse cx="750" cy="66" rx="34" ry="11" fill="none" stroke="#3c3a63" stroke-width="5"/>
+          <text x="750" y="42" font-family="Menlo,monospace" font-size="10" fill="#3c3a63" text-anchor="middle">ITS NEST</text>
           <g fill="#e0b348">
-            <circle cx="380" cy="160" r="7"/><circle cx="450" cy="185" r="7"/><circle cx="520" cy="155" r="7"/>
-            <circle cx="420" cy="215" r="6"/><circle cx="490" cy="220" r="6"/>
+            <circle cx="380" cy="150" r="7"/><circle cx="450" cy="175" r="7"/><circle cx="520" cy="145" r="7"/>
+            <circle cx="420" cy="205" r="6"/><circle cx="490" cy="210" r="6"/>
           </g>
-          <text x="450" y="255" font-family="Menlo,monospace" font-size="11" fill="#141C18" text-anchor="middle">THE SAME MONEY, AND IT WANTS IT TOO</text>
-          <!-- two birds converging -->
-          <path d="M250 110 L370 155" stroke="#1e1a24" stroke-width="2.5"/>
-          <path d="M370 155 l-13 -3 l4 -11 z" fill="#1e1a24"/>
-          <path d="M650 110 L530 152" stroke="#3c3a63" stroke-width="2.5" stroke-dasharray="6 4"/>
-          <path d="M530 152 l13 -3 l-4 -11 z" fill="#3c3a63"/>
-          <g fill="#1e1a24"><path d="M235 96 l24 0 l-12 16 z"/></g>
-          <g fill="#3c3a63"><path d="M641 96 l24 0 l-12 16 z"/></g>
-          <text x="120" y="200" font-family="Menlo,monospace" font-size="10" fill="#3E4A44">it takes what you leave · it follows what you carry · it is beatable and slightly stupid</text>
+          <text x="450" y="243" font-family="Menlo,monospace" font-size="11" fill="#141C18" text-anchor="middle">THE SAME MONEY, AND IT WANTS IT TOO</text>
+          <path d="M250 104 L370 145" stroke="#1e1a24" stroke-width="2.5"/>
+          <path d="M370 145 l-13 -3 l4 -11 z" fill="#1e1a24"/>
+          <path d="M650 104 L530 142" stroke="#3c3a63" stroke-width="2.5" stroke-dasharray="6 4"/>
+          <path d="M530 142 l13 -3 l-4 -11 z" fill="#3c3a63"/>
+          <g fill="#1e1a24"><path d="M235 90 l24 0 l-12 16 z"/></g>
+          <g fill="#3c3a63"><path d="M641 90 l24 0 l-12 16 z"/></g>
+          <text x="120" y="196" font-family="Menlo,monospace" font-size="10" fill="#3E4A44">it takes what you leave · it follows what you carry · it is beatable and slightly stupid</text>
         </svg>
       </div>
-      <div class="exhibit-cap">Mock — Level 8, Company. The first block where something else on the
-        map has goals rather than a patrol and a cone.</div>
+      <div class="exhibit-cap">Mock — Company. A system rather than a setting: it could attach to
+        any block in the set.</div>
     </div>
 
     <div class="col">
       <h3>8 · Company — currency: <em>competition</em></h3>
       <p>Another crow, and it wants the same money. It has its own nest, it takes what you leave on
-      the ground, and it follows you when you are carrying. This is the first level where something
-      on the map has <strong>goals</strong> rather than a patrol and a cone, and it makes every
-      earlier mechanic re-read: bait becomes something you can use on a rival, the kid's trade
-      becomes contested, and putting a coin down to do something else stops being safe.</p>
-      <p><strong>This is much more expensive than the other two, and it is the one that could make
-      the game worse.</strong> Every human in this game has an authored <span class="mono">floorY</span>
-      and never leaves it — that is exactly what makes them cheap, predictable and fair. A rival crow
-      needs the crow's own locomotion, pathing in three dimensions, and a decision layer about what
-      to chase. Worse, the block's whole tone is that nothing can really hurt you: there is no fail
-      state and there is not going to be one. A rival that reliably beats you to things would break
-      that, so it would have to be a <em>thief</em> and not an opponent — beatable, a little stupid,
-      and funnier than it is threatening. I would build it last, and I would be prepared to cut it.</p>
+      the ground, and it follows you when you are carrying. The first level where something on the
+      map has <strong>goals</strong> rather than a patrol and a cone, and it makes every earlier
+      mechanic re-read: bait becomes something you can use on a rival, the kid's trade becomes
+      contested, and putting a coin down to do something else stops being safe. It is also the only
+      one of these three that is a <em>system</em> rather than a place — it could be attached to any
+      block in the set, which is either its best property or the reason it never gets built.</p>
+      <p><strong>Much more expensive than the other two, and the one that could make the game
+      worse.</strong> Every human here has an authored <span class="mono">floorY</span> and never
+      leaves it — exactly what makes them cheap, predictable and fair. A rival crow needs the crow's
+      own locomotion, pathing in three dimensions, and a decision layer about what to chase. Worse,
+      the tone of this game is that nothing can really hurt you: there is no fail state and there is
+      not going to be one. A rival that reliably beat you to things would break that, so it would
+      have to be a <em>thief</em> and not an opponent — beatable, a little stupid, and funnier than
+      it is threatening. Build it last, and be prepared to cut it.</p>
+
+      <div class="note">
+        <span class="lbl">Parked, with one finding worth keeping</span>
+        Two earlier proposals came out when the ship chain replaced them. <strong>The Night
+        Market</strong> — stalls packing up on a timer, so the map shrinks as the run does; still
+        the cheapest idea on this page and still available. <strong>The Basin</strong> — a dry dock
+        with the nest at the bottom, spending <em>descent</em>. That one produced a number worth
+        keeping whatever gets built: a pit's floor is hidden by its own near rim, and a 4 m-deep
+        hole needs roughly 4.6 m of clear depth in front of it before the floor is visible at all.
+        Which rules out a shaft in this engine, permanently.
+      </div>
     </div>
   </section>
 
