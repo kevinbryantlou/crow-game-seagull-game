@@ -36,7 +36,6 @@ import * as THREE from 'three';
 import { PAL } from '../render/palette.js';
 import { box, cyl, cone, ico, plane, at, group, mat } from '../render/shapes.js';
 import { NightLights } from '../render/nightlights.js';
-import { WATER_EDGE_PAD } from './collide.js';
 import { makeKit } from './kit.js';
 import { RULES } from './rules.js';
 
@@ -89,14 +88,7 @@ const SEA_Y = -1.6;
 const RAIL_STBD = 11.9;      // the near bulwark, and the block's edge kerb
 const RAIL_PORT = -8.3;
 const HOUSE = { x: -26.5, w: 7.0 };
-/**
- * The washdown tank. Its z is set by the escape harness rather than by the eye:
- * the rim test lays approach runs 3.2m outside the water's *extent* on all four
- * sides and needs twelve of the twenty on standable ground, and the collider is
- * `WATER_EDGE_PAD` wider than the waterline again on top of that. At z 4.5 the
- * starboard approaches landed inside the bulwark and only eight survived.
- */
-const POOL = { x: -13.5, z: 3.4 };
+
 const MAST = { x: 9.0, z: 2.0 };
 const KID = { x: -20.0, z: 9.6 };
 /** The bait anchor — the hatch the bosun works over. The game calls it `cart`. */
@@ -107,6 +99,17 @@ const HATCHES = [
   { x: 1.0, z: 0.5, w: 12.0, d: 15.0 },
   { x: 17.0, z: 0.5, w: 12.0, d: 15.0 },
 ];
+
+/** `?cargo=x,z,tiers,hue;x,z,tiers,hue;…` — dev only. See CARGO below. */
+function cargoOverride() {
+  try {
+    if (!import.meta.env?.DEV || typeof location === 'undefined') return null;
+    const raw = new URLSearchParams(location.search).get('cargo');
+    if (!raw) return null;
+    const out = raw.split(';').filter(Boolean).map((g) => g.split(',').map(Number));
+    return out.every((a) => a.length === 4 && a.every(Number.isFinite)) ? out : null;
+  } catch { return null; }
+}
 
 export function buildLevel() {
   const root = new THREE.Group();
@@ -216,7 +219,13 @@ export function buildLevel() {
     });
   }
 
-  night.add(shipSide, PAL.hullSide, { peak: 0.44, warm: 2.6, delay: 1.0 });
+  /**
+   * Warm, and dimmer than the sea. It was `PAL.hullSide` at 0.44 with the ocean
+   * beside it at 0.42, and at dusk the two came out the same blue — the ship's
+   * own side read as more water. Deck light spilling over a rail is warm light
+   * on grey steel, so that is what it is now, and the hull stays a hull.
+   */
+  night.add(shipSide, PAL.deckWalk, { peak: 0.26, warm: 1.2, delay: 1.0 });
 
   /**
    * The wake and the bow wave — the only thing in frame that says *moving*
@@ -305,7 +314,18 @@ export function buildLevel() {
    * 6.0 x 2.4, so two of them clash unless their centres differ by 6 in x or
    * 2.4 in z.
    */
-  const CARGO = [
+  /**
+   * Overridable from the URL in dev builds, and only so the layout can be
+   * mocked *in the game* rather than in a drawing.
+   *
+   * The first mockup of this was a hand-rolled oblique projection in an SVG,
+   * and it did not reflect the camera the game actually uses — which made it
+   * useless for the one judgement it existed to support. `scripts/cargo-mock.mjs`
+   * drives the real renderer through this hook instead, so what you are looking
+   * at is the block. Same reasoning as `?level=`: a dev affordance, ignored by
+   * a production build because `import.meta.env.DEV` is false there.
+   */
+  const CARGO = cargoOverride() || [
     [-2.0, -4.5, 1, 0], [14.0, -4.0, 1, 2], [20.0, 1.0, 1, 3],
     [27.0, -1.0, 1, 1], [5.0, -5.0, 1, 2], [10.0, 4.5, 1, 3],
   ];
@@ -467,65 +487,25 @@ export function buildLevel() {
   // ══════════════════════════════════════════════════════════════════════════
 
   /**
-   * A rectangular steel deck tank, not a swimming pool.
+   * **No water, and that is a declaration rather than an omission.**
    *
-   * The first build used `kit.addPool`, which is the object every basin in this
-   * game is made of — a circular stone rim with pale coping. On a container
-   * ship it photographed as **an ornamental fountain**, which is exactly what it
-   * is, and it was the first thing a playtest objected to. Nothing round and
-   * stone-rimmed belongs on a working deck.
+   * This block had a circular pool (a fountain on a cargo ship), then a
+   * rectangular steel washdown tank. Both were reaching for something that
+   * belongs on the other five blocks and does not belong here: a working
+   * container deck at sea has nowhere a body of standing water makes sense, and
+   * every attempt to justify one produced an object a playtest read as a pond.
    *
-   * So it is the wharf's box water instead: a welded steel tank with a coaming,
-   * of the sort a ship carries for washdown and fire drill. Same numbers as
-   * every water body in the game — coping 0.62, surface 0.42, bed 0.06 — because
-   * those two are fixed by a pair of assertions that hold hands and not by
-   * taste. `WATER_EDGE_PAD` is why the collider box is 0.6 wider on every side
-   * than the waterline: the crow has to still read as *in* the water while it is
-   * pressed against the inside face, or it loses its float height at the one
-   * moment it needs to climb out.
+   * So the level says `none: true` and `audit-level.mjs` skips the whole water
+   * suite for it — the escape tests, the rim-is-a-wall test, the bird-in-water
+   * test. That machinery is the strongest safety net in the repo and it is not
+   * being weakened: a block that quietly *forgot* to build its fountain still
+   * fails, because opting out has to be typed.
+   *
+   * What it costs is the dive, which is one of the game's six verbs. The block
+   * pays that back with the task it replaces — taking something off the cargo,
+   * which is this level's own thesis rather than a borrowed one.
    */
-  const TANK = { minX: POOL.x - 4.4, maxX: POOL.x + 4.4, minZ: POOL.z - 3.0, maxZ: POOL.z + 3.0 };
-  const RIM = 0.62, SURFACE = RIM - 0.20, BED = 0.06;
-  const FOUNTAIN = {
-    shape: 'box',
-    minX: TANK.minX - WATER_EDGE_PAD, maxX: TANK.maxX + WATER_EDGE_PAD,
-    minZ: TANK.minZ - WATER_EDGE_PAD, maxZ: TANK.maxZ + WATER_EDGE_PAD,
-    x: (TANK.minX + TANK.maxX) / 2,
-    z: (TANK.minZ + TANK.maxZ) / 2,
-    r: Math.min((TANK.maxX - TANK.minX) / 2, (TANK.maxZ - TANK.minZ) / 2),
-    rim: RIM, floor: BED,
-  };
-  {
-    const w = TANK.maxX - TANK.minX, d = TANK.maxZ - TANK.minZ;
-    const cx = FOUNTAIN.x, cz = FOUNTAIN.z;
-    // Four coaming walls, each stopping short of the corner posts rather than
-    // landing flush on them — two solids must never share a face plane.
-    for (const [ox, oz, ww, dd] of [
-      [0, -(d / 2 + 0.2), w + 0.8, 0.4], [0, d / 2 + 0.2, w + 0.8, 0.4],
-      [-(w / 2 + 0.2), 0, 0.4, d + 0.8], [w / 2 + 0.2, 0, 0.4, d + 0.8],
-    ]) {
-      const wall = box(ww, RIM, dd, PAL.deckHatch, { up: PAL.hullSheer, down: PAL.shade });
-      wall.position.set(cx + ox, RIM / 2, cz + oz);
-      root.add(wall);
-      solid(cx + ox, cz + oz, ww, dd, RIM, 0, { tag: 'tank-coaming' });
-      perch(cx + ox, RIM, cz + oz);
-    }
-    const bed = plane(w, d, PAL.poolTile, { receive: true, decal: true });
-    bed.position.set(cx, BED, cz);
-    root.add(bed);
-    const water = new THREE.Mesh(
-      new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2),
-      new THREE.MeshLambertMaterial({
-        color: PAL.poolWater, transparent: true, opacity: 0.72, flatShading: true,
-      }),
-    );
-    water.userData.baseOpacity = 0.72;
-    water.position.set(cx, SURFACE, cz);
-    root.add(water);
-    root.userData.fountainWater = water;
-    night.add(water, PAL.poolWater, { peak: 0.34, warm: 2.6, delay: 1.4 });
-  }
-  night.addPool(root, POOL.x, POOL.z, 5.2, { peak: 0.78, warm: 1.2, delay: 1.4 });
+  const FOUNTAIN = { none: true, shape: 'box', minX: 0, maxX: 0, minZ: 0, maxZ: 0, x: 0, z: 0, r: 0, rim: -99, floor: -100 };
 
   // ══════════════════════════════════════════════════════════════════════════
   // The mast, and the nest on it
@@ -789,7 +769,7 @@ export function buildLevel() {
     root, colliders, occluders, perches,
     nightLights: night,
     fountain: FOUNTAIN,
-    waterDeck: DECK.deck,
+    waterDeck: DECK.deck,   // unused — this block has no water. See FOUNTAIN.
     nest: NEST,
     nestPlatform: 3.2,     // the mast platform
     nestFootprint: 1.5,    // the twig ring itself
@@ -857,23 +837,17 @@ function pickupPlacements({ FOUNTAIN, LASH, WINCH, RACK, MESS, PAINT, FOCSLE, SH
    * neighbouring stack the first time the port side was rearranged.
    */
   const top = (x, z) => (boxTops.find((b) => b.x === x && b.z === z) || { y: 0 }).y;
-  add('coins', 0.60, 14.0, top(14.0, -4.0) + 0.04, -4.0);
-  add('bill1', 1.00, 20.0, top(20.0, 1.0) + 0.04, 1.0);
-  add('coins', 1.55, 5.0, top(5.0, -5.0) + 0.04, -5.0);
+  add('coins', 0.60, 14.0, top(14.0, -4.0) + 0.04, -4.0, { onCargo: true });
+  add('bill1', 1.00, 20.0, top(20.0, 1.0) + 0.04, 1.0, { onCargo: true });
+  add('coins', 1.55, 5.0, top(5.0, -5.0) + 0.04, -5.0, { onCargo: true });
 
-  /**
-   * The tank. Free money, and you have to get in for it.
-   *
-   * Placed by hand inside the waterline rather than on a circle, because the
-   * water is a rectangle now: a ring of coins put one of them 0.2m behind the
-   * starboard coaming, which is 0.62 tall and therefore hides 0.72m of bed
-   * behind it. Every one of these is clear of all four walls.
-   */
+  // — Loose change round the aft deck, where the tank used to be. Free, and
+  //   the only money on the block nobody is anywhere near. —
   for (const [x, z, kind, v] of [
-    [-16.0, 2.0, 'quarter', 0.25], [-14.0, 4.4, 'quarter', 0.25],
-    [-11.5, 1.6, 'dime', 0.10], [-15.5, 5.2, 'quarter', 0.25],
-    [-12.0, 4.8, 'coins', 0.60],
-  ]) add(kind, v, x, FOUNTAIN.rim - 0.28, z, { inWater: true });
+    [-16.0, 2.0, 'quarter', 0.25], [-14.0, 5.4, 'quarter', 0.25],
+    [-11.5, 1.6, 'dime', 0.10], [-17.5, 5.6, 'quarter', 0.25],
+    [-12.0, 6.4, 'coins', 0.60],
+  ]) add(kind, v, x, 0.06, z);
 
   // A five under a shackle on the hatch cover — the weight you shove off first.
   add('bill5', 5.00, SHACKLE.x + 0.34, SHACKLE.y + 0.02, SHACKLE.z, { pinned: true });
@@ -896,7 +870,7 @@ function pickupPlacements({ FOUNTAIN, LASH, WINCH, RACK, MESS, PAINT, FOCSLE, SH
 
   // — Four shinies. Three are somewhere you have to look up to find. —
   add('shiny', 0, 11.4, 0.66, 6.4, { shinyKind: 'ring' });
-  add('shiny', 0, -16.6, FOUNTAIN.rim - 0.28, 3.6, { inWater: true, shinyKind: 'cap' });
+  add('shiny', 0, -19.5, 0.06, 6.6, { shinyKind: 'cap' });
   add('shiny', 0, 27.0, top(27.0, -1.0) + 0.05, -1.0, { shinyKind: 'marble' });
   add('shiny', 0, 26.2, 0.06, -5.4, { shinyKind: 'cap' });
 

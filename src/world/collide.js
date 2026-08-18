@@ -246,6 +246,15 @@ export function hasLineOfSight(cols, ex, ey, ez, px, py, pz, floor = 0) {
 export const WATER_EDGE_PAD = 0.6;
 
 export function inWaterXZ(f, x, z, inset = 0.7) {
+  /**
+   * A block may have no water. Level 6 is a container ship at sea, and the one
+   * thing a working container deck does not have is a pond — every earlier
+   * block's water is an ornamental basin, a duck pond or a harbour, and all of
+   * those belong where they are. The sentinel is `none`, declared by the level
+   * rather than inferred from a missing field, so a block that simply forgot to
+   * build its fountain still fails loudly.
+   */
+  if (!f || f.none) return false;
   if (f.shape === 'box') {
     return x > f.minX + inset && x < f.maxX - inset
       && z > f.minZ + inset && z < f.maxZ - inset;

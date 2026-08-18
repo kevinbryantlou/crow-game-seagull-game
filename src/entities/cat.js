@@ -96,6 +96,7 @@ export class Cat {
     this._target = new THREE.Vector3();
     this._hop = null;
     this._walk = 0;
+    this._moved = 0;
     this.root = new THREE.Group();
     this._build();
     this.root.position.copy(this.pos);
@@ -117,24 +118,34 @@ export class Cat {
     chest.position.set(0.24, 0.27, 0);
     g.add(chest);
     // Head, and the two ears that make it not a loaf of bread.
-    const head = ico(0.135, 0, PAL.catFur, { up: PAL.catFurLit, down: PAL.catFurShade });
+    const head = new THREE.Group();
     head.position.set(0.38, 0.42, 0);
-    g.add(head);
+    head.add(ico(0.135, 0, PAL.catFur, { up: PAL.catFurLit, down: PAL.catFurShade }));
     for (const s of [-1, 1]) {
-      const ear = box(0.07, 0.09, 0.04, PAL.catFurShade, { shadow: false });
-      ear.position.set(0.37, 0.53, s * 0.07);
-      g.add(ear);
+      head.add(at(box(0.07, 0.09, 0.04, PAL.catFurShade, { shadow: false }), -0.01, 0.11, s * 0.07));
     }
-    const muzzle = box(0.09, 0.06, 0.10, PAL.catFurLit, { shadow: false });
-    muzzle.position.set(0.47, 0.39, 0);
-    g.add(muzzle);
-    // Four legs, and the front pair animate.
+    head.add(at(box(0.09, 0.06, 0.10, PAL.catFurLit, { shadow: false }), 0.09, -0.03, 0));
+    g.add(head);
+    this.head = head;
+    /**
+     * Four legs, each on a pivot at the shoulder rather than a bare box.
+     *
+     * The first build bobbed the legs' `y` by three centimetres and called it
+     * animation, which read — correctly — as a cat gliding across the deck with
+     * its paws nailed to it. Every other character in this game swings
+     * something. A leg has to rotate about the top of itself, so the mesh hangs
+     * *below* its own pivot and the pivot is what turns.
+     */
     this.legs = [];
     for (const [sx, sz] of [[1, -1], [1, 1], [-1, -1], [-1, 1]]) {
+      const pivot = new THREE.Group();
+      pivot.position.set(sx * 0.2, 0.26, sz * 0.09);
       const leg = box(0.08, 0.26, 0.08, PAL.catFurShade);
-      leg.position.set(sx * 0.2, 0.13, sz * 0.09);
-      g.add(leg);
-      this.legs.push(leg);
+      leg.position.y = -0.13;
+      pivot.add(leg);
+      g.add(pivot);
+      // Diagonal pairs move together, which is what a walking cat does.
+      this.legs.push({ pivot, phase: (sx * sz > 0) ? 0 : Math.PI });
     }
     /**
      * The tail, and it is doing the most work of anything here.
@@ -153,6 +164,28 @@ export class Cat {
     this.tail.position.set(-0.28, 0.28, 0);
     g.add(this.tail);
     this.body = body;
+
+    /**
+     * The same alphabet as a person, spoken by an animal.
+     *
+     * Humans put a `?` and a `!` over their heads; without one the cat was the
+     * only thing on the block that could come for you and give no sign it had
+     * noticed. It uses the same billboarded-glyph system so the player does not
+     * have to learn a second language — and its own ginger, at three quarters
+     * the size, so it is legible as *the cat* rather than as another guard.
+     */
+    const cvs = document.createElement('canvas');
+    cvs.width = cvs.height = 128;
+    this._markCanvas = cvs;
+    this._markTex = new THREE.CanvasTexture(cvs);
+    this.marker = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: this._markTex, transparent: true, depthTest: false,
+    }));
+    this.marker.scale.set(0.38, 0.38, 0.38);
+    this.marker.position.y = 0.98;
+    this.marker.visible = false;
+    g.add(this.marker);
+    this._markGlyph = null;
   }
 
   /** Where the cat can stand: the deck under a point, on any level. */
@@ -279,11 +312,13 @@ export class Cat {
       return 0;
     }
     this._walk += step * 5.5;
+    this._moved = step;
     return step;
   }
 
   update(dt, crow, game) {
     this._cols = game.world.colliders;
+    this._moved = 0;
     this.stateT += dt;
     if (this.cooldown > 0) this.cooldown -= dt;
 
@@ -308,6 +343,8 @@ export class Cat {
       this.root.position.set(this.pos.x, base - (peak - this._hop.top) * across, this.pos.z);
       this.root.rotation.y = this.heading;
       this._animate(dt, 1);
+      // Airborne: `_animate` writes root.y, so the arc has to be re-applied.
+      this.root.position.y = base - (peak - this._hop.top) * across;
       if (t >= 1) {
         this.floorY = this._hop.top;
         this.pos.y = this.floorY;
@@ -453,24 +490,82 @@ export class Cat {
     this.root.position.set(this.pos.x, this.floorY, this.pos.z);
     this.root.rotation.y = this.heading;
     this._animate(dt, this.state === STALK ? 1 : 0);
+    // `!` the moment it commits, and nothing at all otherwise — a calm cat is
+    // just a cat, and that is half of why the tell is worth having.
+    this._setMarker(this.state === STALK ? '!' : null);
   }
 
   /**
-   * Two lines of animation. The legs swing, and the tail says what the cat is
-   * thinking — up and swaying while it prowls, flat and still while it stalks.
+   * The gait, and it is four things moving rather than one.
+   *
+   * The first version bobbed the legs' height and swayed the tail, which from
+   * thirty metres is a cat sliding across the deck with its paws fixed to it —
+   * and it was the only mover in the game not doing a proper cycle. What sells
+   * a four-legged walk at this distance is the *diagonal pair*: front-left and
+   * back-right swing together, then the other two. Everything else here is
+   * secondary motion hung off that one phase.
+   *
+   * `_walk` advances with distance travelled, not with time, so a cat that has
+   * stopped stops moving its legs — the mistake that makes a character look
+   * like it is on a treadmill.
+   *
+   * @param {number} stalking  0 while prowling, 1 while hunting.
    */
   _animate(dt, stalking) {
-    for (let i = 0; i < this.legs.length; i++) {
-      const ph = this._walk + (i % 2) * Math.PI;
-      this.legs[i].position.y = 0.13 + Math.abs(Math.sin(ph)) * 0.03;
+    const ph = this._walk;
+    const moving = this._moved > 0.001;
+    for (const { pivot, phase } of this.legs) {
+      // Swing fore and aft about the shoulder. Flat when standing still.
+      pivot.rotation.z = moving ? Math.sin(ph + phase) * 0.62 : 0;
     }
+    // The body rises on the push-off and dips as the legs pass under it — twice
+    // per stride, which is what keeps it from reading as a hovering box.
+    const bob = moving ? Math.abs(Math.sin(ph)) * 0.035 : 0;
+    // Stalking is *low*: the whole animal drops and the stride shortens.
+    const crouch = stalking * 0.07;
+    this.root.position.y = this.floorY + bob - crouch;
+    if (this.body) this.body.rotation.z = moving ? Math.sin(ph * 2) * 0.05 : 0;
+    // The head leads the turn and drops when hunting.
+    if (this.head) {
+      this.head.position.y = 0.42 - crouch * 0.6 + (moving ? Math.sin(ph * 2 + 1) * 0.012 : 0);
+      this.head.rotation.z = -stalking * 0.18;
+    }
+    /**
+     * And the tail, which is the only part that reads *state* rather than
+     * motion: up and swaying while it prowls, low and still while it stalks.
+     * That is a real cat and it is also the cheapest possible tell.
+     */
     const want = stalking ? -0.35 : 0.55;
-    this.tail.rotation.z = (this.tail.rotation.z || 0) + (want - this.tail.rotation.z) * Math.min(1, dt * 4);
-    this.tail.rotation.y = stalking ? 0 : Math.sin(this._walk * 0.5) * 0.35;
-    this.root.position.y += stalking ? 0 : Math.abs(Math.sin(this._walk)) * 0.015;
+    this.tail.rotation.z += (want - this.tail.rotation.z) * Math.min(1, dt * 4);
+    this.tail.rotation.y = stalking ? 0 : Math.sin(ph * 0.5) * 0.35;
   }
 
+  _setMarker(glyph) {
+    if (this._markGlyph === glyph) return;
+    this._markGlyph = glyph;
+    const c = this._markCanvas.getContext('2d');
+    c.clearRect(0, 0, 128, 128);
+    if (glyph) {
+      c.font = 'bold 104px Menlo, monospace';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.lineWidth = 12;
+      c.strokeStyle = 'rgba(15,13,20,0.85)';
+      c.strokeText(glyph, 64, 68);
+      c.fillStyle = '#e8ab74';
+      c.fillText(glyph, 64, 68);
+    }
+    this._markTex.needsUpdate = true;
+    this.marker.visible = !!glyph;
+  }
+
+  /**
+   * The canvas texture is the one GPU resource a cat owns outright — the same
+   * per-entity `CanvasTexture` a Human's marker is, and stranded on a level
+   * swap for the same reason if nothing frees it.
+   */
   dispose() {
+    this._markTex?.dispose();
     this.root.traverse((o) => { if (o.isMesh) o.geometry.dispose(); });
   }
 }

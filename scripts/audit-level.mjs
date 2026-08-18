@@ -40,7 +40,18 @@ export function auditLevel({ level, world, check, deps }) {
   check(say('every collider is finite'), world.colliders.every(
     (c) => [c.minX, c.maxX, c.minZ, c.maxZ, c.top, c.bottom].every(Number.isFinite)));
   check(say('nest group exists'), !!world.root.userData.nestGroup);
-  check(say('water surface exists'), !!world.root.userData.fountainWater);
+  /**
+   * Water is optional, and opting out is a declaration.
+   *
+   * Every block up to the ship has a body of water and the escape suite below
+   * is the strongest safety net in this file. A container deck at sea has
+   * nowhere a pond belongs, so level 6 sets `fountain.none` — and the rule
+   * becomes "a block either has water that works, or says out loud that it has
+   * none". A level that quietly forgot to build its fountain still goes red.
+   */
+  const DRY = !!world.fountain?.none;
+  check(say(DRY ? 'a dry block declares itself dry' : 'water surface exists'),
+    DRY ? !world.root.userData.fountainWater : !!world.root.userData.fountainWater);
   /**
    * And the level states the opacity its own water shimmers around.
    *
@@ -50,7 +61,7 @@ export function auditLevel({ level, world, check, deps }) {
    * on the wharf, which builds at 0.66 so the coins on the bed read through it.
    * A value a level sets and the renderer ignores is worse than no value.
    */
-  {
+  if (!DRY) {
     const w = world.root.userData.fountainWater;
     const base = w?.userData?.baseOpacity;
     check(say('the water declares the opacity it shimmers around'),
@@ -116,7 +127,7 @@ export function auditLevel({ level, world, check, deps }) {
    * radius standing here be in it? The inverse of `inWaterXZ`, which measures
    * inward from the edge; this one measures outward, and both shapes need it.
    */
-  const touchesWater = (x, z, pad = 0) => (F.shape === 'box'
+  const touchesWater = (x, z, pad = 0) => (DRY ? false : F.shape === 'box'
     ? x > WX.minX - pad && x < WX.maxX + pad && z > WX.minZ - pad && z < WX.maxZ + pad
     : Math.hypot(x - F.x, z - F.z) < F.r + pad);
   /** Clear of the basin altogether — standing on the coping counts as out. */
@@ -155,7 +166,7 @@ export function auditLevel({ level, world, check, deps }) {
     return reachesWater(c);
   });
   const undeclared = inBasin.filter((c) => !c.inWater);
-  check(say('nothing undeclared is built inside the water'), undeclared.length === 0,
+  if (!DRY) check(say('nothing undeclared is built inside the water'), undeclared.length === 0,
     `(${undeclared.length} collider(s) overlap the basin: `
     + `${undeclared.slice(0, 4).map((c) => c.tag || 'untagged').join(', ')})`);
   if (inBasin.length) {
@@ -447,7 +458,7 @@ export function auditLevel({ level, world, check, deps }) {
 
   // ── the water, as a room with a door in the ceiling ───────────────────────
   const audio = new Proxy({}, { get: () => () => {} });
-  {
+  if (!DRY) {
     const dry = { move: { x: 0, y: 0 }, flap: false };
 
     /**
@@ -1550,7 +1561,7 @@ export function auditLevel({ level, world, check, deps }) {
 
   const paddling = [...pigeons, ...gulls]
     .filter((p) => Math.abs(p.floorY - DECK) < 0.5 && touchesWater(p.pos.x, p.pos.z));
-  check(say('no bird is standing in the water'), paddling.length === 0, `(${paddling.length})`);
+  if (!DRY) check(say('no bird is standing in the water'), paddling.length === 0, `(${paddling.length})`);
 
   // A gull is a hazard marker, so it has to stay where it was put — a gull that
   // wanders is a hazard that moves, and the whole point of them is learnability.

@@ -798,7 +798,14 @@ export const LEVELS = [
     spawn: [6, 0, 10.4],
 
     tasks: [
-      { id: 'dive', text: "Dive the crew's pool", when: (g) => g.crow.inWater },
+      /**
+       * No dive, because there is no water: a container deck at sea has nowhere
+       * a pond belongs, and two attempts at one both photographed as an
+       * ornamental fountain. What replaces it is the block's own thesis rather
+       * than a borrowed verb — the containers are out of a guard's reach, and
+       * this is the line that says so before anybody has been chased.
+       */
+      { id: 'cargo', text: 'Take something off the cargo', when: (g) => !!g.crow.carried?.onCargo },
       /**
        * Observed rather than banked, like the park's cooler and the wharf's
        * pilings: the risk is in the getting there. The bridge wing is the one
