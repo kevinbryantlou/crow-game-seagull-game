@@ -27,7 +27,7 @@ const finite = (v) => Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isF
 export function auditLevel({ level, world, check, deps }) {
   const {
     RULES, overlaps, blocksWalker, deckAt, WALKER_RADIUS, WALKER_HEIGHT, WALKER_STEP_OVER,
-    inWaterXZ, waterExtent,
+    inWaterXZ, waterExtent, hasLineOfSight, WALKER_EYE, SIGHT_OVER, SIGHT_SLIM,
     Crow, CROW, Human, Pigeon, Gull, Pickup, BAIT_KINDS, prepareOccluders,
   } = deps;
 
@@ -1111,6 +1111,333 @@ export function auditLevel({ level, world, check, deps }) {
   }
   check(say('no patrol route walks through the water'), wading.length === 0,
     `(${[...new Set(wading)].join('; ')})`);
+
+  // ── sightlines ────────────────────────────────────────────────────────────
+  /**
+   * A guard cannot see through a wall — and can still see everything else.
+   *
+   * `Human.canSee` used to be distance and a facing cone and nothing else, so
+   * every guard on every block watched the crow straight through the lobby's
+   * front desk, the roofline's tower, the park's shelter and the wharf's ice
+   * house. The fix is a real segment test (`hasLineOfSight`), and the reason
+   * the checks below come in threes is the one this repo keeps relearning:
+   * **a guard that only checks one direction passes the bug it was written
+   * for.** "The crow is hidden" on its own is satisfied perfectly by a function
+   * that returns false, which would blind five shipped blocks; so every hidden
+   * case is paired with an open-ground case at the same range that must still
+   * be seen, and with the same spot in the air, which must also still be seen.
+   *
+   * Everything here is a real guard at their authored post on a real block.
+   */
+  {
+    const cols = world.colliders;
+    const guards = world.humans.filter((h) => !h.kid);
+    const eyeOf = (h) => (h.pos[1] || 0) + WALKER_EYE;
+    const los = (h, x, y, z) =>
+      hasLineOfSight(cols, h.pos[0], eyeOf(h), h.pos[2], x, y, z, h.pos[1] || 0);
+    const solidAt = (x, y, z) => cols.some((c) => c.shape !== 'ring'
+      && y > c.bottom + 0.01 && y < c.top - 0.01 && overlaps(c, x, z, 0.2));
+    /**
+     * How high the crow is flown when checking that height is read at all.
+     * Eight metres is most of a stamina bar (`RULES.maxUnbrokenClimb` is 9) and
+     * comfortably over every wall on every block; the lobby's soffit at 10.5 is
+     * deliberately above it, because a lid nobody can reach is not in the way.
+     */
+    const CLIMB = 8;
+    // Is there open sky over this spot, within the climb? An awning or a market
+    // roof overhead means going up is not a way out of the shadow it casts —
+    // which is a true thing about the block and useless as a test of whether
+    // the sight test reads height.
+    const roofedOver = (x, y, z) => cols.some((c) => c.shape !== 'ring'
+      && c.bottom > y && c.bottom < y + CLIMB && overlaps(c, x, z, 0.4));
+    // How far outside a collider's footprint a point stands.
+    const clearOf = (c, x, z) => Math.hypot(
+      Math.max(c.minX - x, 0, x - c.maxX), Math.max(c.minZ - z, 0, z - c.maxZ));
+
+    // Where the block is actually played, from the things placed on it.
+    const play = { minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity };
+    for (const p of [...world.humans.map((h) => h.pos), ...world.pickups.map((q) => q.pos), level.spawn]) {
+      play.minX = Math.min(play.minX, p[0]); play.maxX = Math.max(play.maxX, p[0]);
+      play.minZ = Math.min(play.minZ, p[2]); play.maxZ = Math.max(play.maxZ, p[2]);
+    }
+
+    /**
+     * Find one real (guard, cover, hiding place) on this block: a guard at their
+     * post, a solid that is cover from the deck they stand on, and a spot on the
+     * far side of it that they are looking at from within their own view range.
+     * Derived rather than typed in, so the rule runs on all five blocks and on
+     * the sixth — but the solid it settles on is printed, so the check still
+     * names something real when it goes red.
+     */
+    let found = null;
+    for (const h of guards) {
+      const floor = h.pos[1] || 0;
+      for (const c of cols) {
+        if (c.shape === 'ring' || c.top - floor < SIGHT_OVER) continue;
+        // A wall that stands on the ground, not an awning with air under it:
+        // "fly over it" only means something about a solid you cannot fly under.
+        if (c.bottom > floor + 0.3) continue;
+        /**
+         * And something the guard is looking *at*, not leaning *on*.
+         *
+         * The wharf's harbormaster stands 0.7 m from the ice house, inside its
+         * x range, and the ice house is 2 m taller than his eye — so the ray to
+         * a crow on the far side has to climb 2 m in 0.7 m of travel, and the
+         * crow has to reach 24 m before it is seen. That is perfectly correct
+         * and completely useless as a test that height is read at all.
+         *
+         * So: stand back from it by at least as much as it rises above the eye,
+         * which is to say the sightline must be able to clear it at 45° or less.
+         * A solid no taller than the eye needs no clearance — the lobby's 1.25 m
+         * front desk is the case this whole change exists for and the bartender
+         * is right up against it.
+         */
+        if (clearOf(c, h.pos[0], h.pos[2]) < c.top - eyeOf(h)) continue;
+        const cx = (c.minX + c.maxX) / 2, cz = (c.minZ + c.maxZ) / 2;
+        const dx = cx - h.pos[0], dz = cz - h.pos[2];
+        const d = Math.hypot(dx, dz);
+        if (d < 0.5) continue;
+        const ux = dx / d, uz = dz / d;
+        // Step out past the far side of the box and stand on whatever is there.
+        const reach = d + Math.hypot(c.maxX - c.minX, c.maxZ - c.minZ) / 2 + 0.8;
+        if (reach > h.viewDist) continue;
+        const x = h.pos[0] + ux * reach, z = h.pos[2] + uz * reach;
+        const y = deckAt(cols, x, z, Infinity, 0.24);
+        if (solidAt(x, y + 0.1, z)) continue;
+        if (roofedOver(x, y, z)) continue;
+        if (x < play.minX || x > play.maxX || z < play.minZ || z > play.maxZ) continue;
+        if (los(h, x, y, z)) continue;
+        const size = (c.maxX - c.minX) * (c.maxZ - c.minZ);
+        if (!found || size > found.size) {
+          found = { h, c, x, y, z, reach, size,
+            label: c.tag || `${(c.maxX - c.minX).toFixed(1)}x${(c.maxZ - c.minZ).toFixed(1)}m, `
+              + `${c.bottom.toFixed(2)}–${c.top.toFixed(2)} high` };
+        }
+      }
+    }
+
+    check(say('there is somewhere on the block a guard genuinely cannot see into'),
+      !!found, '(no guard on this block is blocked by anything)');
+
+    if (found) {
+      const { h, c, x, y, z, reach, label } = found;
+      console.log(`       ${h.id} at (${h.pos[0]}, ${h.pos[2]}) is blind through ${label} `
+        + `to (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)}) at ${reach.toFixed(1)}m`);
+
+      check(say(`a guard cannot see the crow through ${label}`), !los(h, x, y, z));
+
+      /**
+       * The other direction, and the whole reason this block of checks exists.
+       * Same guard, same range, open ground: if this ever fails together with
+       * the one above, the sight test has stopped discriminating and has simply
+       * gone dark.
+       */
+      let open = null;
+      for (let a = 0; a < 360 && !open; a += 5) {
+        const r = (a * Math.PI) / 180;
+        const ox = h.pos[0] + Math.cos(r) * reach, oz = h.pos[2] + Math.sin(r) * reach;
+        const oy = deckAt(cols, ox, oz, Infinity, 0.24);
+        if (solidAt(ox, oy + 0.1, oz)) continue;
+        if (los(h, ox, oy, oz)) open = { ox, oy, oz };
+      }
+      check(say('the same guard still sees the same distance across open ground'),
+        !!open, `(${h.id} sees nothing at all at ${reach.toFixed(1)}m)`);
+
+      /**
+       * And the direction that would be worse than the bug: a crow *above* the
+       * solid has to stay visible. Flight is the answer to being chased, and a
+       * sight test that treated a footprint as a wall to the sky would quietly
+       * turn every solid on the block into a hiding place in mid-air.
+       *
+       * The spot was chosen with open sky over it and a solid that reaches the
+       * ground, so there is nothing else for the climb to run into. The height
+       * it clears at is not asserted against the solid's `top` — a wall close to
+       * the guard is cleared well below its own height, because the eye is only
+       * a metre and a half up and the ray is already rising by the time it gets
+       * there. What is asserted is that climbing works at all.
+       */
+      let seenAt = null;
+      for (let a = 0.25; a <= CLIMB && seenAt === null; a += 0.25) {
+        if (los(h, x, y + a, z)) seenAt = y + a;
+      }
+      check(say('the same spot is visible again once the crow gets off the ground'),
+        seenAt !== null && seenAt > y,
+        seenAt === null ? `(still hidden ${CLIMB}m up over ${label})` : `(clears at ${(seenAt - y).toFixed(2)}m up)`);
+
+      /**
+       * And the same three answers through `Human.canSee`, which is what the
+       * game actually asks.
+       *
+       * Everything above tests `hasLineOfSight`, and every one of those checks
+       * would go on passing if somebody deleted the call to it from `canSee` —
+       * the geometry would still be right and the guards would still see
+       * through walls, which is precisely the bug. So the real person is built,
+       * handed the real block, turned to face the spot, and asked.
+       */
+      const seer = new Human(world.humans.find((s) => s.id === h.id));
+      seer._cols = cols;
+      seer.buskerEyes = 1;              // a busker between songs, so eyelids are not the answer
+      const faceAt = (tx, tz) => { seer.heading = Math.atan2(-(tz - seer.pos.z), tx - seer.pos.x); };
+
+      faceAt(x, z);
+      check(say('Human.canSee refuses the crow through the solid, not just the geometry'),
+        seer.canSee({ x, y, z }) === false);
+      check(say('Human.canSee still sees the crow once it is over the solid'),
+        seer.canSee({ x, y: seenAt ?? y, z }) === true);
+      if (open) {
+        faceAt(open.ox, open.oz);
+        check(say('Human.canSee still sees the same distance across open ground'),
+          seer.canSee({ x: open.ox, y: open.oy, z: open.oz }) === true);
+      }
+    }
+
+    /**
+     * Aggregate, and the sharper half of the overhead rule.
+     *
+     * The single spot above proves the crow can be seen from *somewhere* higher.
+     * This says altitude helps everywhere at once: sample the whole block from
+     * every guard's post at three heights and require the blinded fraction to
+     * fall each time the crow gets off the ground. Invert the height test in
+     * `hasLineOfSight` and this is what goes red — the single-point check above
+     * would very likely survive it.
+     */
+    {
+      const share = (lift) => {
+        let inRange = 0, blind = 0;
+        for (const h of guards) {
+          const floor = h.pos[1] || 0;
+          for (let x = play.minX; x <= play.maxX; x += 1.5) {
+            for (let z = play.minZ; z <= play.maxZ; z += 1.5) {
+              const y = deckAt(cols, x, z, Infinity, 0.24) + lift;
+              if (Math.hypot(x - h.pos[0], z - h.pos[2], (y - floor) * 0.62) > h.viewDist) continue;
+              inRange++;
+              if (!los(h, x, y, z)) blind++;
+            }
+          }
+        }
+        return inRange ? blind / inRange : 0;
+      };
+      const ground = share(0), low = share(1.2), high = share(3.0);
+      console.log(`       blinded: ${(ground * 100).toFixed(1)}% on the ground, `
+        + `${(low * 100).toFixed(1)}% at 1.2m, ${(high * 100).toFixed(1)}% at 3m`);
+      check(say('getting off the ground makes the crow more visible, not less'),
+        ground > low && low > high,
+        `(${(ground * 100).toFixed(1)} / ${(low * 100).toFixed(1)} / ${(high * 100).toFixed(1)})`);
+
+      /**
+       * And a floor under the whole thing. Every rule above is satisfied by a
+       * block nobody can see across; this is the one that says the lights are
+       * still on. It is a *ceiling on blindness*, so it can only ever be broken
+       * by taking more vision away.
+       *
+       * It is deliberately generous. The outdoor blocks sit at 16–30% and the
+       * lobby at about 44%, because the lobby is the one block that is a room
+       * and its own four walls are supposed to block — the play area it is
+       * measured over runs out past them to the sidewalk. This is a smoke alarm
+       * for `hasLineOfSight` going dark, which would read near 100%, not a
+       * tuning knob for how hard a block is. Do not tighten it to fit today's
+       * numbers.
+       */
+      check(say('most of the block is still visible to the guards watching it'),
+        ground < 0.6, `(${(ground * 100).toFixed(1)}% blinded at ground level)`);
+    }
+
+    /**
+     * `hasLineOfSight` skips rings outright, on the grounds that every ring in
+     * the game is a knee-high coping — the fountain, the pond, the lobby pool —
+     * and the height gate would drop all of them anyway. That is a fact about
+     * the blocks, not about rings, so it is checked rather than assumed. A
+     * circular tower would need the annulus maths actually written.
+     */
+    const tallRings = cols.filter((c) => c.shape === 'ring'
+      && c.top - Math.min(...guards.map((h) => h.pos[1] || 0), 0) >= SIGHT_OVER)
+      .map((c) => `${c.tag || 'ring'} at ${c.top.toFixed(2)}`);
+    check(say('no ring is tall enough for skipping it in the sight test to matter'),
+      tallRings.length === 0, `(${tallRings.join('; ')} — hasLineOfSight would see through it)`);
+
+    /**
+     * Nothing sits *on* the cover threshold.
+     *
+     * SIGHT_OVER decides whether a solid is something a guard looks over or
+     * something they cannot see past, and the lobby's gallery balustrade already
+     * landed exactly on the first value tried — at which point `5.3 - 4.4`
+     * coming out as 0.8999999999999995 was what decided how a shipped block's
+     * staff behave. Any future prop that lands on the line should be a
+     * deliberate decision, so it is made to be one.
+     */
+    const decks = [...new Set(guards.map((h) => h.pos[1] || 0))];
+    const onTheLine = [];
+    for (const c of cols) {
+      if (c.shape === 'ring') continue;
+      for (const d of decks) {
+        if (Math.abs(c.top - d - SIGHT_OVER) < 0.03) {
+          onTheLine.push(`${c.tag || `${(c.maxX - c.minX).toFixed(1)}x${(c.maxZ - c.minZ).toFixed(1)}`}`
+            + ` tops at ${c.top.toFixed(2)}, ${(c.top - d).toFixed(3)} over deck ${d}`);
+        }
+      }
+    }
+    check(say('nothing sits exactly on the line between furniture and cover'),
+      onTheLine.length === 0, `(${[...new Set(onTheLine)].join('; ')})`);
+
+    /**
+     * And nothing sits on the *slimness* line either.
+     *
+     * SIGHT_SLIM decides whether a solid is cover or a post, and a lamppost is
+     * geometrically a four-metre wall — true, and it reads as a bug when a guard
+     * loses the crow behind one. The threshold is the crow's own width, so a
+     * prop that lands on it is one whose ability to hide the bird is a coin
+     * flip. Same argument as the height line above, same 0.03 window.
+     */
+    const onTheSlimLine = [...new Set(cols
+      .filter((c) => c.shape !== 'ring'
+        && Math.abs(Math.max(c.maxX - c.minX, c.maxZ - c.minZ) - SIGHT_SLIM) < 0.03)
+      .map((c) => `${c.tag || 'untagged'} `
+        + `${(c.maxX - c.minX).toFixed(2)}x${(c.maxZ - c.minZ).toFixed(2)}`))];
+    check(say('nothing sits exactly on the line between a post and cover'),
+      onTheSlimLine.length === 0, `(${onTheSlimLine.join('; ')})`);
+
+    /**
+     * And a lamppost is never cover — the case this threshold exists for, named
+     * rather than left to the distribution. Every block but the lobby has one.
+     */
+    {
+      const posts = cols.filter((c) => c.shape !== 'ring' && c.top - 0 >= 4.0
+        && Math.max(c.maxX - c.minX, c.maxZ - c.minZ) < SIGHT_SLIM);
+      const blind = posts.filter((c) => {
+        const cx = (c.minX + c.maxX) / 2, cz = (c.minZ + c.maxZ) / 2;
+        /**
+         * The post **on its own**, not the post plus whatever stands behind it.
+         *
+         * Cast against the whole block and this asks "is the line through here
+         * clear", which is a different question with a different answer: the
+         * roofline's balcony columns stand flat against a fifty-metre building,
+         * so five of them reported as blinding when what blinded the ray was
+         * the hotel. A check has to aim at the thing it names.
+         */
+        return !hasLineOfSight([c], cx, WALKER_EYE, cz - 2, cx, 0.06, cz + 2, 0);
+      });
+      check(say('a guard is not blinded by a lamppost'), blind.length === 0,
+        `(${posts.length} post(s) checked, ${blind.length} blocked sight)`);
+    }
+
+    /**
+     * And the map bounds stay outside the map.
+     *
+     * Every block drops a huge invisible `solid(...)` beside its backdrop to
+     * stop the crow leaving, 24–34 m tall and up to 220 m wide. Those are cover
+     * by any measure, so if one of them ever overlapped the ground people
+     * actually play on it would blind the entire cast at a stroke and every
+     * other check here would still pass. They are all comfortably outside
+     * today — the nearest clears the play area by about five metres — which is
+     * a fact worth holding still rather than a special case worth writing into
+     * the sight test.
+     */
+    const intruding = cols.filter((c) => c.shape !== 'ring' && c.top - c.bottom >= 20
+      && c.maxX > play.minX && c.minX < play.maxX && c.maxZ > play.minZ && c.minZ < play.maxZ)
+      .map((c) => `${(c.maxX - c.minX).toFixed(0)}x${(c.maxZ - c.minZ).toFixed(0)}m, ${c.top.toFixed(0)} tall`);
+    check(say('no map-bounds wall reaches into the ground people play on'),
+      intruding.length === 0, `(${intruding.join('; ')})`);
+  }
 
   /**
    * Chases cannot be authored around anything: SHOOING steers straight at the

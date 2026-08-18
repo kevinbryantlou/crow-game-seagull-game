@@ -34,7 +34,8 @@ globalThis.window = globalThis;
 
 const { LEVELS } = await import('../src/world/levels.js');
 const { RULES } = await import('../src/world/rules.js');
-const { overlaps, blocksWalker, deckAt, WALKER_RADIUS, WALKER_HEIGHT, WALKER_STEP_OVER, inWaterXZ, waterExtent } = await import('../src/world/collide.js');
+const { overlaps, blocksWalker, deckAt, WALKER_RADIUS, WALKER_HEIGHT, WALKER_STEP_OVER, inWaterXZ, waterExtent,
+  hasLineOfSight, WALKER_EYE, SIGHT_OVER, SIGHT_GRAZE, SIGHT_SLIM } = await import('../src/world/collide.js');
 const { Crow, TUNING: CROW } = await import('../src/entities/crow.js');
 const { Human, Pigeon, Gull } = await import('../src/entities/human.js');
 const { Pickup, BAIT_KINDS } = await import('../src/world/pickups.js');
@@ -549,6 +550,96 @@ function auditLights(level, world) {
 
 }
 
+console.log('\nsightlines');
+{
+  /**
+   * The segment maths on its own, with one box and no level around it.
+   *
+   * The per-block audit asserts the interesting half — real guards, real
+   * geometry, both directions. This is the other half: the corner cases a
+   * level may simply never present, and which would otherwise be found by
+   * somebody playing. A ray exactly along an axis divides by a zero `dx`; a
+   * crow's `pos.y` lands *exactly* on the `top` of whatever it is standing on,
+   * because that is what `Crow._integrate` writes when it lands.
+   */
+  const wall = [{ minX: -1, maxX: 1, minZ: -5, maxZ: 5, top: 3, bottom: 0, perch: true }];
+  const eye = WALKER_EYE;
+  const see = (px, py, pz, floor = 0) => hasLineOfSight(wall, -6, floor + eye, 0, px, py, pz, floor);
+
+  check('a wall blocks the crow behind it', !see(6, 0.2, 0));
+  check('the same crow is visible with the wall stepped aside', see(6, 0.2, 20));
+  check('a ray straight along z is not divided by a zero dx', see(-6, 0.2, 20));
+  check('a ray straight along x still meets the wall it points at', !see(6, 0.2, 0));
+  check('flying over the wall clears it', see(6, 6.5, 0));
+  check('flying but not high enough does not', !see(6, 1.0, 0));
+  check('the wall does not block what is in front of it', see(-3, 0.2, 0));
+
+  /**
+   * The grazing allowance, which is not slop. A crow standing on a box has
+   * `pos.y === c.top` exactly, so an exact test reports it as buried inside its
+   * own perch and the guard loses a bird stood in plain sight on a litter bin.
+   */
+  const bin = [{ minX: -0.65, maxX: 0.65, minZ: -0.65, maxZ: 0.65, top: 1.62, bottom: 0, perch: true }];
+  check('a crow standing on top of a solid is not hidden by it',
+    hasLineOfSight(bin, -5, eye, 0, 0, 1.62, 0));
+  check('a crow standing behind that solid still is',
+    !hasLineOfSight(bin, -5, eye, 0, 3, 0.0, 0));
+
+  /**
+   * Cover is measured from the seer's own deck, which is what lets one number
+   * say two true things about the roofline's terrace parapet: 0.70 of stone the
+   * staff on the terrace look straight over, and 6.10 of wall to a porter in
+   * the forecourt below.
+   */
+  const terrace = [
+    { minX: -30, maxX: 1, minZ: -20, maxZ: 20, top: 5.4, bottom: 0, perch: true },
+    { minX: -1, maxX: 1, minZ: -20, maxZ: 20, top: 6.1, bottom: 5.4, perch: true },
+  ];
+  check('a parapet is furniture to somebody standing on its own deck',
+    hasLineOfSight(terrace, -5, 5.4 + eye, 0, 5, 5.4, 0, 5.4));
+  check('the same stone is a wall to somebody on the ground below',
+    !hasLineOfSight(terrace, 5, eye, 0, -5, 5.5, 0, 0));
+
+  /**
+   * The cover threshold, on the one geometry that actually exercises it.
+   *
+   * This needs building deliberately. Low furniture only ever intercepts a
+   * sightline in the last stride before the target — the eye is 1.6 up and the
+   * crow's feet are on the floor, so the ray is only down at bench height when
+   * it has nearly arrived. Delete `SIGHT_OVER` from `hasLineOfSight` and the
+   * blocks barely move; the reason the gate is there is that when it *does*
+   * bite it is absurd, and "absurd, rarely" is not a thing to ship. So: a bench
+   * 0.5 m short of the crow, which an ungated test hides it behind.
+   */
+  const bench = [{ minX: 5.0, maxX: 5.6, minZ: -5, maxZ: 5, top: 0.67, bottom: 0, perch: true }];
+  check('a bench half a metre short of the crow does not hide it',
+    hasLineOfSight(bench, 0, eye, 0, 6, 0.0, 0));
+  check('…and the same geometry one metre taller does',
+    !hasLineOfSight([{ ...bench[0], top: 1.6 }], 0, eye, 0, 6, 0.0, 0));
+
+  // A short box is furniture from any deck, and a tall one never is.
+  const kerb = [{ minX: -1, maxX: 1, minZ: -20, maxZ: 20, top: 0.34, bottom: 0, perch: true }];
+  check('a kerb never blinds anybody', hasLineOfSight(kerb, -20, eye, 0, 20, 0.0, 0));
+  check(`the cover threshold sits between the café tables and the front desk (${SIGHT_OVER})`,
+    SIGHT_OVER > 0.81 && SIGHT_OVER < 1.24, `(${SIGHT_OVER})`);
+  check('the eye is below the walking height it is derived from',
+    WALKER_EYE < WALKER_HEIGHT && WALKER_EYE > 1.2, `(${WALKER_EYE} vs ${WALKER_HEIGHT})`);
+  check('the grazing allowance is small enough not to be cover',
+    SIGHT_GRAZE > 0 && SIGHT_GRAZE < 0.1, `(${SIGHT_GRAZE})`);
+
+  /**
+   * And it allocates nothing. `canSee` is on the 60 Hz path — measured at 0.1
+   * to 0.4 calls a frame across the five blocks, since it only runs for a guard
+   * whose own money is already near the crow — but the cost that would matter
+   * is garbage, not arithmetic, and a `new THREE.Vector3` per call would be
+   * invisible in every check in this file.
+   */
+  const before = process.memoryUsage().heapUsed;
+  for (let i = 0; i < 200000; i++) hasLineOfSight(wall, -6, eye, 0, 6, 0.2, i % 7);
+  const grew = (process.memoryUsage().heapUsed - before) / 200000;
+  check('the sight test allocates nothing per call', grew < 8, `(${grew.toFixed(2)} bytes/call)`);
+}
+
 console.log('\nthe sky ramp');
 {
   /**
@@ -568,7 +659,7 @@ console.log('\nthe sky ramp');
 // ── every block, every rule ─────────────────────────────────────────────────
 const deps = {
   RULES, overlaps, blocksWalker, deckAt, WALKER_RADIUS, WALKER_HEIGHT, WALKER_STEP_OVER,
-  inWaterXZ, waterExtent,
+  inWaterXZ, waterExtent, hasLineOfSight, WALKER_EYE, SIGHT_OVER, SIGHT_SLIM,
   Crow, CROW, Human, Pigeon, Gull, Pickup, BAIT_KINDS, prepareOccluders,
 };
 const summary = [];

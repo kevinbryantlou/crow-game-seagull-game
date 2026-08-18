@@ -12,8 +12,8 @@ import * as THREE from 'three';
 import { PAL } from '../render/palette.js';
 import { box, cyl, ico, at, mat } from '../render/shapes.js';
 import {
-  resolveWalk, stepAround, deckAt,
-  WALKER_RADIUS, WALKER_HEIGHT, WALKER_STEP_OVER,
+  resolveWalk, stepAround, deckAt, hasLineOfSight,
+  WALKER_RADIUS, WALKER_HEIGHT, WALKER_STEP_OVER, WALKER_EYE,
   PIGEON_RADIUS, PIGEON_HEIGHT, PIGEON_STEP_OVER,
 } from '../world/collide.js';
 
@@ -182,6 +182,29 @@ export class Human {
     const dist = Math.hypot(dx, dz, dy);
     if (dist > this.viewDist) return false;
     if (this.busker && this.buskerEyes < 0.5) return false;
+
+    /**
+     * And nothing solid in the way.
+     *
+     * This used to be distance and a cone and nothing else, so a guard saw the
+     * crow through the lobby's front desk, the roofline's van, the park's
+     * shelter and the wharf's ice house. It is a real 3-D segment test rather
+     * than a footprint one for one specific reason: a crow *over* the desk has
+     * to stay visible, and getting that direction wrong would be worse than the
+     * bug — it would make flight, the answer to being chased, a hiding place.
+     *
+     * It runs before the 1.4m cone exemption below, not after. Close range is a
+     * statement about peripheral vision, and peripheral vision does not go
+     * through a wall: a crow crouched on the far side of the reception desk a
+     * metre and a half away is precisely the case being fixed.
+     *
+     * `_cols` is handed over by `update` every frame. A person built and asked
+     * about a sightline before ever being updated has an empty list and sees
+     * everything, which is the same answer they gave before this existed.
+     */
+    if (!hasLineOfSight(this._cols, this.pos.x, this.floorY + WALKER_EYE, this.pos.z,
+      p.x, p.y, p.z, this.floorY)) return false;
+
     if (dist < 1.4) return true;
     const fx = Math.cos(this.heading), fz = -Math.sin(this.heading);
     const dot = (dx * fx + dz * fz) / dist;

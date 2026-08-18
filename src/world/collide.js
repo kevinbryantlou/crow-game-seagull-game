@@ -24,6 +24,184 @@ export const PIGEON_HEIGHT = 0.35;
 export const PIGEON_STEP_OVER = 0.1;
 
 /**
+ * Where a person looks from.
+ *
+ * `WALKER_HEIGHT` is 1.75 because that is what a person's *collider* has to be
+ * to stop them walking under a café awning. The eye is not up there: the rig in
+ * `entities/human.js` hangs the head group at 1.60 and builds a 0.32 skull
+ * about it, so 1.60 is the number the model itself already uses. Sighting from
+ * the collision height instead would put every guard's eye on the top of their
+ * own skull and hand them a free 0.15m of vision over every desk in the game.
+ */
+export const WALKER_EYE = 1.60;
+
+/**
+ * How far a solid has to stand above the seer's own deck before it is cover.
+ *
+ * `hasLineOfSight` below is exact, and on its own it is *too* exact. It aims at
+ * a single point, and the point it is given is the crow's **feet** — `crow.pos`
+ * is set to `floor` on landing — so a ray from a standing eye is grazing the
+ * ground by the time it arrives. Left ungated, a 0.34m kerb hides a bird stood
+ * behind it, and a guard blinded by street furniture would gut five shipped,
+ * playtested blocks.
+ *
+ * So a solid only counts if a person would have to look *at* it rather than
+ * over it. Where that line falls is a judgement, and the honest thing to say
+ * about it is that **the blocks do not contain a gap to put it in**. Measure
+ * every collider in the game against every deck somebody stands on and the
+ * heights run all but continuously through the region that matters:
+ *
+ *     0.62  fountain, pond and quay copings           0.72  a lobby plinth
+ *     0.67  a bench          0.70  a terrace parapet, from its own deck
+ *     0.79  a park bench     0.80  a lobby column base
+ *     0.81  a café tabletop
+ *     ————————————————————— 0.85 —————————————————————
+ *     0.90  a park platform, and the lobby's gallery balustrade
+ *     0.94  a lobby pier     0.95  the wharf's bait table     0.98  a park stand
+ *     1.00  a newsstand      1.04, 1.12, 1.15, 1.17, 1.19 …
+ *     1.25  the lobby's front desk — the solid this whole change is about
+ *     1.40  the wharf's breakwater      1.62  a litter bin
+ *
+ * So the value is picked for *margin*, not for meaning. 0.81 → 0.90 is the only
+ * empty band wider than 0.06 anywhere between a bench and the front desk, and
+ * 0.85 sits in the middle of it with 0.04 clear on each side. That matters more
+ * than the fourth decimal place of the number itself, because the first value
+ * tried was 0.90 and it landed *exactly* on `lobby.js`'s gallery balustrade —
+ * `DECK.mezzanine` is 4.4, the rail tops out at 5.3, and `5.3 - 4.4` is
+ * 0.8999999999999995. Which side of the rule a shipped block's gallery staff
+ * fell on would have been decided by a floating-point crumb. `smoke` asserts
+ * nothing else ever comes to rest on the line.
+ *
+ * Above the line the classification is what you would want: the front desk, the
+ * breakwater, the bins and the containers are cover. Below it the kerbs, the
+ * copings, the benches and the café tables are not, which is the result the
+ * five shipped blocks need — a guard blinded by street furniture would gut all
+ * of them.
+ *
+ * Measured **from the seer's own deck**, which is what makes the parapet line
+ * true in both directions at once — 0.70 of stone is something the terrace
+ * staff look straight over, and the same stone is 6.10 of wall to a porter
+ * standing in the forecourt. It also means the deck a guard is standing on
+ * (top exactly at their feet, so 0 above it) is never their own cover, which is
+ * the conservative reading: a roof edge does geometrically hide the ground at
+ * the foot of the building, but taking that away from the roofline's staff is a
+ * change to how a played block behaves, and this is a bug fix.
+ */
+export const SIGHT_OVER = 0.85;
+
+/**
+ * How close a sightline may skim a solid's surface and still count as clear.
+ *
+ * Load-bearing, not slop. A crow's `pos.y` is its feet, and landing sets that
+ * to the collider's `top` *exactly* — so a bird standing on the lobby desk or a
+ * litter bin is a point sitting precisely on the face of the thing under it,
+ * and an exact test reports it as buried inside its own perch. Five centimetres
+ * of grazing allowance is well under anything that reads as cover and is the
+ * difference between "on the bin" and "behind the bin".
+ */
+export const SIGHT_GRAZE = 0.05;
+
+/**
+ * How wide a solid has to be before it is cover rather than a post.
+ *
+ * A lamppost is 0.30 x 0.30 and 4.60 tall, so it clears `SIGHT_OVER` by five
+ * metres and is, geometrically, a wall. There are twenty-one of them across the
+ * five blocks and they were 24% of the park's blinded sightlines. A guard losing
+ * the crow behind a pole is *true* and reads as a bug, which is the whole
+ * argument: this test exists to model what a person can see, and a person does
+ * not lose a bird behind a lamppost.
+ *
+ * The line has a physical meaning rather than a tuned one. **The crow's own
+ * collision radius is 0.34, so the bird is 0.68 wide, and a solid narrower than
+ * that cannot hide it** — there is no position behind a 0.30m post where a
+ * 0.68m bird is not sticking out of both sides. So the rule is "is this thing
+ * at least as wide as the thing it is meant to be hiding", and the answer is
+ * measured on the collider's *larger* horizontal dimension: a front desk is
+ * 8.3 x 1.2 and is obviously cover, while a post is small both ways.
+ *
+ * 0.66 rather than 0.68 for the same reason `SIGHT_OVER` is 0.85 — margin, not
+ * meaning. Measured across every block, the candidates run 0.30, 0.40, 0.50,
+ * 0.60 (a tree trunk), 0.62, then 0.70, 0.76, 0.94, 1.10, 1.24, 1.30 (a litter
+ * bin). 0.62 -> 0.70 is the gap the line belongs in and 0.66 sits in the middle
+ * of it, 0.04 clear on each side. `smoke` asserts nothing comes to rest on it.
+ *
+ * What this drops: lampposts, tree trunks, the roofline's slim columns, the
+ * thinner pilings. What it keeps: bins, planters, newsstands, desks, vans,
+ * buildings — everything anybody would call cover. The tree is worth noting,
+ * because a tree also carries a second, 2.8m collider for its canopy: the trunk
+ * stops blocking and the canopy still does, which is right in both directions.
+ */
+export const SIGHT_SLIM = 0.66;
+
+/**
+ * Is there anything solid between an eye and a point?
+ *
+ * The whole reason this is a segment test and not a footprint test: a crow
+ * flying *over* the lobby's front desk has to stay visible. So a collider only
+ * blocks if the segment is actually inside it — over its footprint **and**
+ * between its `bottom` and its `top` while it is there.
+ *
+ * The method is the standard Liang–Barsky slab clip run on x and z only, which
+ * hands back the two parameters where the segment enters and leaves the
+ * footprint; the segment's height at those two parameters is then the height
+ * range to compare against the box. That is exact for an axis-aligned box and
+ * costs no allocation, which matters because this is on the 60 Hz path.
+ *
+ * @param {number} floor  the deck the *seer* is standing on. Everything about
+ *   cover is relative to it — see SIGHT_OVER.
+ */
+export function hasLineOfSight(cols, ex, ey, ez, px, py, pz, floor = 0) {
+  const dx = px - ex, dy = py - ey, dz = pz - ez;
+  const loY = ey < py ? ey : py, hiY = ey < py ? py : ey;
+
+  for (let i = 0; i < cols.length; i++) {
+    const c = cols[i];
+    /**
+     * Rings are the fountain, pond and lobby-pool copings, and every one of
+     * them tops out at 0.62 — below SIGHT_OVER from any deck anybody stands on,
+     * so the height gate on the next line already drops all of them and the
+     * annulus maths would never once run. Skipped by name rather than left to
+     * that coincidence, and `smoke` asserts the coincidence still holds: the
+     * day somebody builds a circular tower, a check is what says so instead of
+     * a guard quietly seeing through it.
+     */
+    if (c.shape === 'ring') continue;
+    if (c.top - floor < SIGHT_OVER) continue;
+    // Too slim to hide a bird 0.68 wide — a lamppost is not cover.
+    if (c.maxX - c.minX < SIGHT_SLIM && c.maxZ - c.minZ < SIGHT_SLIM) continue;
+    if (c.bottom >= hiY || c.top <= loY) continue;
+
+    let t0 = 0, t1 = 1;
+
+    if (dx === 0) {
+      if (ex <= c.minX || ex >= c.maxX) continue;
+    } else {
+      let a = (c.minX - ex) / dx, b = (c.maxX - ex) / dx;
+      if (a > b) { const s = a; a = b; b = s; }
+      if (a > t0) t0 = a;
+      if (b < t1) t1 = b;
+      if (t0 >= t1) continue;
+    }
+
+    if (dz === 0) {
+      if (ez <= c.minZ || ez >= c.maxZ) continue;
+    } else {
+      let a = (c.minZ - ez) / dz, b = (c.maxZ - ez) / dz;
+      if (a > b) { const s = a; a = b; b = s; }
+      if (a > t0) t0 = a;
+      if (b < t1) t1 = b;
+      if (t0 >= t1) continue;
+    }
+
+    // How high the segment is running while it is over the footprint.
+    const ya = ey + dy * t0, yb = ey + dy * t1;
+    const segLo = ya < yb ? ya : yb, segHi = ya < yb ? yb : ya;
+    if (segLo < c.top - SIGHT_GRAZE && segHi > c.bottom + SIGHT_GRAZE) return false;
+  }
+  return true;
+}
+
+/**
  * Is (x, z) inside the level's water body, `inset` metres in from its edge?
  *
  * The water was a circle for four blocks, and the test for it was written out
