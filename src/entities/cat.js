@@ -291,10 +291,21 @@ export class Cat {
     // can be caught mid-air between two decks, which is a bird with legs.
     if (this.state === HOP) {
       const t = Math.min(1, this.stateT / HOP_TIME);
-      this.pos.x = this._hop.fromX + (this._hop.x - this._hop.fromX) * t;
-      this.pos.z = this._hop.fromZ + (this._hop.z - this._hop.fromZ) * t;
-      const base = this._hop.fromY + (this._hop.top - this._hop.fromY) * t;
-      this.root.position.set(this.pos.x, base + Math.sin(t * Math.PI) * 0.30, this.pos.z);
+      /**
+       * **Up first, then across.** A straight lerp between the two points put
+       * the cat *inside* the container for the middle third of every hop — it
+       * read, correctly, as clipping through the box rather than leaping onto
+       * it. A cat jumps up and then forward, so the vertical eases out (most of
+       * the rise in the first third) and the horizontal eases in. By the time
+       * it is over the box's footprint it is already above the box.
+       */
+      const up = 1 - (1 - t) * (1 - t);        // ease-out: rises early
+      const across = t * t;                    // ease-in: moves late
+      this.pos.x = this._hop.fromX + (this._hop.x - this._hop.fromX) * across;
+      this.pos.z = this._hop.fromZ + (this._hop.z - this._hop.fromZ) * across;
+      const peak = Math.max(this._hop.fromY, this._hop.top) + 0.34;
+      const base = this._hop.fromY + (peak - this._hop.fromY) * up;
+      this.root.position.set(this.pos.x, base - (peak - this._hop.top) * across, this.pos.z);
       this.root.rotation.y = this.heading;
       this._animate(dt, 1);
       if (t >= 1) {

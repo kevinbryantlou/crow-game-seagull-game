@@ -197,6 +197,30 @@ export const PAL = {
    * Three channels high, hue kept. It still reads as a red stripe in sun and it
    * stops being a black stripe in shade.
    */
+  /**
+   * Open ocean, and it needs its own colour rather than the wharf's `harbour`.
+   *
+   * `PAL.harbour` (0x8ab6d8) is a sheltered basin seen from a dock, and under
+   * the afternoon key it renders (138, 155, 136) — green over blue by nineteen.
+   * On level 6 that is a third of the frame with no shore in it, and it read as
+   * *flat land*: the crow appeared to be playing in a sandbox. Reported from a
+   * playtest, and correct.
+   *
+   * Solved the same way the deck was. To land a deep blue near (60, 95, 140)
+   * after a key that multiplies blue by 0.63 and green by 0.85, blue has to
+   * start near 2.5x red. It is also deliberately *darker* than the deck — water
+   * that is the same value as the floor beside it is another floor, whatever
+   * hue it is.
+   *
+   * How much darker is bounded from the other side, though, and the first try
+   * overshot it: at 0x3c70df the sea was a third of the frame at 63 luminance
+   * and took the t=0.45 dusk median to 44 against a floor of 48. The floors are
+   * floors and are never lowered to make a block pass, so the colour moved
+   * instead. Deep enough to read as ocean, bright enough to be navigable.
+   */
+  ocean:       0x5f9af2,
+  oceanDeep:   0x4a7fd0,
+
   hullBoot:    0xc08a80,
   /**
    * The ship's own red cargo, one step less saturated than `container[0]`.
