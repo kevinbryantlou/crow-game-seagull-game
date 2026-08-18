@@ -18,6 +18,7 @@ import { isSharedMaterial } from './render/shapes.js';
 import { RULES } from './world/rules.js';
 import { Crow } from './entities/crow.js';
 import { Human, Pigeon, Gull } from './entities/human.js';
+import { Cat } from './entities/cat.js';
 import { Pickup, BAIT_KINDS } from './world/pickups.js';
 import { PAL } from './render/palette.js';
 
@@ -288,6 +289,20 @@ class Game {
     /** Everything with feathers that mobs food, which is both kinds. */
     this.birds = [...this.pigeons, ...this.gulls];
 
+    /**
+     * The ship's cat, and the only thing in this game that changes decks.
+     *
+     * Per level and opt-in, exactly like `pianist` — a block that wants one
+     * says so and no other block pays for it. Level 6 is the only one, because
+     * it is the only one whose whole design rests on "up is safe", and a cat is
+     * the cheapest honest way to put a clock on that.
+     */
+    this.cats = (this.world.cats || []).map((s) => {
+      const c = new Cat(s);
+      this.stage.scene.add(c.root);
+      return c;
+    });
+
     this.total = 0;
     this.banked = 0;
     this.elapsed = 0;
@@ -356,6 +371,7 @@ class Game {
     for (const p of this.pickups) disposeTree(p.root);
     for (const h of this.humans) { h.dispose(); disposeTree(h.root); }
     for (const b of this.birds) disposeTree(b.root);
+    for (const c of this.cats) { c.dispose(); disposeTree(c.root); }
     // Optional chaining because a build that threw half-way leaves a world
     // without a crow, and the teardown that follows must not throw on top of
     // the failure it is trying to clean up after.
@@ -375,6 +391,7 @@ class Game {
     this.pigeons = [];
     this.gulls = [];
     this.birds = [];
+    this.cats = [];
   }
 
   /** Hide the cards and start play. The one entry point into a running game. */
@@ -1176,6 +1193,7 @@ class Game {
     for (const h of this.humans) h.update(dt, this.crow, this);
     for (const p of this.pigeons) p.update(dt, food, this.crow, this.world);
     for (const g of this.gulls) g.update(dt, food, this.crow, this.world, this);
+    for (const c of this.cats) c.update(dt, this.crow, this);
 
     // Tasks that complete by observation rather than by a discrete action. The
     // predicate lives on the level, because what counts as an observation is the

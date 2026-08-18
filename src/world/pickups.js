@@ -17,6 +17,7 @@ export const KIND_LABEL = {
   bill20: 'TWENTY',
   shiny: 'SOMETHING SHINY', hotdog: 'HOT DOG', chips: 'A CONE OF CHIPS',
   pretzel: 'A SOFT PRETZEL', croissant: 'A CROISSANT', fish: 'A MACKEREL',
+  bacon: 'A BACON ROLL',
   bottle: 'A MESSAGE IN A BOTTLE',
 };
 
@@ -35,7 +36,7 @@ const SHINY_LABEL = {
  * twice. The wharf's mackerel is the first one that is not baked goods, and it
  * needed no rule anywhere to notice.
  */
-export const BAIT_KINDS = new Set(['hotdog', 'chips', 'pretzel', 'croissant', 'fish']);
+export const BAIT_KINDS = new Set(['hotdog', 'chips', 'pretzel', 'croissant', 'fish', 'bacon']);
 
 /**
  * The glint texture: a soft radial falloff with a faint four-point star.
@@ -317,6 +318,37 @@ function buildMesh(spec) {
       }
       return g;
     }
+    case 'bacon': {
+      /**
+       * Level 6's bait, off the galley step.
+       *
+       * A soft roll with a rasher hanging out of one side. The silhouette has
+       * to survive being the only warm object on a grey steel deck, so the
+       * rasher is the read: a flat pink slab proud of the bun on the camera
+       * side, not tucked inside it where the roll would swallow it.
+       */
+      const g = new THREE.Group();
+      const bun = ico(0.098, 0, PAL.goldLit, { up: PAL.gold, down: PAL.bark });
+      bun.scale.set(1.25, 0.82, 1.0);
+      bun.position.y = 0.08;
+      bun.castShadow = true;
+      g.add(bun);
+      // The cut across the top, a shade darker, so it reads as opened.
+      const cut = box(0.2, 0.016, 0.12, PAL.gold, { shadow: false });
+      cut.position.y = 0.128;
+      g.add(cut);
+      // The rasher — proud on the camera side, and the only saturated thing.
+      const rasher = box(0.21, 0.022, 0.08, PAL.container[0], { shadow: false });
+      rasher.position.set(0.01, 0.108, 0.075);
+      rasher.rotation.z = 0.12;
+      g.add(rasher);
+      const fat = box(0.21, 0.016, 0.026, PAL.containerLit[0], { shadow: false });
+      fat.position.set(0.01, 0.118, 0.108);
+      fat.rotation.z = 0.12;
+      g.add(fat);
+      return g;
+    }
+
     case 'croissant': {
       // Level 4's bait, off the tea cart in the lounge.
       //

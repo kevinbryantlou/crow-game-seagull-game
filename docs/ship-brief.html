@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<title>Small Change — The Container Ship</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  html { -webkit-text-size-adjust: 100%; }
+  :root {
+    --paper:      #E9E5DA;
+    --paper-2:    #DFDACB;
+    --ink:        #141C18;
+    --ink-soft:   #3E4A44;
+    --nickel:     #8B948F;
+    --rule:       #C3BFB1;
+    --enamel:     #1F4D3D;
+    --enamel-2:   #17392E;
+    --brass:      #A87C22;
+    --brass-lit:  #C79A34;
+    --sheen:      #4B4B7A;
+    --band-text:  #EDEAE0;
+    --band-dim:   #9FB5AB;
+    --chip-bg:    #D7D2C2;
+    --shadow:     rgba(20,28,24,.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:     #131815;
+      --paper-2:   #1A211D;
+      --ink:       #E4E2D7;
+      --ink-soft:  #A3ADA6;
+      --nickel:    #7C857F;
+      --rule:      #2C3630;
+      --enamel:    #16332A;
+      --enamel-2:  #102520;
+      --brass:     #D2A644;
+      --brass-lit: #E0B85C;
+      --sheen:     #8A8AC4;
+      --band-text: #E4E2D7;
+      --band-dim:  #7E9A8D;
+      --chip-bg:   #212925;
+      --shadow:    rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:     #131815;
+    --paper-2:   #1A211D;
+    --ink:       #E4E2D7;
+    --ink-soft:  #A3ADA6;
+    --nickel:    #7C857F;
+    --rule:      #2C3630;
+    --enamel:    #16332A;
+    --enamel-2:  #102520;
+    --brass:     #D2A644;
+    --brass-lit: #E0B85C;
+    --sheen:     #8A8AC4;
+    --band-text: #E4E2D7;
+    --band-dim:  #7E9A8D;
+    --chip-bg:   #212925;
+    --shadow:    rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .display {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold",
+                 "Arial Narrow", "Helvetica Neue", sans-serif;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-wrap: balance;
+  }
+  .mono {
+    font-family: Menlo, ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: .82em;
+    letter-spacing: .01em;
+  }
+
+  /* ---- sign band ---- */
+  .band {
+    background: var(--enamel);
+    color: var(--band-text);
+    padding: 3.2rem 1.5rem 2.4rem;
+    border-bottom: 6px solid var(--brass);
+  }
+  .band-inner { max-width: 62rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1.1rem; }
+  .band .eyebrow {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .72rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--band-dim);
+  }
+  h1.title {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: clamp(3rem, 11vw, 6.5rem);
+    line-height: .86;
+    letter-spacing: .005em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  h1.title .thin { display: block; color: var(--brass-lit); }
+  .band .deck {
+    font-size: 1.12rem; max-width: 34rem; color: var(--band-text);
+    opacity: .88; margin: 0;
+  }
+  .facts {
+    display: flex; flex-wrap: wrap; gap: 0 2.2rem;
+    border-top: 1px solid rgba(159,181,171,.28);
+    padding-top: 1rem; margin-top: .4rem;
+  }
+  .facts div { display: flex; flex-direction: column; gap: .1rem; }
+  .facts dt {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .18em; text-transform: uppercase; color: var(--band-dim);
+  }
+  .facts dd { margin: 0; font-size: .95rem; }
+
+  /* ---- document body ---- */
+  main { max-width: 62rem; margin: 0 auto; padding: 0 1.5rem 6rem; }
+  .col { max-width: 38rem; }
+
+  section { padding-top: 3.4rem; }
+  section > * + * { margin-top: 1rem; }
+
+  h2 {
+    font-family: "Avenir Next Condensed", "HelveticaNeue-CondensedBold", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase;
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+    line-height: 1.05; letter-spacing: .015em;
+    margin: 0 0 .2rem; padding-bottom: .55rem;
+    border-bottom: 2px solid var(--ink);
+    display: flex; align-items: baseline; gap: .7rem;
+  }
+  h2 .sec {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .7rem; font-weight: 400; letter-spacing: .12em;
+    color: var(--brass); flex: none;
+  }
+  h3 {
+    font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    font-size: .95rem; margin: 1.8rem 0 .3rem; color: var(--ink);
+  }
+  p { margin: 0; }
+  section p + p { margin-top: .85rem; }
+  a { color: var(--brass); }
+
+  ul, ol { margin: .2rem 0; padding-left: 1.15rem; }
+  li { margin: .3rem 0; }
+  li::marker { color: var(--nickel); }
+
+  strong { font-weight: 700; }
+  em.term { font-style: normal; font-weight: 700; color: var(--sheen); }
+
+  /* ---- exhibits (break the column) ---- */
+  .exhibit { margin: 2rem 0 0; }
+  .exhibit-cap {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--nickel); margin-top: .6rem;
+  }
+  .plate {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    padding: 1.2rem;
+    overflow-x: auto;
+  }
+  .plate svg { display: block; width: 100%; height: auto; min-width: 30rem; }
+
+  /* ---- tables ---- */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--rule); background: var(--paper-2); }
+  table { border-collapse: collapse; width: 100%; min-width: 34rem; font-size: .92rem; }
+  th, td { text-align: left; padding: .6rem .85rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); background: var(--chip-bg); border-bottom: 2px solid var(--ink);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num { font-family: Menlo, ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.val { font-family: Menlo, ui-monospace, monospace; font-variant-numeric: tabular-nums; color: var(--brass); white-space: nowrap; }
+
+  /* ---- key caps ---- */
+  kbd {
+    font-family: Menlo, ui-monospace, monospace; font-size: .74rem;
+    background: var(--chip-bg); border: 1px solid var(--rule);
+    border-bottom-width: 2px; border-radius: 3px;
+    padding: .1rem .38rem; color: var(--ink); white-space: nowrap;
+  }
+
+  /* ---- callout ---- */
+  .note {
+    border-left: 4px solid var(--brass);
+    background: var(--paper-2);
+    padding: .9rem 1.1rem;
+    font-size: .95rem;
+  }
+  .note .lbl {
+    font-family: Menlo, ui-monospace, monospace;
+    font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--brass); display: block; margin-bottom: .25rem;
+  }
+
+  /* ---- scope columns ---- */
+  .scope { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0; border: 1px solid var(--rule); }
+  .scope > div { padding: 1rem 1.15rem; border-right: 1px solid var(--rule); }
+  .scope > div:last-child { border-right: 0; }
+  .scope h4 {
+    font-family: Menlo, ui-monospace, monospace; font-weight: 400;
+    font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+    margin: 0 0 .5rem; color: var(--ink-soft);
+  }
+  .scope ul { padding-left: 1rem; font-size: .9rem; }
+  .scope.in  > div:first-child { background: var(--paper-2); }
+
+  /* ---- milestones ---- */
+  .miles { border-top: 2px solid var(--ink); }
+  .mile {
+    display: grid; grid-template-columns: 5.5rem 1fr; gap: 1.2rem;
+    padding: .85rem 0; border-bottom: 1px solid var(--rule); align-items: baseline;
+  }
+  .mile .m-id {
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; color: var(--brass); padding-top: .15rem;
+  }
+  .mile .m-body strong { display: block; font-family: "Avenir Next Condensed","Arial Narrow",sans-serif; text-transform: uppercase; letter-spacing: .04em; font-size: 1rem; }
+  .mile .m-body span { font-size: .9rem; color: var(--ink-soft); }
+
+  footer {
+    border-top: 2px solid var(--ink); margin-top: 4rem; padding-top: 1rem;
+    font-family: Menlo, ui-monospace, monospace; font-size: .7rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--nickel);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+  }
+
+  @media (max-width: 40rem) {
+    body { font-size: 16px; }
+    .mile { grid-template-columns: 1fr; gap: .1rem; }
+    .plate svg { min-width: 26rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="band">
+  <div class="band-inner">
+    <div class="eyebrow">Level 6 &nbsp;·&nbsp; The Container Ship &nbsp;·&nbsp; Proposed — nothing built</div>
+    <h1 class="title">The<br>Ship<span class="thin">The Crow's Nest</span></h1>
+    <p class="deck">A container ship at sea, days from land. An open steel deck with boxes standing
+      on it in ones and twos. You can see everything. The people on it can barely see past their own
+      cargo — and one hop up puts you out of their reach.</p>
+    <dl class="facts">
+      <div><dt>Goal</dt><dd>$45.00</dd></div>
+      <div><dt>Decks</dt><dd>0 / 0.6 / 3.0 / 5.4 / 6.6, nest 7.0</dd></div>
+      <div><dt>Session</dt><dd>8 min, from t=0.30</dd></div>
+      <div><dt>Nest</dt><dd>A mast platform amidships</dd></div>
+      <div><dt>Slot</dt><dd>After the wharf</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main>
+
+  <section id="decide">
+    <h2><span class="sec">§1</span> What changed, and what's left to decide</h2>
+    <div class="col">
+      <p>The first version of this brief was built on canyons — tall container rows making corridors
+      you walk down blind. You vetoed it: <em>fit the level to the engine, don't occlude a meaningful
+      amount of the navigable map.</em> That was right, and the replacement is better, because it
+      turns out the engine already hands you the mechanic.</p>
+
+      <div class="note">
+        <span class="lbl">The whole idea, in one line</span>
+        <strong>A container is 2.4 m tall. That hides 2.78 m of deck from the camera and hides
+        everything from a guard.</strong> So the player sees the whole board and the crew see almost
+        nothing — and since a guard can only reach 1.9 m above their own feet, standing on any box
+        is safe.
+      </div>
+
+      <p>Three of the five decisions in the last version have evaporated. Two remain.</p>
+
+      <div class="miles">
+        <div class="mile">
+          <div class="m-id">1</div>
+          <div class="m-body"><strong>Is "you see everything, they see nothing" the level?</strong>
+            <span>It inverts the master outline, which wanted to take information away from the
+            player. This gives the player <em>more</em> information than any block so far and takes
+            it from the guards instead. Everything below assumes it.</span></div>
+        </div>
+        <div class="mile">
+          <div class="m-id">2</div>
+          <div class="m-body"><strong>$45</strong>
+            <span>Next rung of the $5 ladder. My recommendation is hold it: the bank is the shortest
+            trip in the game and the deck is fast to cross. First thing to cut to $40 if a playtest
+            reads slow. One line.</span></div>
+        </div>
+      </div>
+
+      <p><strong>Settled:</strong> the ship is at sea with an empty backdrop; no ship roll; the nest
+      is on a mast amidships; the guard line-of-sight fix is <em>already shipped and live</em>, so
+      this level is being designed against behaviour that exists rather than behaviour I am asking
+      for. That is new, and it is why this version needs no engine changes at all.</p>
+    </div>
+  </section>
+
+  <section id="numbers">
+    <h2><span class="sec">§2</span> The two numbers it's built on</h2>
+    <div class="col">
+      <p>Both are measured off shipped code, not chosen.</p>
+
+      <h3>A camera 28 m up and an eye 1.6 m up see completely different worlds</h3>
+      <p>The camera is fixed at 38&deg; down and never tilts, so a solid hides
+      <strong>1.16&times; its own height</strong> of floor behind it. A 2.4 m container therefore
+      costs the player a 2.78 m shadow — about the size of the shadow a litter bin or a newsstand
+      already casts on level 1.</p>
+      <p>A guard's eye is at 1.60 m. A 2.4 m box is 0.8 m over their head, so it hides
+      <strong>everything</strong> behind it, all the way to the horizon.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate"><svg viewBox="0 0 900 300" role="img" aria-label="What a 2.4m container hides from the camera and from a guard">
+  <rect x="0" y="0" width="900" height="300" fill="#E9E5DA"/>
+  <text x="24" y="26" font-family="Menlo,monospace" font-size="11" fill="#A87C22" letter-spacing="2">THE SAME BOX, TWO EYELINES</text>
+  <line x1="24" y1="240" x2="876" y2="240" stroke="#141C18" stroke-width="2"/>
+  <text x="24" y="258" font-family="Menlo,monospace" font-size="9" fill="#3E4A44">DECK</text>
+  <rect x="470" y="168" width="58" height="72" fill="#d07a63" stroke="#6b5136" stroke-width="1.5"/>
+  <text x="499" y="160" font-family="Menlo,monospace" font-size="10" fill="#141C18" text-anchor="middle">2.4 m</text>
+  <line x1="403" y1="240" x2="860" y2="46" stroke="#4B4B7A" stroke-width="2" stroke-dasharray="6 4"/>
+  <path d="M860 46 l-13 3 l3 -12 z" fill="#4B4B7A"/>
+  <text x="700" y="80" font-family="Menlo,monospace" font-size="10" fill="#4B4B7A">to the camera, 28 m up</text>
+  <rect x="403" y="240" width="67" height="9" fill="#141C18" fill-opacity=".55"/>
+  <text x="330" y="262" font-family="Menlo,monospace" font-size="10" fill="#141C18" text-anchor="end">hidden from the camera: 2.78 m</text>
+  <g stroke="#8c2f2f" stroke-width="2">
+    <line x1="150" y1="192" x2="470" y2="205"/>
+  </g>
+  <path d="M150 192 l10 -6 l0 12 z" fill="#8c2f2f"/>
+  <circle cx="150" cy="192" r="4" fill="#8c2f2f"/>
+  <text x="120" y="182" font-family="Menlo,monospace" font-size="10" fill="#8c2f2f" text-anchor="end">a guard's eye, 1.6 m</text>
+  <rect x="528" y="228" width="332" height="12" fill="#8c2f2f" fill-opacity=".30"/>
+  <text x="694" y="222" font-family="Menlo,monospace" font-size="10" fill="#8c2f2f" text-anchor="middle">hidden from the guard: everything behind it</text>
+  <text x="24" y="288" font-family="Menlo,monospace" font-size="10" fill="#3E4A44">One box costs the player 2.78 m of floor and costs a guard the whole deck behind it. That gap is the level.</text>
+</svg>
+</div>
+      <div class="exhibit-cap">The gap between those two is the level. It costs nothing to build —
+        it is a consequence of the camera this game has always had.</div>
+    </div>
+
+    <div class="col">
+      <h3>A guard can only reach 1.9 m above their own feet</h3>
+      <p><span class="mono">Human.update</span> gives up on catching the crow once it is 1.9 m above
+      the guard's own floor, and the actual shoo needs 1.6 m. A container top is
+      <strong>2.4 m</strong> — or 3.0 m when the box stands on a hatch cover. So
+      <strong>one hop up is always safe, everywhere on the ship</strong>, and it is safe by 0.5 m
+      rather than by a hair.</p>
+      <p>This is already true on every block — any 2 m perch does it. No block has ever made it the
+      structure. Here the deck is <em>made of</em> the safe thing.</p>
+
+      <h3>And a check on the whole idea: how hidden is hidden?</h3>
+      <p>Your note was that a meaningful amount of the navigable map must not be occluded. I did not
+      have a number for what "meaningful" is, so I measured the shipped blocks — ground-floor
+      walkable deck, hidden from the fixed camera, invisible map-bounds excluded:</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Block</th><th>Ground hidden from the camera</th></tr></thead>
+          <tbody>
+            <tr><td>1 · Small Change</td><td class="num">34.7%</td></tr>
+            <tr><td>2 · The Park</td><td class="num">35.9%</td></tr>
+            <tr><td>3 · The Hotel (Outside)</td><td class="num">41.1%</td></tr>
+            <tr><td>4 · The Hotel (Inside)</td><td class="num">39.2%</td></tr>
+            <tr><td>5 · The Wharf</td><td class="num">5.6%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p><strong>35–41% is normal.</strong> So the canyon version was not wrong about the
+      <em>quantity</em> — it was wrong about the <em>location</em>. On level 1 the hidden third sits
+      behind the caf&eacute; row and the newsstand, where nobody walks. In the canyon version it was
+      the corridors themselves.</p>
+
+      <div class="note">
+        <span class="lbl">Which turns your note into a rule the build can be held to</span>
+        <strong>No more than 35% of the deck hidden</strong> — no worse than level 1 — <strong>and
+        no hidden pocket on a route or under a pickup.</strong> The second half is the one that
+        matters, and rule 6 already enforces it for pickups. The first half I will measure and
+        report, with the same script that produced the table above.
+      </div>
+    </div>
+  </section>
+
+  <section id="loop">
+    <h2><span class="sec">§3</span> The loop</h2>
+    <div class="col">
+      <div class="scope in">
+        <div>
+          <h4>The deck — 0 and 0.6</h4>
+          <ul>
+            <li>Open steel. You can walk anywhere, fast, no corners.</li>
+            <li>All the money is down here.</li>
+            <li>Everyone can reach you.</li>
+            <li>But they can only see as far as the next box.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>The boxes — 2.4 and 3.0</h4>
+          <ul>
+            <li>Out of arm's reach. Nobody can follow.</li>
+            <li>Every one is in frame, so you always see your bird.</li>
+            <li>Islands — crossing between them costs a wingbeat.</li>
+            <li>Nothing to take up here. It is a place to wait, not to work.</li>
+          </ul>
+        </div>
+      </div>
+
+      <p>So the run is: <strong>watch, drop, grab, hop back up.</strong> You have perfect information
+      — every guard, every heading, every cone — and the thing you want is always on the floor with
+      them. The block is a timing puzzle you can actually solve, rather than a memory test.</p>
+
+      <p>What makes it more than a waiting game is that the guards are <em>also</em> half blind.
+      Since the sight fix shipped, a crewman cannot see through his own cargo. So you are not just
+      timing a cone sweeping past — you are working an approach where he never gets a clear line at
+      all, and the boxes that hide you from him cost you almost nothing in return.</p>
+
+      <div class="note">
+        <span class="lbl">Why this is not the roofline again</span>
+        The roofline spends altitude: money is priced by the climb, and getting up is the work.
+        Here the climb is <strong>one flap and it is free</strong>. Height is not a reward, it is a
+        pause button — and the cost of pressing it is that you are not carrying anything while you
+        do. Every other block rewards being up. This one just makes it safe.
+      </div>
+    </div>
+  </section>
+
+  <section id="plan">
+    <h2><span class="sec">§4</span> The deck</h2>
+    <div class="col">
+      <p>60 m long, about 21 m across. The house and funnel at the west end, an open aft well deck
+      with the crew pool, then two hatch covers with containers standing on them, and a walkway
+      running the full length of each side.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate"><svg viewBox="0 0 900 400" role="img" aria-label="Plan of the container ship's deck">
+  <rect x="0" y="0" width="900" height="400" fill="#E9E5DA"/>
+  <rect x="0" y="0" width="900" height="51" fill="#8ab6d8" fill-opacity=".45"/>
+  <text x="450" y="22" font-family="Menlo,monospace" font-size="10" fill="#141C18" text-anchor="middle" letter-spacing="2">OPEN OCEAN — no shore, no horizon in frame</text>
+  <rect x="0" y="51" width="900" height="9" fill="#6e7480"/>
+  <rect x="0" y="60" width="900" height="252" fill="#c2c6c8" fill-opacity=".55"/>
+  <rect x="0" y="312" width="900" height="42" fill="#c2c6c8" fill-opacity=".85"/>
+  <text x="440" y="338" font-family="Menlo,monospace" font-size="10" fill="#141C18" letter-spacing="1">THE STARBOARD WALKWAY — open, and the whole length of the ship</text>
+  <rect x="0" y="354" width="900" height="9" fill="#6e7480"/>
+  <rect x="0" y="363" width="900" height="37" fill="#8ab6d8" fill-opacity=".45"/>
+  <text x="60" y="384" font-family="Menlo,monospace" font-size="10" fill="#141C18">THE SEA — 2.6 m down, out of bounds</text>
+
+  <rect x="375" y="75" width="180" height="225" fill="#b8b1a6" fill-opacity=".5" stroke="#8a8f98" stroke-width="1.5"/>
+  <rect x="615" y="75" width="180" height="225" fill="#b8b1a6" fill-opacity=".5" stroke="#8a8f98" stroke-width="1.5"/>
+  <text x="553" y="309" font-family="Menlo,monospace" font-size="9" fill="#3E4A44" text-anchor="end">HATCH COVER · 0.6 — a step, not a wall</text>
+  <text x="793" y="309" font-family="Menlo,monospace" font-size="9" fill="#3E4A44" text-anchor="end">HATCH COVER · 0.6</text>
+
+  <g stroke="#6b5136" stroke-width="1.5">
+    <rect x="375" y="109" width="90" height="36" fill="#d07a63"/>
+    <rect x="465" y="180" width="90" height="36" fill="#dfb662"/>
+    <rect x="390" y="255" width="90" height="36" fill="#6f9fc0"/>
+    <rect x="630" y="120" width="90" height="36" fill="#7fb392"/>
+    <rect x="705" y="195" width="90" height="36" fill="#d07a63"/>
+    <rect x="645" y="270" width="90" height="36" fill="#dfb662"/>
+    <rect x="825" y="150" width="90" height="36" fill="#6f9fc0"/>
+  </g>
+  <g stroke="#6b5136" stroke-width="1.5">
+    <rect x="330" y="66" width="90" height="36" fill="#7fb392"/>
+    <rect x="690" y="66" width="90" height="36" fill="#d07a63"/>
+  </g>
+  <text x="375" y="60" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">TWO HIGH — shadow falls on the sea</text>
+
+  <circle cx="585" cy="210" r="17" fill="none" stroke="#A87C22" stroke-width="2.5"/>
+  <circle cx="585" cy="210" r="5" fill="#6e7480"/>
+  <text x="585" y="204" font-family="Menlo,monospace" font-size="9" fill="#A87C22" text-anchor="middle">NEST</text>
+  <text x="585" y="216" font-family="Menlo,monospace" font-size="8" fill="#A87C22" text-anchor="middle">7.0</text>
+  <text x="585" y="245" font-family="Menlo,monospace" font-size="9" fill="#A87C22" text-anchor="middle">the mast, in the cross lane</text>
+
+  <rect x="0" y="51" width="105" height="303" fill="#e4dacb" stroke="#6e7480" stroke-width="2"/>
+  <text x="40" y="200" font-family="Menlo,monospace" font-size="10" fill="#141C18" text-anchor="middle" transform="rotate(-90 40 200)">THE HOUSE · 0 / 3.4 / 6.6 · funnel 9.4</text>
+  <text x="66" y="200" font-family="Menlo,monospace" font-size="9" fill="#3E4A44" text-anchor="middle" transform="rotate(-90 66 200)">the mate on the wing · the galley door</text>
+
+  <rect x="180" y="195" width="135" height="105" fill="#4e9bb0" fill-opacity=".30" stroke="#8a8f98" stroke-width="2"/>
+  <text x="247" y="240" font-family="Menlo,monospace" font-size="10" fill="#141C18" text-anchor="middle">THE CREW POOL</text>
+  <text x="247" y="255" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">9 × 7 · coping 0.62</text>
+  <text x="112" y="152" font-family="Menlo,monospace" font-size="10" fill="#141C18" letter-spacing="1">THE AFT WELL DECK</text>
+  <text x="112" y="168" font-family="Menlo,monospace" font-size="9" fill="#3E4A44">open steel — the kid, the mooring gear</text>
+
+  <circle cx="150" cy="345" r="7" fill="#A87C22"/>
+  <text x="164" y="348" font-family="Menlo,monospace" font-size="9" fill="#A87C22">THE KID — on a coil of rope · trades</text>
+  <circle cx="630" cy="345" r="6" fill="none" stroke="#141C18" stroke-width="2"/>
+  <text x="642" y="348" font-family="Menlo,monospace" font-size="9" fill="#141C18">SPAWN</text>
+
+  <text x="112" y="392" font-family="Menlo,monospace" font-size="9" fill="#A87C22">Boxes stand in ones and twos with open steel between them. Every box top is a safe perch; all of them are in frame.</text>
+  <path d="M866 396 l-14 -22 h28 z" fill="#141C18"/>
+  <text x="866" y="370" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">CAMERA</text>
+</svg>
+</div>
+      <div class="exhibit-cap">Camera fixed at bottom right. 15 px to the metre.</div>
+    </div>
+
+    <div class="col">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Height</th><th>What</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0</td><td>the main deck, walkways, aft well deck</td><td>everyone, and all the money</td></tr>
+            <tr><td class="num">0.6</td><td>the hatch covers</td><td>a step, not a wall — under the 0.85 cover threshold, so guards see straight over them</td></tr>
+            <tr><td class="num">2.4 / 3.0</td><td>container tops</td><td>out of reach; nine of them</td></tr>
+            <tr><td class="num">5.4</td><td>the two-high pair</td><td>at the port rail, so their 5.6 m shadow falls on the sea</td></tr>
+            <tr><td class="num">3.4 / 6.6</td><td>the house — boat deck, bridge wing</td><td>the mate</td></tr>
+            <tr><td class="num">7.0</td><td>the mast platform</td><td>the nest</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p><strong>The hatch covers are the quiet trick.</strong> A real ship's deck is mostly hatch
+      cover, and at 0.6 m they sit below the 0.85 m threshold at which a solid becomes cover — so
+      they break the floor into levels, give the deck scale and texture, and hide 0.70 m of ground
+      from the camera and nothing at all from a guard. Free geography.</p>
+
+      <p><strong>The two-high stacks are the only tall cargo</strong>, and they sit against the port
+      rail specifically because a 4.8 m box throws a 5.6 m shadow — put there, it lands on the
+      bulwark and the sea rather than on anywhere you play. Silhouette variety at no cost. Same
+      argument puts the house at the west end: the funnel at 9.4 m throws 10.9 m, and from the west
+      end that goes off the map.</p>
+
+      <p>Nothing forms a corridor. Boxes stand in ones and twos with open steel between them, which
+      is also what a part-loaded ship actually looks like.</p>
+    </div>
+  </section>
+
+  <section id="nest">
+    <h2><span class="sec">§5</span> The nest, the water, the money</h2>
+    <div class="col">
+      <h3>The nest</h3>
+      <p>A mast amidships with a platform at 7.0 m. The crow's nest is a crow's nest.</p>
+      <p>It sits in the cross lane between the two hatch covers, so it is central and every bank is
+      short — the shortest in the game. Three rules it satisfies: the platform is 3.2 m across
+      against a 1.5 m nest (2.13&times;, needs 2); the mast is a bare pole with no gallery under the
+      platform, so there is no lid to be trapped beneath; and the masthead light hangs on an arm
+      cantilevered from <em>below</em> the platform, because anything rooted above it sits in the
+      column the audit checks — the mistake the lobby clock made.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate"><svg viewBox="0 0 900 240" role="img" aria-label="Elevation of the mast and the crow's nest">
+            <rect x="0" y="0" width="900" height="240" fill="#E9E5DA"/>
+            <text x="24" y="24" font-family="Menlo,monospace" font-size="11" fill="#A87C22" letter-spacing="2">THE MAST — ELEVATION — 20 PX TO THE METRE</text>
+            <line x1="24" y1="200" x2="876" y2="200" stroke="#141C18" stroke-width="2"/>
+            <text x="30" y="216" font-family="Menlo,monospace" font-size="9" fill="#3E4A44">DECK 0</text>
+
+            <!-- row B stacks either side -->
+            <rect x="120" y="104" width="150" height="96" fill="#6f9fc0" stroke="#6b5136" stroke-width="1.5"/>
+            <line x1="120" y1="152" x2="270" y2="152" stroke="#6b5136"/>
+            <text x="195" y="96" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">ROW B · 4.8</text>
+            <rect x="560" y="104" width="150" height="96" fill="#d07a63" stroke="#6b5136" stroke-width="1.5"/>
+            <line x1="560" y1="152" x2="710" y2="152" stroke="#6b5136"/>
+            <text x="635" y="96" font-family="Menlo,monospace" font-size="9" fill="#141C18" text-anchor="middle">ROW B · 4.8</text>
+
+            <!-- the street between -->
+            <text x="415" y="216" font-family="Menlo,monospace" font-size="9" fill="#A87C22" text-anchor="middle">STREET 1 · 4.0 m</text>
+
+            <!-- mast -->
+            <rect x="411" y="60" width="8" height="140" fill="#6e7480"/>
+            <!-- ladder rungs -->
+            <g stroke="#6e7480" stroke-width="1.5">
+              <line x1="404" y1="190" x2="426" y2="190"/><line x1="404" y1="176" x2="426" y2="176"/>
+              <line x1="404" y1="162" x2="426" y2="162"/><line x1="404" y1="148" x2="426" y2="148"/>
+              <line x1="404" y1="134" x2="426" y2="134"/><line x1="404" y1="120" x2="426" y2="120"/>
+              <line x1="404" y1="106" x2="426" y2="106"/><line x1="404" y1="92" x2="426" y2="92"/>
+            </g>
+            <!-- platform 3.2 wide at y 7.0 -->
+            <rect x="383" y="54" width="64" height="7" fill="#8a8f98" stroke="#6e7480" stroke-width="1.5"/>
+            <text x="470" y="60" font-family="Menlo,monospace" font-size="10" fill="#141C18">PLATFORM 3.2 m across, at 7.0 — 2.13&times; the nest</text>
+            <!-- nest -->
+            <ellipse cx="415" cy="48" rx="15" ry="6" fill="none" stroke="#8c6e4a" stroke-width="2.5"/>
+            <text x="470" y="44" font-family="Menlo,monospace" font-size="10" fill="#A87C22">THE NEST — 1.5 m twig ring</text>
+            <!-- mast light on an arm -->
+            <line x1="419" y1="72" x2="447" y2="72" stroke="#6e7480" stroke-width="2"/>
+            <circle cx="451" cy="72" r="6" fill="#f2cf74" stroke="#A87C22"/>
+            <text x="470" y="76" font-family="Menlo,monospace" font-size="10" fill="#141C18">masthead light on an arm — never over the twigs</text>
+            <!-- climb annotation -->
+            <line x1="300" y1="104" x2="300" y2="54" stroke="#4B4B7A" stroke-width="1.5" stroke-dasharray="4 3"/>
+            <text x="292" y="84" font-family="Menlo,monospace" font-size="9" fill="#4B4B7A" text-anchor="end">2.2 m from row B</text>
+            <text x="24" y="236" font-family="Menlo,monospace" font-size="9" fill="#3E4A44">No gallery under the platform. A crow rising beside the mast meets open air on every side, so there is no lid and no pot.</text>
+          </svg></div>
+      <div class="exhibit-cap">Drawn so the three answers are visible.</div>
+    </div>
+
+    <div class="col">
+      <h3>The water</h3>
+      <p>A crew pool on the aft deck, 9 &times; 7 m. Ships this size have one; a real one is a
+      quarter the size, and the size here is set by the escape harness — a 4 &times; 4 pool yields
+      one grid cell and would report a clean pass having checked almost nothing. It needs
+      16.6 &times; 14.6 m of clear deck around it, because the approach runs sit 3.2 m out and the
+      collider is the <em>basin</em>, 0.6 m wider than the waterline on every side. The aft deck is
+      18 &times; 19.6, so it fits.</p>
+      <p>The sea is out of bounds — the hull is 2.6 m of vertical steel, and a crow in the water
+      alongside is a lobster pot, which this project has shipped three times. Which leaves the joke:
+      surrounded by an entire ocean, the only water it can swim in is a steel box on the back deck.</p>
+
+      <h3>The money — $71.42 against a $45 goal</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Where</th><th>What</th><th>Value</th><th>Whose</th></tr></thead>
+          <tbody>
+            <tr><td>the pool bottom</td><td>five coins</td><td class="val">$1.45</td><td>—</td></tr>
+            <tr><td>the starboard walkway</td><td>scattered change</td><td class="val">$0.92</td><td>—</td></tr>
+            <tr><td>three container tops</td><td>change and a dollar</td><td class="val">$3.15</td><td>—</td></tr>
+            <tr><td>a hatch cover</td><td>a five under a shackle</td><td class="val">$5.00</td><td>—</td></tr>
+            <tr><td>the mooring deck</td><td>a dollar</td><td class="val">$1.00</td><td>—</td></tr>
+            <tr><td>an open flat rack</td><td>loose change</td><td class="val">$6.50</td><td>—</td></tr>
+            <tr><td>the fo'c'sle store</td><td>loose singles</td><td class="val">$4.00</td><td>—</td></tr>
+            <tr><td><strong>the lashing bridge</strong></td><td><strong>a twenty under a mug</strong></td><td class="val">$20.00</td><td>the bosun</td></tr>
+            <tr><td>the paint store</td><td>a tin of change</td><td class="val">$8.00</td><td>the bosun</td></tr>
+            <tr><td>the mess room table</td><td>a ten</td><td class="val">$10.00</td><td>the cook</td></tr>
+            <tr><td>the bridge wing</td><td>the mate's change</td><td class="val">$6.40</td><td>the mate</td></tr>
+            <tr><td>the mooring winch</td><td>a five</td><td class="val">$5.00</td><td>the lasher</td></tr>
+            <tr><td>four shinies</td><td>a shackle pin, a washer, a brass tally, a lens</td><td class="val">—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>You land 63% of it, in line with the wharf's 62% and the lobby's 61%. All four audit bounds
+      pass: unguarded and dry $20.57, guarded $49.40 against $26.42 of slack, unguarded plus every
+      trade $36.07 against $45. The kid pays <span class="mono">[2.25, 3.25, 4.50, 5.50]</span>.</p>
+      <p><strong>Almost none of it is on a box top.</strong> That is the design working: the tops are
+      where you are safe, so putting money there would pay you for hiding. The three cheap pickups up
+      there exist only to teach that the tops are landable in the first thirty seconds.</p>
+    </div>
+  </section>
+
+  <section id="cast">
+    <h2><span class="sec">§6</span> The cast</h2>
+    <div class="col">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Who</th><th>Where</th><th>Job</th></tr></thead>
+          <tbody>
+            <tr><td><strong>the bosun</strong></td><td>the deck, working the lashings</td><td>Owns $28 of the guarded money. The bait guard.</td></tr>
+            <tr><td><strong>the lasher</strong></td><td>a lap of the hatch covers</td><td>The one who keeps crossing your approach. Owns the winch five.</td></tr>
+            <tr><td><strong>the mate</strong></td><td>the bridge wing, 6.6 m up</td><td>The only guard with a long clear view — nothing on deck is tall enough to block him. He is what the west end costs.</td></tr>
+            <tr><td><strong>the cook</strong></td><td>the galley door</td><td>Owns the mess room ten. Notices nothing.</td></tr>
+            <tr><td><strong>the fitter</strong></td><td>the starboard walkway</td><td>Oblivious, paces, stands where you want to land.</td></tr>
+            <tr><td><strong>the kid</strong></td><td>a coil of rope on the aft deck. Sits.</td><td>Trades. "The kid" is what a ship calls its youngest anyway.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p><strong>The mate is the block's counterweight and the reason it is not solved.</strong>
+      Everyone else is at 1.6 m with cargo in the way; he is at 6.6 m with nothing in the way at all,
+      because the deck is deliberately low. So the west end — the pool, the kid, the mess room ten —
+      is the one part of the ship where the boxes do not help you, and that is where a third of the
+      money is.</p>
+
+      <p>They are working because that is what a deck gang does on passage: tightening lashings,
+      chipping, painting. No cargo work, no crane.</p>
+
+      <h3>Silhouette</h3>
+      <p>The kid is legible because she sits and almost nothing else in the game does. A ship's deck
+      is full of things that read as seats — bollards, bitts, coamings, rope coils — so this block
+      has to work at it. Nobody else sits.</p>
+
+      <h3>Gulls, and they have to be two groups</h3>
+      <p>Eight gulls. They are also the level-5 callback now that there is no landmark: a ship on
+      passage tows gulls for days, so these are the wharf's gulls and they followed you out.</p>
+      <p>A bird only comes to food within 2.2 m of its own floor, so <strong>a gull on a 2.4 m box
+      is already out of range of a bacon roll on the deck</strong>, by 20 cm. Four go low — rails,
+      deck, hatch tops — and those are the mob. Four go high on the boxes and will never come to
+      food. Not one flock.</p>
+      <p><strong>No pigeons.</strong> There are none at sea. Worth confirming on day one that the
+      set piece fires without them, because no block has ever shipped without pigeons.</p>
+    </div>
+  </section>
+
+  <section id="look">
+    <h2><span class="sec">§7</span> How it looks</h2>
+    <div class="col">
+      <h3>The deck is the biggest surface in the game</h3>
+      <p>Roughly 60 &times; 21 m of continuous paint — bigger than the park's lawn, twice the
+      lobby's floor. Both took three attempts, and both failed the same way: a colour picked at one
+      end of the light ramp and never checked at the other.</p>
+      <p>A real ship's deck is red oxide or deck green, and both are ruled out by arithmetic this
+      repo has already paid for. Red oxide is saturated, so it has two low channels and goes
+      near-black in shade — that killed the wharf's first container palette, and those were accents,
+      not 1200 m² of ground. Deck green goes olive under the warm afternoon key, and olive on a floor
+      is turf.</p>
+    </div>
+
+    <div class="exhibit">
+      <div class="plate"><svg viewBox="0 0 900 250" role="img" aria-label="Deck paint candidates at both ends of the light ramp">
+            <rect x="0" y="0" width="900" height="250" fill="#E9E5DA"/>
+            <text x="24" y="24" font-family="Menlo,monospace" font-size="11" fill="#A87C22" letter-spacing="2">DECK PAINT — THE SAME COLOUR UNDER BOTH KEYS</text>
+            <text x="150" y="52" font-family="Menlo,monospace" font-size="9" fill="#3E4A44" text-anchor="middle">t=0 · key 0xffd9a0 · 2.6</text>
+            <text x="420" y="52" font-family="Menlo,monospace" font-size="9" fill="#3E4A44" text-anchor="middle">t=0.98 · key 0x6e6aa8 · violet fill</text>
+            <text x="700" y="52" font-family="Menlo,monospace" font-size="9" fill="#3E4A44" text-anchor="middle">verdict</text>
+
+            <!-- row 1: red oxide -->
+            <rect x="24" y="62" width="252" height="46" fill="#c98a68"/>
+            <rect x="294" y="62" width="252" height="46" fill="#5c4450"/>
+            <text x="30" y="90" font-family="Menlo,monospace" font-size="10" fill="#141C18">RED OXIDE 0xb06a4a</text>
+            <text x="300" y="90" font-family="Menlo,monospace" font-size="10" fill="#E4E2D7">two low channels</text>
+            <text x="570" y="90" font-family="Menlo,monospace" font-size="10" fill="#141C18">NO — the wharf's container lesson, at 1200 m²</text>
+
+            <!-- row 2: green -->
+            <rect x="24" y="118" width="252" height="46" fill="#b6bd7e"/>
+            <rect x="294" y="118" width="252" height="46" fill="#5a5d63"/>
+            <text x="30" y="146" font-family="Menlo,monospace" font-size="10" fill="#141C18">DECK GREEN 0x8fa06a</text>
+            <text x="300" y="146" font-family="Menlo,monospace" font-size="10" fill="#E4E2D7">survives dusk</text>
+            <text x="570" y="146" font-family="Menlo,monospace" font-size="10" fill="#141C18">NO — goes olive under the warm key. Turf.</text>
+
+            <!-- row 3: cool grey -->
+            <rect x="24" y="174" width="252" height="46" fill="#dcd2c4"/>
+            <rect x="294" y="174" width="252" height="46" fill="#7d7f92"/>
+            <text x="30" y="202" font-family="Menlo,monospace" font-size="10" fill="#141C18">COOL STEEL GREY 0xc2c6c8</text>
+            <text x="300" y="202" font-family="Menlo,monospace" font-size="10" fill="#141C18">blue holds</text>
+            <text x="570" y="202" font-family="Menlo,monospace" font-size="10" fill="#A87C22">PROPOSED — blue at 1.03&times; red, three channels high</text>
+            <text x="24" y="240" font-family="Menlo,monospace" font-size="9" fill="#3E4A44">Swatches are indicative, not measured. The build checks the real frame at t=0 and t=0.98 before anything else is painted.</text>
+          </svg></div>
+      <div class="exhibit-cap">Indicative, not measured. The build checks the real frame at t=0 and
+        t=0.98 before anything is painted.</div>
+    </div>
+
+    <div class="col">
+      <p><strong>Cool steel grey</strong>, with the hatch covers a half-step darker so the deck is
+      not one flat field, and painted non-slip strips on the walkways as decals.</p>
+
+      <h3>The containers carry all the colour</h3>
+      <p><span class="mono">PAL.container</span> already holds four hues that were backed off from
+      saturated when the wharf's first palette failed dusk. That work is done. With only eleven boxes
+      the wallpaper risk from the canyon version is gone — these read as objects, not as a wall.</p>
+
+      <h3>Making it read as a ship</h3>
+      <p>You never see the horizon, the hull, or both ends at once, so the ship cannot be established
+      by silhouette. It has to be established by edges: two bulwark rails running the full 60 m with
+      sea below and beyond, water moving on both sides at once, the house and funnel at one end only,
+      and lashing rods and turnbuckles at the box feet — the one detail that could not be anything
+      else. A static bow wave and wake say she is moving. No roll.</p>
+
+      <h3>Dusk</h3>
+      <p><span class="mono">dayStart: 0.30</span>, so the deck lights catch at <strong>4m48s</strong>
+      of an eight-minute day. Deliberately not the latest in the set: at t=0.58 the key light
+      multiplies blue by 0.35, which is what turned the wharf's harbour brown. This block has water on
+      <em>two</em> sides and a grey deck between them, so it has more to lose from a late start than
+      any block yet.</p>
+      <p>Few lights, small, bright — the lobby's lesson, where thirty pools cost 38 ms a frame.
+      Twelve pools, none over 5 m: the house front, the mast, the walkway ends, the pool coping, and
+      one on each hatch cover.</p>
+    </div>
+  </section>
+
+  <section id="build">
+    <h2><span class="sec">§8</span> Budget, tests and wiring</h2>
+    <div class="col">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Budget</th><th>Cap</th><th>For scale</th></tr></thead>
+          <tbody>
+            <tr><td>Meshes</td><td class="num">≤ 400</td><td>block 373 · park 460 · roofline 510 · lobby 618 · wharf 322</td></tr>
+            <tr><td>Colliders</td><td class="num">≤ 65</td><td>52–64 across the five</td></tr>
+            <tr><td>Backdrop</td><td class="num">~6 meshes</td><td>the cheapest in the game; open sea</td></tr>
+            <tr><td>Light pools</td><td class="num">≤ 12, r ≤ 5.0</td><td>the lobby reached 30 and came back down</td></tr>
+            <tr><td>Ground hidden from camera</td><td class="num">≤ 35%</td><td>level 1 is 34.7%; the wharf 5.6%</td></tr>
+            <tr><td>Occluders</td><td class="num">≤ 12</td><td>only the near-side boxes; the fade is a nicety here, not load-bearing</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p><strong>This should be the cheapest block in the game.</strong> Eleven containers is
+      twenty-two meshes and four materials. No trees, no planting, no caf&eacute; furniture, no
+      crowd, a six-mesh backdrop, and a deck that is mostly flat paint.</p>
+
+      <h3>What the tests will and won't catch</h3>
+      <ul>
+        <li><strong>No pickup hidden from the camera</strong> — the rule that keeps the money legible,
+          and with a sparse deck it should pass easily rather than by a whisker.</li>
+        <li><strong>Everything resting on a deck that exists</strong> — box tops at 2.4 and 3.0 and
+          hatch covers at 0.6 make it easy to write a coordinate and forget the tier.</li>
+        <li><strong>The coplanar-face rule will not catch stacked containers</strong> (different
+          tops), so do not expect it to. What it <em>will</em> catch is a bulwark rail cap drawn
+          flush with the bulwark top, and a container sitting exactly flush on a hatch cover. Watch
+          those.</li>
+        <li><strong>Tag only the starboard bulwark <span class="mono">edge-kerb</span></strong> — the
+          rule takes the first match, and this is the first block with a kerb-like collider at both
+          edges.</li>
+        <li><strong>Chase probes:</strong> an open deck is the easiest pathing case in the game, so
+          the lattice worry from the canyon version is gone. Probes still go round the house, the
+          pool and each hatch cover.</li>
+      </ul>
+      <p>Two checks worth adding: <strong>print the hidden-ground fraction every run</strong> so the
+      35% budget is enforced rather than claimed, and <strong>assert a guard cannot see across the
+      deck through a container</strong> — the mechanic the whole block rests on, which is currently
+      an inference from a shipped fix rather than a statement about this level.</p>
+
+      <h3>Wiring</h3>
+      <ul>
+        <li><span class="mono">world/levels.js</span> — a sixth entry with
+          <span class="mono">next: null</span>; the wharf's <span class="mono">next</span> goes
+          <span class="mono">null</span> → <span class="mono">6</span>, plus
+          <span class="mono">shortName: 'the ship'</span>. That one field grows the ending button, the
+          Levels chip and the save ladder together.</li>
+        <li><span class="mono">core/save.js</span> — nothing; it reads the ladder off
+          <span class="mono">next</span>.</li>
+        <li><strong>Levels screen at six chips is fine</strong> — 168 px chips in a 44 rem row fit
+          exactly three across, so six is the first count that fills the grid evenly.</li>
+        <li>The wharf's ending copy is left alone — it closes rather than points, the same call made
+          for the lobby when the wharf arrived. The button does the pointing.</li>
+        <li><span class="mono">shoot.mjs</span> gets slots <span class="mono">70</span>–<span class="mono">79</span>
+          and <span class="mono">l6-dusk-*</span>. <span class="mono">smoke.mjs</span> needs nothing
+          — it iterates the registry.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="words">
+    <h2><span class="sec">§9</span> The words</h2>
+    <div class="col">
+      <h3>Tasks</h3>
+      <ul>
+        <li>Dive the crew's pool</li>
+        <li>Get the six off the bridge wing</li>
+        <li>Trade something shiny</li>
+        <li>Get the bosun off the hatch</li>
+        <li>Get the twenty</li>
+      </ul>
+
+      <h3>Toasts</h3>
+      <ul>
+        <li>Take it to your nest</li>
+        <li>The kid sitting on the rope will trade for that</li>
+        <li>A bacon roll. Every gull following this ship knows what it is.</li>
+        <li>The five is loose &nbsp;/&nbsp; Too near the hatch &nbsp;/&nbsp; Every gull on this ship has seen it</li>
+        <li><strong>Not from up on the boxes</strong> — the wrong-deck failure, and on this block the
+          wrong answer is three metres straight up, which is exactly where a player will try it,
+          because that is where they have been standing all game.</li>
+      </ul>
+      <p>Plain words for places. No <em>bulwark</em>, no <em>fo'c'sle</em>, no <em>coaming</em> in
+      anything a player reads.</p>
+
+      <h3>The ending</h3>
+      <p>Being at sea is worth two endings. Every loss so far ends with the level still there and
+      nobody watching — <em>the fountain is full of coins and you have all night</em>. That needs
+      somewhere you could come back to. Out here there is nowhere to go, and it lands funnier rather
+      than bleaker: <strong>you have four days.</strong> And the win gets a joke the set has been
+      setting up for six blocks: forty-five dollars, earned in the one place on earth where money
+      buys nothing.</p>
+      <p>Title: <strong>Night&lt;span&gt;Watch&lt;/span&gt;</strong>.</p>
+      <p><em>Won:</em> "The last note goes into the nest and every deck light on the ship comes on at
+      once, bow to stern, because somebody on the bridge threw one switch.<br><br>You come back seven
+      metres over a container deck, on a steel platform three metres across with a rail round it and
+      nothing above it but sky. There is no land in any direction and there will not be for four
+      days, which makes forty-five dollars the most useless fortune anybody ever earned. Down by the
+      rail a kid is still holding a brass tally out at arm's length for a bird that is not there any
+      more."</p>
+      <p><em>Lost:</em> "You got to $X. The deck lights are on, the watch has changed, and the sea has
+      gone the colour of a bruise all the way out to an edge you cannot see.<br><br>Still a crow. But
+      nothing on this ship is going anywhere for four days, and neither is the twenty under the mug on
+      number three hatch."</p>
+      <p>The premise survives it: the curse is <em>collect the sum</em>, not spend it. A crow banking
+      twenty dollars was never going to buy anything on any block, so "the money is useless out here"
+      is a joke in the ending and not a hole in the loop.</p>
+    </div>
+  </section>
+
+  <section id="open">
+    <h2><span class="sec">§10</span> Open questions</h2>
+    <div class="col">
+      <ol>
+        <li><strong>Is one hop up too safe?</strong> The honest risk in this design is the opposite of
+          the last one: if standing on a box is always safe and always available, the block may have
+          no teeth. The mate is the intended answer, and the money being all on the floor is the
+          other. If a playtest reads as trivial, the first lever is fewer boxes, not taller ones.</li>
+        <li><strong>Does an empty backdrop read as finished?</strong> You have said yes given enough
+          interesting things across the ship, so the deck has to earn it — the wake, the lashing gear,
+          the ragged load, the house.</li>
+        <li><strong>Does the bait fire with no pigeons and four low gulls?</strong> Day one, before any
+          geometry is nice.</li>
+        <li><strong>Does the guard sight fix feel right at this density?</strong> This is the first
+          block designed around it rather than corrected by it, and your playtest of levels 1–5 is the
+          first real evidence either way.</li>
+      </ol>
+    </div>
+  </section>
+
+  <footer>
+    <span>Small Change · Level 6 · The Container Ship</span>
+    <span>Proposed — nothing built</span>
+  </footer>
+
+</main>
+</body>
+</html>

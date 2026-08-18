@@ -1977,7 +1977,7 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
     await p5.evaluate(() => { document.getElementById('hud').style.display = ''; });
   }
 
-  // The ending: its own copy, its own goal, and no next block after it.
+  // The ending: its own copy, its own goal, and — since level 6 — a next block.
   const end5 = !has5 ? null : await p5.evaluate(() => {
     const g = window.__game;
     g.total = 41.20; g.elapsed = 301; g.finished = false; g.running = true;
@@ -1994,12 +1994,239 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
   if (end5 && !/forty-one dollars twenty cents/i.test(end5.title)) {
     errors.push(`L5 ending headline wrong: "${end5.title}"`);
   }
-  if (end5 && end5.onward === false) errors.push('L5 is the last block but offered a next one');
+  /**
+   * The wharf used to be the last block and this assertion used to say so. The
+   * ship arriving flipped it, and it is worth the two lines rather than a
+   * deletion: `next` on the descriptor is the whole progression system, so a
+   * block that stops offering the one after it is a real break and nothing else
+   * in the harness would notice.
+   */
+  if (end5 && end5.onward === true) {
+    errors.push('L5 hands off to the ship but its ending offered no next block');
+  }
   if (end5) { await new Promise((r) => setTimeout(r, 1400)); await shoot5('69-l5-ending'); }
 
   // This section wins a block, which clears it. Any later section that needs a
   // known save has to clear storage itself — see the navigation notes below.
   await p5.close();
+}
+
+// ── level 6: the container ship (shots 70-79) ────────────────────────────────
+/**
+ * The block that spends *reach*, and the only one with an entity that climbs.
+ *
+ * Its two claims are both arithmetic and both need a real frame to confirm. A
+ * 2.4m container hides 2.78m of deck from this camera and everything from a
+ * guard's 1.60m eye — so the money has to be visible while the crew are blind,
+ * and `smoke` proves the first half while only a screenshot shows the second.
+ * And a guard gives up 1.9m above their own feet, so every box top is safe,
+ * which is why there is a cat.
+ *
+ * The deck is also the largest painted surface in the game and it is cool grey,
+ * which is a colour that only exists because the first attempt rendered as
+ * sand. Both dusk samples are pointed at it.
+ */
+{
+  const url6 = URL + (URL.includes('?') ? '&' : '?') + 'level=6';
+  const p6 = await browser.newPage();
+  await p6.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
+  p6.on('console', (m) => { if (m.type() === 'error') errors.push(`L6 console: ${m.text()}`); });
+  p6.on('pageerror', (e) => errors.push(`L6 uncaught: ${e.message}`));
+  p6.on('requestfailed', (r) => errors.push(`L6 404/failed: ${r.url()}`));
+
+  console.log(`\nloading ${url6}`);
+  await p6.goto(url6, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  const booted6 = Date.now();
+  await p6.waitForFunction(
+    () => document.getElementById('loading')?.classList.contains('hidden')
+       || (document.getElementById('loading')?.textContent || '').startsWith('Could not start'),
+    { timeout: 30000 },
+  ).catch(() => errors.push('L6: still booting after 30s — no error thrown, just slow'));
+  const boot6Msg = await p6.$eval('#loading', (el) => (el.classList.contains('hidden') ? null : el.textContent))
+    .catch(() => null);
+  if (boot6Msg) errors.push(`L6 did not start: ${boot6Msg}`);
+  console.log(`  L6 booted in ${Date.now() - booted6} ms`);
+
+  const has6 = await p6.evaluate(() => !!window.__game);
+  await p6.click('#start');
+  await new Promise((r) => setTimeout(r, 1200));
+
+  const shoot6 = async (name) => {
+    writeFileSync(`${OUT}/${name}.png`, await p6.screenshot({ type: 'png' }));
+    console.log(`  wrote ${OUT}/${name}.png`);
+  };
+  const look6 = async (name, x, y, z) => {
+    if (!has6) return;
+    await p6.evaluate(([px, py, pz]) => {
+      window.__game.crow.pos.set(px, py, pz);
+      window.__game.crow.vel.set(0, 0, 0);
+      window.__game.stage.snapTo(window.__game.crow.pos);
+    }, [x, y, z]);
+    await new Promise((r) => setTimeout(r, 900));
+    await shoot6(name);
+  };
+
+  await shoot6('70-l6-spawn');
+  await look6('71-l6-mast', 9, 7.2, 2);
+  await look6('72-l6-pool', -13.5, 0.1, 9.5);
+  await look6('73-l6-cargo', 16, 2.9, 3);
+  await look6('74-l6-port', 0, 0.1, -7);
+  await look6('75-l6-house', -20, 0.1, 6);
+
+  /**
+   * The cat, which is the one thing here no other block can be asked about.
+   *
+   * It is put on the deck with the crow on a box top and given fifteen seconds.
+   * What is being checked is not that it catches anything — it is slow on
+   * purpose and the crow can always leave — but that it *arrives*: that it
+   * leaves the deck, ends up level with the bird, and never ends a frame
+   * standing on nothing. An earlier build climbed, walked off the far edge and
+   * strolled home three metres in the air.
+   */
+  if (has6) {
+    const cat = await p6.evaluate(async () => {
+      const g = window.__game;
+      const c = g.cats && g.cats[0];
+      if (!c) return { missing: true };
+      /**
+       * Both of them start somewhere legal, which took one run to get right.
+       * The first version dropped the cat at (14, 0, 5) — inside number two
+       * hatch's footprint at deck level, so it was standing *in* the cargo lid
+       * and `resolveWalk` simply held it against the edge for fifteen seconds.
+       * The cat is on the open cross lane now and the crow is on the box beside
+       * it, which is the situation the block actually produces.
+       */
+      g.crow.pos.set(14.0, 2.8, -4.0);
+      g.crow.vel.set(0, 0, 0);
+      g.stage.snapTo(g.crow.pos);
+      c.pos.set(8.5, 0, -1.5); c.floorY = 0; c.state = 0; c.interest = 2;
+      let climbed = false, level = false, floating = 0, maxFloor = 0;
+      const t0 = performance.now();
+      return await new Promise((res) => {
+        const iv = setInterval(() => {
+          g.crow.pos.set(14.0, 2.8, -4.0); g.crow.vel.set(0, 0, 0);
+          maxFloor = Math.max(maxFloor, c.floorY);
+          if (c.floorY > 0.3) climbed = true;
+          if (Math.abs(c.floorY - 2.8) < 0.2
+            && Math.hypot(c.pos.x - 14, c.pos.z + 4) < 2.6) level = true;
+          /**
+           * Standing on nothing: its own floor far above whatever is actually
+           * under it, and not mid-hop (state 2 is the hop, which is airborne on
+           * purpose). Computed here from the level's own colliders rather than
+           * through a helper the page does not export — the first version of
+           * this called `window.__deckAt`, which does not exist, so it could
+           * never have fired. A check that cannot fail is not a check.
+           */
+          let under = 0;
+          for (const col of g.world.colliders) {
+            if (col.shape === 'ring' || col.perch === false) continue;
+            if (c.pos.x < col.minX || c.pos.x > col.maxX) continue;
+            if (c.pos.z < col.minZ || c.pos.z > col.maxZ) continue;
+            if (col.top <= c.floorY + 0.05 && col.top > under) under = col.top;
+          }
+          if (c.state !== 2 && c.floorY - under > 0.4) floating++;
+          if (performance.now() - t0 > 15000) { clearInterval(iv); res({ climbed, level, floating, maxFloor }); }
+        }, 250);
+      });
+    });
+    console.log('  L6 cat:', JSON.stringify(cat));
+    if (cat.missing) errors.push('L6: no cat on the block');
+    if (!cat.missing && !cat.climbed) errors.push('L6: the cat never left the deck');
+    if (!cat.missing && !cat.level) {
+      errors.push(`L6: the cat never got level with the crow (best floor ${cat.maxFloor})`);
+    }
+    if (!cat.missing && cat.floating > 2) {
+      errors.push(`L6: the cat spent ${cat.floating} samples standing on nothing`);
+    }
+  }
+
+  // ── dusk, from the open deck and from among the cargo ─────────────────────
+  if (has6) {
+    const FLOOR = { p50: RULES.duskMedianFloor, p05: RULES.duskShadowFloor };
+    await p6.evaluate(() => { document.getElementById('hud').style.display = 'none'; });
+
+    const measure6 = async (through, settle, at) => {
+      await p6.evaluate(([tt, pos]) => {
+        const g = window.__game;
+        g.running = false;
+        g.finished = false;
+        g.elapsed = tt * g.sessionSeconds;
+        g.crow.pos.set(pos[0], pos[1], pos[2]);
+        g.crow.vel.set(0, 0, 0);
+        g.stage.snapTo(g.crow.pos);
+      }, [through, at]);
+      await new Promise((r) => setTimeout(r, settle));
+      await settleLights(p6);
+      const b64 = await p6.screenshot({ type: 'png', encoding: 'base64' });
+      return p6.evaluate((u) => new Promise((res) => {
+        const img = new Image();
+        img.onload = () => {
+          const cv = document.createElement('canvas');
+          cv.width = img.width; cv.height = img.height;
+          const cx = cv.getContext('2d');
+          cx.drawImage(img, 0, 0);
+          const y0 = Math.floor(img.height * 0.42);
+          const d = cx.getImageData(0, y0, img.width, img.height - y0).data;
+          const L = [];
+          let r = 0, g = 0, b = 0, n = 0;
+          for (let i = 0; i < d.length; i += 16) {
+            L.push(0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]);
+            r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
+          }
+          L.sort((x, y) => x - y);
+          res({
+            p05: Math.round(L[Math.floor(L.length * 0.05)]),
+            p50: Math.round(L[Math.floor(L.length * 0.5)]),
+            rgb: [Math.round(r / n), Math.round(g / n), Math.round(b / n)],
+          });
+        };
+        img.src = u;
+      }), `data:image/png;base64,${b64}`);
+    };
+
+    let late6 = null;
+    for (const [where, pos] of [['deck', [6, 0, 10.4]], ['cargo', [16, 0, 2]]]) {
+      for (const [through, settle] of [[0.20, 500], [0.45, 9000], [0.98, 700]]) {
+        const m = await measure6(through, settle, pos);
+        const key = `l6-dusk-${where}-${String(Math.round(through * 100))}`;
+        writeFileSync(`${OUT}/${key}.png`, await p6.screenshot({ type: 'png' }));
+        console.log(`  ${key}: p05 ${m.p05}, p50 ${m.p50}, avg rgb ${m.rgb.join(',')}`);
+        if (m.p50 < FLOOR.p50) errors.push(`${key}: median ${m.p50} below the ${FLOOR.p50} floor`);
+        if (m.p05 < FLOOR.p05) errors.push(`${key}: 5th pct ${m.p05} below the ${FLOOR.p05} floor`);
+        if (through > 0.9) late6 = m;
+      }
+    }
+    /**
+     * The hue, and this block should be *repaying* the debt the lobby ran up.
+     * Its biggest surface is cool by construction, so anything less than the
+     * roofline's margin means the warm additive light has eaten it again.
+     */
+    if (late6) {
+      console.log(`  L6 dusk hue: blue over red by ${late6.rgb[2] - late6.rgb[0]}`);
+      if (late6.rgb[2] <= late6.rgb[0]) {
+        errors.push(`L6 dusk reads warm, not violet: avg rgb ${late6.rgb.join(',')}`);
+      }
+    }
+    await p6.evaluate(() => { document.getElementById('hud').style.display = ''; });
+  }
+
+  // The ending: its own copy, its own goal, and no next block after it.
+  const end6 = !has6 ? null : await p6.evaluate(() => {
+    const g = window.__game;
+    g.total = 46.10; g.elapsed = 301; g.finished = false; g.running = true;
+    g._finish(true);
+    return {
+      title: document.getElementById('ending-title').textContent.replace(/\s+/g, ' ').trim(),
+      goal: g.goal,
+      onward: document.getElementById('onward').hidden,
+    };
+  });
+  if (end6) console.log('  L6 ending:', JSON.stringify(end6));
+  if (end6 && end6.goal !== 45) errors.push(`L6 goal is ${end6.goal}, expected 45`);
+  if (end6 && end6.onward === false) errors.push('L6 is the last block but offered a next one');
+  if (end6) { await new Promise((r) => setTimeout(r, 1400)); await shoot6('79-l6-ending'); }
+
+  await p6.close();
 }
 
 // ── the way from one block to the next ───────────────────────────────────────

@@ -147,6 +147,85 @@ export const PAL = {
    * a saturated colour to sit. A red container on tan paving is two browns; on
    * grey concrete it is a red container.
    */
+  /**
+   * The ship's deck, and the largest single surface in the game — 60 x 21 m.
+   *
+   * A real container ship's deck is red oxide or deck green, and both are ruled
+   * out by arithmetic this repo has already paid for twice. Red oxide is a
+   * saturated hue, so it has two low channels and renders near-black in shade;
+   * that is what failed the wharf's first container palette, and those were
+   * accents rather than 1200 m2 of ground. Deck green goes olive under the
+   * 2.6-intensity warm afternoon key, and olive on a floor is turf — the
+   * lobby's runner made that mistake indoors.
+   *
+   * **The raw hex has to be far bluer than the result you want**, and the first
+   * attempt got that wrong in the most predictable way available. 0xc2c6c8 is a
+   * cool grey on a colour picker and it rendered as *sand*: the afternoon key is
+   * 0xffd9a0 at 2.6, which multiplies red by 1.00, green by 0.85 and blue by
+   * 0.63, so a neutral grey comes out (194, 168, 126) — a beach. That is the
+   * park's lawn failure exactly, on a surface twice the size.
+   *
+   * So it is solved rather than eyeballed: to land near-neutral under the key,
+   * blue has to start at roughly 1.4x red. 0xa3c0dd is (163, 192, 221), which
+   * the key turns into (163, 163, 139) — a light neutral steel that still reads
+   * as painted metal, and which the violet dusk fill then takes properly cold,
+   * the way a steel deck at last light actually goes.
+   */
+  deckSteel:   0xa8ceff,
+  /** The walkways and hatch covers, each a clear step darker so the deck is not
+   *  one flat field — value contrast is what separated the park's paths from
+   *  its grass, and this block needs the same trick for the same reason. */
+  deckWalk:    0x94bff5,
+  deckHatch:   0x86b3ea,
+  deckHatchLit: 0xb4d6ff,
+  /** The hull below the rail. Dark enough to read as a hull, light enough not
+   *  to be a black band across the bottom of the frame — at this camera the
+   *  near topside is a permanent foreground object, not a distant silhouette. */
+  hullSide:    0x9db2cc,
+  hullSheer:   0xc4d8f2,
+  /**
+   * The boot-top at the waterline, and it is desaturated on purpose.
+   *
+   * Drawn first in `PAL.container[0]` — a coral, and the obvious colour, since
+   * a real boot-top is red. It runs the whole 64m of the ship at the waterline,
+   * and bucketing the darkest 5% of the dusk frame by colour found it
+   * immediately: **#300000**, near-black, and it *was* the 5th percentile on
+   * every sample. A saturated hue has two low channels, so in shade it collapses
+   * to one. This is the wharf's container palette a second time, on a different
+   * object and in the foreground rather than as an accent.
+   *
+   * Three channels high, hue kept. It still reads as a red stripe in sun and it
+   * stops being a black stripe in shade.
+   */
+  hullBoot:    0xc08a80,
+  /**
+   * The ship's own red cargo, one step less saturated than `container[0]`.
+   *
+   * `container[0]` (0xd07a63) is fine on the wharf, where the containers are
+   * small accents at the back of the block. On level 6 they are foreground
+   * masses several metres across, and their shaded faces were the 5th
+   * percentile at dusk once the boot-top was fixed — the same near-black red,
+   * the same two low channels, a third object. Scale is what changed, not the
+   * colour, which is the useful part: a hue that is safe as an accent is not
+   * automatically safe as a wall.
+   */
+  /**
+   * The ship's cat. Ginger, because it has to be the one warm thing on a cool
+   * grey deck — the block is deliberately blue-grey end to end, so the single
+   * object that can come and get you is the single object that is not.
+   *
+   * Three channels high even in the shade tone: a cat is small and moving, and
+   * a saturated ginger would vanish into every shadow on the block, which is
+   * the one thing this entity must never do.
+   */
+  catFur:       0xd08c52,
+  catFurLit:    0xe8ab74,
+  catFurShade:  0x9a6440,
+
+  cargoRust:    0xc98f80,
+  cargoRustLit: 0xdda99a,
+  poolTile:    0x9ec8ee,
+  poolWater:   0x5a96f5,
   concrete:    0xd0c9be,
   concreteMid: 0xb8b1a6,
 

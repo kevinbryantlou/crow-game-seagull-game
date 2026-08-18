@@ -25,6 +25,7 @@ import { buildLevel as buildPark } from './park.js';
 import { buildLevel as buildRoofline } from './level2.js';
 import { buildLevel as buildLobby } from './lobby.js';
 import { buildLevel as buildWharf } from './wharf.js';
+import { buildLevel as buildShip } from './ship.js';
 import { RULES } from './rules.js';
 
 export const LEVELS = [
@@ -569,8 +570,19 @@ export const LEVELS = [
     build: buildWharf,
     title: 'The Wharf',
     district: 'The Landing',
-    /** The last block there is. The ending screen offers only a replay. */
-    next: null,
+    /**
+     * The ship — which has been sitting in this block's own backdrop for the
+     * whole level, so boarding it is the one handoff in the set that needs no
+     * copy at all. One field, and the ending screen grows a brass button, the
+     * Levels screen grows a sixth chip and save.js opens the door.
+     *
+     * The winning copy below is left exactly as it was. It was written as the
+     * game's last ending and it still reads as one — it closes on the gull
+     * watching you rather than pointing anywhere, and the button under it does
+     * the pointing. That is the same call made for the lobby when this block
+     * arrived.
+     */
+    next: 6,
     shortName: 'the wharf',
     /**
      * $40, and the ladder's honest fifth term.
@@ -738,6 +750,155 @@ export const LEVELS = [
         + 'water has gone the colour of a bruise all the way to the breakwater.<br><br>'
         + 'Still a crow. But the lamp out there runs all night whether anybody is watching '
         + 'or not, and there is a five on a post that nobody has come back for since June.',
+    },
+  },
+
+  {
+    id: 6,
+    slug: 'the-ship',
+    build: buildShip,
+    title: 'The Container Ship',
+    district: "The Crow's Nest",
+    /** The last block there is. The ending screen offers only a replay. */
+    next: null,
+    shortName: 'the ship',
+    /**
+     * $45, the sixth rung of a five-dollar ladder.
+     *
+     * $71.42 exists here, so this is 63% of it — with the wharf's 62% and the
+     * lobby's 61% rather than the park's 76%. The argument for holding the
+     * rung rather than repeating $40: the nest is amidships on a mast, so the
+     * bank is the shortest round trip in the game, and the deck is open steel
+     * you cross at full speed.
+     *
+     * The counter-argument, stated so it does not have to be discovered: this
+     * block's cost is *waiting*. If a playtest reads slow rather than tense,
+     * $45 goes to $40 and nothing else moves.
+     */
+    goal: 45.00,
+    sessionSeconds: RULES.sessionSeconds,
+    /**
+     * Deliberately not the latest start in the set, which is the wharf's
+     * lesson rather than a preference. At t=0.58 the key light multiplies blue
+     * by 0.35 and turned that block's harbour brown by arithmetic; this one has
+     * open water on *two* sides and a cool grey deck between them, so it has
+     * more to lose from a late start than any block yet. At 0.30 the deck
+     * lights catch at 4m48s of an eight-minute day.
+     */
+    dayStart: 0.30,
+    /**
+     * On the starboard walkway amidships, looking forward along the ship.
+     *
+     * The opening frame has to carry the block in one picture: open deck, the
+     * boxes standing on it in ones and twos, the mast with the nest on it just
+     * up-frame, and the house at the far end. Standing on the walkway rather
+     * than between the cargo, because the first thing this level has to teach
+     * is that the deck is open — the second is that the boxes are landable.
+     */
+    spawn: [6, 0, 10.4],
+
+    tasks: [
+      { id: 'dive', text: "Dive the crew's pool", when: (g) => g.crow.inWater },
+      /**
+       * Observed rather than banked, like the park's cooler and the wharf's
+       * pilings: the risk is in the getting there. The bridge wing is the one
+       * place on the ship the cargo does not hide you from, so this task is
+       * the level's own currency spent as a chore.
+       */
+      { id: 'wing', text: 'Get the change off the bridge wing', when: (g) => !!g.crow.carried?.onWing },
+      { id: 'trade', text: 'Trade something shiny' },
+      { id: 'hatch', text: 'Get the bosun off the hatch' },
+      { id: 'twenty', text: 'Get the twenty' },
+    ],
+    bankTicks: { bill20: 'twenty' },
+
+    teach: {
+      money: 'Take it to your nest',
+      // Plain words for a place. "Rope" is a shape you can pick out of a frame
+      // from the back of the ship; "bitts" and "fo'c'sle" appear in the source
+      // and in nothing a player reads.
+      shiny: 'The kid sitting on the rope will trade for that',
+      bait: 'A bacon roll. Every gull following this ship knows what it is.',
+    },
+
+    /**
+     * A rung above the wharf's.
+     *
+     * She is easy to reach — she is on a coil of rope on open deck with nobody
+     * owning the ground round her. What a trade costs here is finding the
+     * shiny: two of the four are on cargo you have to go up to see, and one is
+     * in the pool.
+     *
+     * Bounded by the rule rather than by taste: unguarded money plus every
+     * trade she will ever make is $36.07 against $45, so trading can soften
+     * this block by most of the way and can never finish it.
+     */
+    tradeValues: [2.25, 3.25, 4.50, 5.50],
+
+    bait: {
+      task: 'hatch',
+      guard: 'bosun',
+      seconds: 12,
+      mobFor: 13,
+      anchor: (world) => world.cart,
+      minDist: 8,
+      tooClose: 'Too near the hatch',
+      onDrop: 'Every gull on this ship has seen it',
+      /**
+       * The deck, and up on the boxes is the wrong answer.
+       *
+       * The roofline teaches "birds do not use stairs" with a failure rather
+       * than a toast, and every block since has assumed it. Here the wrong
+       * answer is not another building, it is three metres straight up — which
+       * is exactly where a player will try it, because standing on a box is
+       * what they have been doing all game.
+       */
+      deck: 0,
+      wrongDeck: 'Not from up on the boxes',
+    },
+
+    pinToast: 'The five is loose',
+
+    /**
+     * An open deck is the easiest pathing case in the game — there are no
+     * corridors here by design. What the probes are actually for is the four
+     * big solids: the house, the pool, and the two hatch covers with cargo
+     * standing on them.
+     */
+    chaseProbes: (w) => [
+      ['the walkway, end to end', 0, [-13.5, 11.0], [28, 10.4]],
+      ['the aft deck, round the pool', 0, [-13.5, 11.0], [-13.5, -2.0]],
+      ['the aft deck, corner to corner', 0, [-22.5, -6.9], [-5.5, 10.7]],
+      ['number one hatch, round the cargo', 0, [-7.7, -7.0], [8, 8.0]],
+      ['number two hatch, round the cargo', 0, [10, 8.5], [26, -5.0]],
+      ['the cross lane, past the mast', 0, [9, 10.5], [9, -6.5]],
+      ['forward, round the flat rack', 0, [3, -7.0], [15, -7.0]],
+    ],
+
+    ending: {
+      lostTitle: 'Night<span>Watch</span>',
+      /**
+       * The game's last ending, so it closes rather than points — and being at
+       * sea is what it closes on. Every loss in this set ends with the level
+       * still there and nobody watching, which is a consolation that depends on
+       * having somewhere to come back to. Out here there is nowhere to go, and
+       * it lands funnier than it does bleak.
+       */
+      won: () =>
+        'The last note goes into the nest and every deck light on the ship comes on at '
+        + 'once, bow to stern, because somebody on the bridge threw one switch.<br><br>'
+        + 'You come back seven metres over a container deck, on a steel platform three '
+        + 'metres across with a rail round it and nothing above it but sky. There is no '
+        + 'land in any direction and there will not be for four days, which makes '
+        + 'forty-five dollars the most useless fortune anybody ever earned. Down by the '
+        + 'rail a kid is still holding a brass tally out at arm\'s length for a bird that '
+        + 'is not there any more.',
+      lost: (total) =>
+        `You got to $${total.toFixed(2)}. The deck lights are on, the watch has changed, `
+        + 'and the sea has gone the colour of a bruise all the way out to an edge you '
+        + 'cannot see.<br><br>'
+        + 'Still a crow. But nothing on this ship is going anywhere for four days, and '
+        + 'neither is the twenty under the mug on number three hatch.',
     },
   },
 ];

@@ -166,6 +166,18 @@ export function hasLineOfSight(cols, ex, ey, ez, px, py, pz, floor = 0) {
      * a guard quietly seeing through it.
      */
     if (c.shape === 'ring') continue;
+    /**
+     * An opt-out, for the one shape this test gets wrong: a small platform on a
+     * pole. The mast's crown is 3.2m across and seven metres up, so it is wide
+     * enough and tall enough to qualify as cover — and a guard standing at the
+     * foot of the mast is then blind to a crow *above* it, which is
+     * geometrically true and exactly the direction this whole change must never
+     * break. Flight is the answer to being chased; a lid in the sky that hides
+     * the bird from underneath is worse than the bug being fixed.
+     *
+     * Declared per collider, and there is one in the game.
+     */
+    if (c.sight === false) continue;
     if (c.top - floor < SIGHT_OVER) continue;
     // Too slim to hide a bird 0.68 wide — a lamppost is not cover.
     if (c.maxX - c.minX < SIGHT_SLIM && c.maxZ - c.minZ < SIGHT_SLIM) continue;

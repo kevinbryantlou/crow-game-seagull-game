@@ -107,6 +107,8 @@ src/
                        (built second, slotted third — filenames are not slot numbers)
   world/lobby.js       LEVEL 4 — The Hotel (Inside): one room, a gallery, a chandelier
   world/wharf.js       LEVEL 5 — The Wharf: a quay, one pier, and things that float
+  world/ship.js        LEVEL 6 — The Container Ship: open deck, low cargo, one cat
+  entities/cat.js      the ship's cat — the only entity that changes decks
   world/levels.js      the registry: goal, tasks, teach copy, bait rules, endings, per level
   world/collide.js     the collider format, and going round things (pure, unit tested)
   world/pickups.js     the money
@@ -122,7 +124,8 @@ docs/                  design brief + style guide — the spec, written to be ch
                        menu-brief.html    — progress, level select and pause: PROPOSED, not built
                        lobby-brief.html   — level 4, the lobby: built, played, revised once
                        wharf-brief.html   — level 5, the wharf: built, played over seven rounds
-                       levels-overview.html — MASTER OUTLINE: all five blocks plus three proposed
+                       ship-brief.html    — level 6, the ship: the design, and the redesign that produced it
+                       levels-overview.html — MASTER OUTLINE: the blocks, shipped and proposed
                        harness-brief.html — how smoke and shoot work, and what neither can see
 ```
 
@@ -757,7 +760,7 @@ once per entry in `LEVELS`:
   `something + z` becomes string concatenation and then `NaN`. It surfaced as
   every light pool on the pier landing at `y: NaN`.
 
-## Five levels
+## Six levels
 
 `world/levels.js` is the registry. A level descriptor holds everything about a
 block that is not geometry: `goal`, `sessionSeconds`, `dayStart`, `spawn`, the
@@ -766,9 +769,9 @@ task list (with `when` predicates for the ones that complete by observation),
 smoke, and the ending copy. If another block would need a different one, it is
 level data; if they all need the same one, it is in `world/rules.js`.
 
-The ladder is **$20 / $25 / $30 / $35 / $40** and **one deck / two decks / four
-decks / three decks inside one room / five decks with water between them**. Five
-equal dollar steps, one rung per block.
+The ladder is **$20 / $25 / $30 / $35 / $40 / $45** and **one deck / two decks /
+four decks / three decks inside one room / five decks with water between them /
+an open deck you cannot be reached on**. Six equal dollar steps, one rung per block.
 The lobby was built at $40 on an argument about the fiction — the last block is
 the inside of a building whose outside asked $30 — and came down to $35 on a
 playtest note about the run. The fiction argument is still true; it was just not
@@ -853,6 +856,41 @@ drags** — one line in `levels.js`, and the geometry does not care.
   belongs to **gulls**, there are more of them than there are people, and none of
   them guards anything. The seagull option from the original "would you rather"
   turns up as the setting of the last block.
+
+- **Level 6 — The Container Ship** (`ship.js`). Four decks (0 / 0.4 / 2.4–2.8 /
+  3.4–6.84, nest at 7.0), $45, ±30 wide, starting at `dayStart: 0.30` so the deck
+  lights catch at 4m48s. `docs/ship-brief.html` is the spec.
+
+  What it spends is **reach**, and the whole block rests on two numbers that were
+  already true. A 2.4m container hides only 1.16 x 2.4 = 2.78m of deck from this
+  camera and hides *everything* from a guard whose eye is at `WALKER_EYE` (1.60),
+  so **the player sees the board and the crew do not**. And a guard gives up
+  1.9m above their own feet, so a box top is always safe. The money is all on the
+  floor with the people; you watch, drop, grab and hop back up.
+
+  It is the cheapest block in the game — 196 meshes against the lobby's 618 —
+  because there is no `addSkyline`: the ship is at sea, the backdrop is open
+  water on both sides, and that is about six meshes.
+
+  **Three numbers on it are set by fairness rules rather than by composition.**
+  There are six containers and not ten, because the audit requires the blinded
+  share of the block to *fall* every time the crow climbs and at ten it rose at
+  three metres — on a deck of 2.4m boxes, three metres up is the worst possible
+  altitude. Every stack is one tier for the same reason. And the lashing bridge
+  and the mast crown declare `sight: false`, because a 7m slab at 2.2–2.4 was
+  61 of the blinded samples at 3m on its own, and a small platform on a pole
+  blinds a guard standing under it about a bird above it — both of which turn
+  flight into a hiding place, which is the one direction that change must never
+  break.
+
+  It also has the game's only **cat**. Every human has an authored `floorY` and
+  never leaves it, which is what makes "one hop up is safe" true — lovely for
+  ninety seconds and then the block has no teeth. The cat walks a round of the
+  whole deck, and if you loiter it comes and climbs, one hop at a time, taking
+  about thirteen seconds from across the ship. It is slower than a guard, it
+  telegraphs, it gives up after eight seconds, and it does exactly what a
+  shooing human does — a new capability, not a new consequence. See
+  `docs/style-guide.html` §5.
 
 **Finishing a block hands you the next one.** The ending screen carries a brass
 button naming where it goes (`The park →`) with `Again!` beside it in outline;

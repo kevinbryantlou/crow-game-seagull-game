@@ -43,6 +43,8 @@ export function makeKit(ctx) {
        * standing in water that had all been declared.
        */
       inWater: opts.inWater === true,
+      /** Opt out of blocking a person's sightline — see `hasLineOfSight`. */
+      sight: opts.sight,
     });
   };
 
