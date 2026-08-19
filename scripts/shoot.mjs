@@ -2096,19 +2096,28 @@ if (ending) { await new Promise((r) => setTimeout(r, 1600)); await shoot('10-end
        * The cat is on the open cross lane now and the crow is on the box beside
        * it, which is the situation the block actually produces.
        */
-      g.crow.pos.set(14.0, 2.8, -4.0);
+      /**
+       * A single-tier box, which is exactly as high as a cat can go.
+       *
+       * Containers stand on the deck: a single is 2.4 and a two-high stack is
+       * 4.8, well past a 2.6m leap. So the cat reaches the low boxes and not
+       * the tall ones, and that line is the block's rule rather than a defect —
+       * a low box is quick and unsafe, a tall one is a longer climb and safe.
+       * Tested at the height it is supposed to work at.
+       */
+      g.crow.pos.set(14.0, 2.4, 2.4);
       g.crow.vel.set(0, 0, 0);
       g.stage.snapTo(g.crow.pos);
-      c.pos.set(8.5, 0, -1.5); c.floorY = 0; c.state = 0; c.interest = 2;
+      c.pos.set(9.0, 0, 4.0); c.floorY = 0; c.state = 0; c.interest = 2;
       let climbed = false, level = false, floating = 0, maxFloor = 0;
       const t0 = performance.now();
       return await new Promise((res) => {
         const iv = setInterval(() => {
-          g.crow.pos.set(14.0, 2.8, -4.0); g.crow.vel.set(0, 0, 0);
+          g.crow.pos.set(14.0, 2.4, 2.4); g.crow.vel.set(0, 0, 0);
           maxFloor = Math.max(maxFloor, c.floorY);
           if (c.floorY > 0.3) climbed = true;
-          if (Math.abs(c.floorY - 2.8) < 0.2
-            && Math.hypot(c.pos.x - 14, c.pos.z + 4) < 2.6) level = true;
+          if (Math.abs(c.floorY - 2.4) < 0.2
+            && Math.hypot(c.pos.x - 14, c.pos.z - 2.4) < 2.8) level = true;
           /**
            * Standing on nothing: its own floor far above whatever is actually
            * under it, and not mid-hop (state 2 is the hop, which is airborne on

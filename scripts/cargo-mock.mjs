@@ -24,27 +24,29 @@ mkdirSync(OUT, { recursive: true });
 
 /** `[x, z, tiers, hue]` per container. Edit freely and re-run. */
 const LAYOUTS = {
-  'A — as shipped': [
+  'A — the sparse deck that got playtested': [
     [-2, -4.5, 1, 0], [14, -4, 1, 2], [20, 1, 1, 3], [27, -1, 1, 1], [5, -5, 1, 2], [10, 4.5, 1, 3],
   ],
-  'B — two bays, two and three high': [
-    [-2, -6.4, 2, 0], [-2, -3.6, 3, 1], [4, -6.4, 3, 2], [4, -3.6, 2, 3],
-    [16, -6.4, 3, 1], [16, -3.6, 2, 0], [22, -6.4, 2, 3], [22, -3.6, 3, 2],
-    [10, -6.4, 2, 3], [28, -3.6, 2, 1],
+  'B — three rows, two high (SHIPPED)': [
+    [-4, -5.2, 2, 0], [-4, -2.4, 2, 2], [-4, 2.4, 1, 3],
+    [2, -5.2, 2, 3], [2, -2.4, 1, 0], [2, 2.4, 2, 1],
+    [14, -5.2, 2, 1], [14, -2.4, 2, 3], [14, 2.4, 1, 2],
+    [20, -5.2, 1, 2], [20, -2.4, 2, 1], [20, 2.4, 2, 0],
+    [26, -5.2, 2, 0], [26, -2.4, 2, 2], [10, 6, 1, 3],
   ],
-  'C — worked ship: full bays, one struck': [
-    [-4, -6.4, 3, 0], [-4, -3.6, 3, 2], [-4, -0.8, 2, 1],
-    [2, -6.4, 3, 3], [2, -3.6, 2, 0], [2, -0.8, 2, 2],
-    [14, -6.4, 3, 1], [14, -3.6, 3, 3], [14, -0.8, 2, 0],
-    [20, -6.4, 2, 2], [20, -3.6, 3, 1], [20, -0.8, 1, 3],
-    [26, -6.4, 2, 0], [26, -3.6, 2, 2],
+  'C — four rows, two high': [
+    [-4, -5.2, 2, 0], [-4, -2.4, 2, 2], [-4, 0.4, 2, 1], [-4, 3.2, 1, 3],
+    [2, -5.2, 2, 3], [2, -2.4, 1, 0], [2, 0.4, 2, 2], [2, 3.2, 2, 1],
+    [14, -5.2, 2, 1], [14, -2.4, 2, 3], [14, 0.4, 2, 0], [14, 3.2, 1, 2],
+    [20, -5.2, 1, 2], [20, -2.4, 2, 1], [20, 0.4, 2, 3], [20, 3.2, 2, 0],
+    [26, -5.2, 2, 0], [26, -2.4, 2, 2], [26, 0.4, 2, 1],
   ],
-  'D — full load, four bays': [
-    [-4, -6.4, 3, 0], [-4, -3.6, 3, 2], [-4, -0.8, 3, 1], [-4, 2.0, 2, 3],
-    [2, -6.4, 3, 3], [2, -3.6, 3, 0], [2, -0.8, 2, 2], [2, 2.0, 2, 1],
-    [14, -6.4, 3, 1], [14, -3.6, 3, 3], [14, -0.8, 3, 0], [14, 2.0, 2, 2],
-    [20, -6.4, 3, 2], [20, -3.6, 3, 1], [20, -0.8, 2, 3], [20, 2.0, 2, 0],
-    [26, -6.4, 2, 0], [26, -3.6, 2, 2], [26, -0.8, 2, 1],
+  'D — three high (rejected)': [
+    [-4, -5.2, 3, 0], [-4, -2.4, 3, 2], [-4, 0.4, 3, 1], [-4, 3.2, 2, 3],
+    [2, -5.2, 3, 3], [2, -2.4, 3, 0], [2, 0.4, 2, 2], [2, 3.2, 2, 1],
+    [14, -5.2, 3, 1], [14, -2.4, 3, 3], [14, 0.4, 3, 0], [14, 3.2, 2, 2],
+    [20, -5.2, 3, 2], [20, -2.4, 3, 1], [20, 0.4, 2, 3], [20, 3.2, 2, 0],
+    [26, -5.2, 2, 0], [26, -2.4, 2, 2], [26, 0.4, 2, 1],
   ],
 };
 
@@ -55,7 +57,8 @@ const browser = await puppeteer.launch({
   args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
 });
 const page = await browser.newPage();
-await page.setViewport({ width: 1280, height: 760, deviceScaleFactor: 1 });
+// Modest, because every frame ends up inlined in the page.
+await page.setViewport({ width: 800, height: 470, deviceScaleFactor: 1 });
 await page.setCacheEnabled(false);
 
 const VIEWS = [
@@ -84,8 +87,18 @@ for (const [name, layout] of Object.entries(LAYOUTS)) {
     }, pos);
     await new Promise((r) => setTimeout(r, 800));
     const file = `${slug}-${view}.png`;
-    writeFileSync(`${OUT}/${file}`, await page.screenshot({ type: 'png' }));
-    shots.push(file);
+    const png = await page.screenshot({ type: 'png' });
+    writeFileSync(`${OUT}/${file}`, png);
+    /**
+     * Inlined as a data URI, not linked.
+     *
+     * `docs/*.html` are self-contained by rule — no webfonts, no external
+     * assets — because they are deployed to the gated notes area of the sibling
+     * site, where a relative path into `shots/` would 404. `shots/` is
+     * gitignored as well, so a linked version is a page that only works on the
+     * machine that generated it.
+     */
+    shots.push(`data:image/png;base64,${png.toString('base64')}`);
   }
 
   /**
@@ -169,7 +182,7 @@ await browser.close();
 const cards = rows.map(({ name, m, shots }) => `
   <section class="card">
     <h2>${name}</h2>
-    <div class="shots">${shots.map((f) => `<img src="../shots/cargo/${f}" alt="">`).join('')}</div>
+    <div class="shots">${shots.map((f) => `<img src="${f}" alt="">`).join('')}</div>
     <div class="nums">
       <div><dt>Containers</dt><dd>${m.boxes}</dd></div>
       <div><dt>Tallest stack</dt><dd>${m.tallest.toFixed(1)} m</dd></div>
@@ -216,11 +229,18 @@ in among the boxes. The numbers underneath are measured off the built world, not
 made it. <strong>Deck hidden from camera</strong> is walkable steel the player cannot see (level 1 is
 34.7%). <strong>Guards blind</strong> must never rise as the crow climbs, or flight becomes a way to
 hide — the one thing the sightline change must not do.</p>
+<p class="lede"><strong>Why B ships and not D.</strong> The aggregate below is kind to three-high
+stacks, but the audit runs a second, sharper test: it takes a spot a guard cannot see, lifts the crow
+<em>eight metres</em>, and requires it to become visible. From four metres behind a 7.2&nbsp;m stack
+that is geometrically impossible — the ray from eight metres down to a 1.6&nbsp;m eye clears the box
+only if the box sits in the first eighth of the distance. A 4.8&nbsp;m stack clears comfortably. Three
+high is not a tuning problem; it is outside what the rule permits. Four rows (C) measures the same as
+three but closes the lane down the middle, which is where the block is played.</p>
 ${cards}
 <footer>Generated by <code>scripts/cargo-mock.mjs</code> against a running <code>npm run dev</code>.
 Edit the <code>LAYOUTS</code> table and re-run; each entry is <code>[x, z, tiers, hue]</code>.
-The frames live in <code>shots/cargo/</code>, which is gitignored — this page is a local tool and
-needs a re-run rather than a checkout.
+The level reads the same list from <code>?cargo=</code> in dev builds, so you can drive it by hand.
+Frames are inlined, so this page travels.
 The level reads the same list from <code>?cargo=</code> in dev builds, so you can drive it by hand too.</footer>
 </body></html>`);
 console.log('\nwrote docs/cargo-mock.html');

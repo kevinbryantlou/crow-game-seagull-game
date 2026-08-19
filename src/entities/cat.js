@@ -48,6 +48,22 @@ const CAT_RADIUS = 0.22;
 const CAT_HEIGHT = 0.45;
 const CAT_STEP_OVER = 0.30;
 /** The tallest single hop. Two container tiers is 4.8 and takes two hops. */
+/**
+ * The tallest single hop, and it draws the block's most important line.
+ *
+ * A cat leaps about its own body length upward and no more. Containers stand on
+ * the deck, so a single is 2.4 and a two-high stack is 4.8 — which means **the
+ * cat can reach a single-tier box and cannot reach a two-high one.** It walks
+ * to the foot of a tall stack, finds nothing it can get onto, and mills about
+ * underneath.
+ *
+ * That is a limit rather than a feature, and it is worth keeping because of
+ * what it does to the deck: a low box is quick to reach and not safe, a tall
+ * one is a longer climb and is. The player gets a real choice out of an honest
+ * constraint. It also cannot be fixed cheaply — routing "up the low box, then
+ * across to the high one" is two-step planning, and the whole reason chases in
+ * this game are cheap is that nothing plans.
+ */
 const HOP_UP = 2.6;
 /** Down is easier than up, and it has to clear a full container in one go. */
 const HOP_DOWN = 3.4;

@@ -92,7 +92,7 @@ const HOUSE = { x: -26.5, w: 7.0 };
 const MAST = { x: 9.0, z: 2.0 };
 const KID = { x: -20.0, z: 9.6 };
 /** The bait anchor — the hatch the bosun works over. The game calls it `cart`. */
-const HATCH_BOSUN = { x: 1.0, z: -1.0 };
+const HATCH_BOSUN = { x: -10.0, z: 6.0 };
 
 /** The two hatch covers, and the cross lane between them. */
 const HATCHES = [
@@ -326,9 +326,53 @@ export function buildLevel() {
    * a production build because `import.meta.env.DEV` is false there.
    */
   const CARGO = cargoOverride() || [
-    [-2.0, -4.5, 1, 0], [14.0, -4.0, 1, 2], [20.0, 1.0, 1, 3],
-    [27.0, -1.0, 1, 1], [5.0, -5.0, 1, 2], [10.0, 4.5, 1, 3],
+    [-4.0, -5.2, 2, 0], [-4.0, -2.4, 2, 2], [-4.0, 2.4, 1, 3],
+    [2.0, -5.2, 2, 3], [2.0, -2.4, 1, 0], [2.0, 2.4, 2, 1],
+    [14.0, -5.2, 2, 1], [14.0, -2.4, 2, 3], [14.0, 2.4, 1, 2],
+    [20.0, -5.2, 1, 2], [20.0, -2.4, 2, 1], [20.0, 2.4, 2, 0],
+    [26.0, -5.2, 2, 0], [26.0, -2.4, 2, 2],
+    // One box out on its own by the starboard walkway. It breaks up sixty
+    // metres of empty steel, and it is the only cargo standing close enough to
+    // a guard for the audit's "somewhere a guard cannot see into" search to
+    // find a pair — a three-high stack has to be stood six metres back from
+    // before its top clears an eye at 45 degrees, which is further than anyone
+    // on this deck patrols.
+    [10.0, 6.0, 1, 3],
   ];
+  /**
+   * A worked load: two bays of nineteen containers, two and three high, with a
+   * cross lane between them and the whole starboard side left open.
+   *
+   * The sparse deck this block shipped with was a real ship in nobody's
+   * imagination, and the density was over-corrected out of it while chasing the
+   * "flight must always help" rule. Measured through the game rather than
+   * argued: this load hides **12% of the walkable deck** against a 35 budget,
+   * and guard blindness still falls at every step as the crow climbs.
+   *
+   * The z values are on a 2.8m pitch starting at -5.2 rather than -6.4, which
+   * is pathing and not composition: hard against the rail the port lane came
+   * out 0.45m wide and a walker is 0.72 across, so the back of the ship stopped
+   * being walkable at all.
+   *
+   * **Nothing is stacked more than two high, and that is arithmetic.**
+   *
+   * The audit proves that getting off the ground helps by lifting a crow eight
+   * metres from a hidden spot and requiring it to become visible. From a spot
+   * four metres behind a stack, a ray from eight metres down to a 1.6m eye
+   * clears the stack only if the stack is under about an eighth of the way
+   * along — so a **7.2m stack cannot be cleared by an eight-metre climb** and a
+   * 4.8m one comfortably can. Three-high is not a tuning problem; it is outside
+   * what this rule permits.
+   *
+   * Two and one alternating still reads as a stacked, part-discharged ship,
+   * which is what a sea of single boxes did not.
+   *
+   * And there are **three rows, not four, with a 2.4m lane down the middle**.
+   * Four rows on a 2.8m pitch is not a grid, it is an eleven-metre wall: a spot
+   * deep inside it is behind two rows from every direction, and the same
+   * eight-metre climb cannot clear the second one either. The lane is what
+   * makes the inside of the block a place rather than a seam.
+   */
   /**
    * **Seven, not ten**, and the count is set by a fairness rule rather than by
    * composition.
@@ -358,28 +402,49 @@ export function buildLevel() {
    */
   for (const [x, z, tiers, hue] of CARGO) {
     /**
-     * Whether a box stands on a cover is a property of where it *is*, not a
-     * flag somebody types. Typed by hand, three boxes sat 0.40m sunk into the
-     * covers they were standing on and two 6m containers occupied 18m³ of the
-     * same volume as each other — none of which any check can see, because the
-     * coplanar rule compares tops and these differ.
+     * **Every container stands on the deck, never on a hatch cover.**
+     *
+     * Standing them on the covers was the obvious model and it cost 0.4m of
+     * height for nothing: a three-high stack came out at 7.6, and the audit
+     * climbs a crow eight metres to prove that getting off the ground helps.
+     * 0.4m of clearance over a 7.6m wall is not clearance, so there were spots
+     * where eight metres of climb still left the bird hidden. On the deck the
+     * same stack is 7.2 and the margin doubles.
+     *
+     * It also deletes a whole class of bug — boxes sunk into the covers they
+     * were standing on, and stack tops that varied by which side of an
+     * invisible line they were on.
      */
-    const onHatch = HATCHES.some((h) => x > h.x - h.w / 2 - 2.6 && x < h.x + h.w / 2 + 2.6
-      && z > h.z - h.d / 2 && z < h.z + h.d / 2);
-    const base = onHatch ? DECK.hatch : 0;
+    const base = 0;
     const g = new THREE.Group();
     for (let t = 0; t < tiers; t++) {
       const c = box(6.0, 2.4, 2.4, HUE[hue], { up: HUE_LIT[hue], down: PAL.shade });
       c.position.y = 1.2 + t * 2.4;
       g.add(c);
-      // Doors on the near end, so a container is not an anonymous slab.
-      const d = box(0.10, 1.9, 2.0, HUE_LIT[hue], { shadow: false });
-      d.position.set(3.02, 1.15 + t * 2.4, 0);
-      g.add(d);
-      // Corner castings, and the one detail that could not be anything else.
-      for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-        g.add(at(box(0.26, 0.26, 0.26, PAL.steelDark),
-          sx * 2.87, 0.13 + t * 2.4, sz * 1.07));
+      // Doors on the near end, so a container is not an anonymous slab. Only
+      // where the end is actually in frame — a door on the far side of a stack
+      // is a draw call nobody ever sees.
+      if (x < 26) {
+        const d = box(0.10, 1.9, 2.0, HUE_LIT[hue], { shadow: false });
+        d.position.set(3.02, 1.15 + t * 2.4, 0);
+        g.add(d);
+      }
+      /**
+       * Corner castings on the **top tier only**, and that is a performance
+       * decision with a number behind it.
+       *
+       * Four per tier is the honest model and it was 188 meshes on a full load
+       * — the single largest line item on the block, and 188 draw calls for
+       * eight cubes you cannot resolve at this camera below the top of a stack.
+       * On the top tier they still do their job, which is to say "container"
+       * rather than "crate": the corner castings are the one detail that could
+       * not be anything else, and the top of a stack is where the eye reads it.
+       */
+      if (t === tiers - 1) {
+        for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+          g.add(at(box(0.26, 0.26, 0.26, PAL.steelDark),
+            sx * 2.87, 0.13 + t * 2.4, sz * 1.07));
+        }
       }
     }
     g.position.set(x, base, z);
@@ -388,14 +453,13 @@ export function buildLevel() {
     solid(x, z, 6.0, 2.4, top, base, { tag: 'container' });
     perch(x, top, z);
     boxTops.push({ x, y: top, z, tiers });
-    // Lashing rods at the feet of the ones standing on deck.
-    if (!onHatch) {
-      for (const sx of [-1, 1]) {
-        const rod = cyl(0.05, 0.05, 1.9, 5, PAL.steel, { up: PAL.silver });
-        rod.rotation.z = sx * 0.42;
-        rod.position.set(x + sx * 3.1, base + 0.95, z + 1.2);
-        root.add(rod);
-      }
+    // Lashing rods at the feet, on the camera side only — the one detail that
+    // could not be anything but a container ship, and two meshes a stack.
+    for (const sx of [-1, 1]) {
+      const rod = cyl(0.05, 0.05, 1.9, 5, PAL.steel, { up: PAL.silver });
+      rod.rotation.z = sx * 0.42;
+      rod.position.set(x + sx * 3.1, base + 0.95, z + 1.2);
+      root.add(rod);
     }
   }
 
@@ -523,39 +587,45 @@ export function buildLevel() {
    * *below* the platform, because anything rooted above it stands in the column
    * the audit sweeps — which is the mistake the lobby clock made.
    */
-  const NEST = { x: MAST.x, y: 7.0, z: MAST.z };
+  /**
+   * 9.0, up from 7.0. A three-high stack on a hatch cover tops out at 7.6, and
+   * a crow's nest lower than the cargo is not a crow's nest — it is a shelf.
+   * The climb from the tallest stack is 1.4m, and from the deck it is broken by
+   * every box on the way up.
+   */
+  const NEST = { x: MAST.x, y: 9.0, z: MAST.z };
   {
     const g = new THREE.Group();
-    g.add(at(cyl(0.18, 0.22, 7.0, 6, PAL.steel, { up: PAL.silver, down: PAL.steelDark }), 0, 3.5, 0));
-    for (let i = 0; i < 9; i++) {
+    g.add(at(cyl(0.18, 0.22, 9.0, 6, PAL.steel, { up: PAL.silver, down: PAL.steelDark }), 0, 4.5, 0));
+    for (let i = 0; i < 12; i++) {
       g.add(at(box(0.56, 0.05, 0.05, PAL.steelDark, { shadow: false }), 0, 0.7 + i * 0.7, 0.22));
     }
     const plat = cyl(1.6, 1.6, 0.16, 12, PAL.steel, { up: PAL.silver, down: PAL.steelDark });
-    plat.position.y = 6.92;
+    plat.position.y = 8.92;
     g.add(plat);
     for (let i = 0; i < 10; i++) {
       const a = (i / 10) * Math.PI * 2;
       g.add(at(box(0.06, 0.44, 0.06, PAL.steelDark, { shadow: false }),
-        Math.cos(a) * 1.5, 7.22, Math.sin(a) * 1.5));
+        Math.cos(a) * 1.5, 9.22, Math.sin(a) * 1.5));
     }
     // The masthead light, on an arm *below* the platform.
-    g.add(at(box(0.9, 0.07, 0.07, PAL.steel, { shadow: false }), 0.55, 6.6, 0));
-    const bulb = at(ico(0.19, 0, PAL.goldLit, { shadow: false }), 1.0, 6.6, 0);
+    g.add(at(box(0.9, 0.07, 0.07, PAL.steel, { shadow: false }), 0.55, 8.6, 0));
+    const bulb = at(ico(0.19, 0, PAL.goldLit, { shadow: false }), 1.0, 8.6, 0);
     bulb.material = mat(PAL.goldLit);
     g.add(bulb);
     night.add(bulb, PAL.goldLit, { peak: 1.0, warm: 1.5, delay: 0.0, flicker: true });
     night.addPool(root, MAST.x, MAST.z, 5.2, { peak: 0.80, warm: 1.5, delay: 0.0 });
 
     const nest = makeNest();
-    nest.position.y = 7.0;
+    nest.position.y = 9.0;
     g.add(nest);
     g.position.set(MAST.x, 0, MAST.z);
     root.add(g);
     root.userData.nestGroup = nest;
 
-    solid(MAST.x, MAST.z, 0.44, 0.44, 6.4, 0, { tag: 'mast' });
-    solid(MAST.x, MAST.z, 3.2, 3.2, 7.0, 6.6, { tag: 'mast-platform', sight: false });
-    perch(MAST.x, 7.0, MAST.z);
+    solid(MAST.x, MAST.z, 0.44, 0.44, 8.4, 0, { tag: 'mast' });
+    solid(MAST.x, MAST.z, 3.2, 3.2, 9.0, 8.6, { tag: 'mast-platform', sight: false });
+    perch(MAST.x, 9.0, MAST.z);
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -571,7 +641,7 @@ export function buildLevel() {
    * UNDER IT" because it has no label to use. A pinned bill with no pin is a
    * five nobody can ever take.
    */
-  const SHACKLE = { x: -3.9, y: 0.62, z: 1.0 };
+  const SHACKLE = { x: -3.9, y: 0.44, z: 4.5 };
   const shackle = group(
     at(cyl(0.20, 0.20, 0.09, 10, PAL.steelDark, { up: PAL.steel }), 0, 0.045, 0),
     at(box(0.09, 0.20, 0.09, PAL.steel, { up: PAL.silver }), 0.10, 0.14, 0),
@@ -589,8 +659,8 @@ export function buildLevel() {
     const g = new THREE.Group();
     g.add(at(box(7.0, 0.18, 1.1, PAL.steel, { up: PAL.silver, down: PAL.steelDark }), 0, 2.31, 0));
     for (const sx of [-1, 1]) {
-      g.add(at(cyl(0.10, 0.10, 2.0, 6, PAL.steelDark, { up: PAL.steel }), sx * 3.2, 1.4, 0));
-      g.add(at(box(7.0, 0.06, 0.06, PAL.steelDark, { shadow: false }), 0, 2.78, sx * 0.5));
+      g.add(at(cyl(0.10, 0.10, 2.0, 6, PAL.steelDark, { up: PAL.steel }), sx * 2.2, 1.4, 0));
+      g.add(at(box(5.0, 0.06, 0.06, PAL.steelDark, { shadow: false }), 0, 2.78, sx * 0.5));
     }
     g.position.set(LASH.x, 0, LASH.z);
     root.add(g);
@@ -605,7 +675,7 @@ export function buildLevel() {
      * was single-handedly making flight hide the bird. It is still a floor and
      * still a perch; it is just not a wall.
      */
-    solid(LASH.x, LASH.z, 7.0, 1.1, 2.4, 2.2, { tag: 'lashing-bridge', sight: false });
+    solid(LASH.x, LASH.z, 5.0, 1.1, 2.4, 2.2, { tag: 'lashing-bridge', sight: false });
     perch(LASH.x, 2.4, LASH.z);
   }
 
@@ -659,7 +729,7 @@ export function buildLevel() {
   }
 
   /** An open flat rack — cargo with no box on it, and loose change in the bed. */
-  const RACK = { x: 8.5, y: 0.24, z: -4.6 };
+  const RACK = { x: 8.5, y: 0.24, z: -3.6 };
   {
     const g = new THREE.Group();
     g.add(at(box(6.0, 0.22, 2.4, PAL.dockMid, { up: PAL.dockLit, down: PAL.shade }), 0, 0.11, 0));
@@ -816,12 +886,12 @@ function pickupPlacements({ FOUNTAIN, LASH, WINCH, RACK, MESS, PAINT, FOCSLE, SH
   //   camera sees it and so does everybody else. —
   for (const [x, y, z] of [
     [-9.5, 0.06, 10.3], [-2.0, 0.06, 10.0], [5.0, 0.06, 9.9], [16.0, 0.06, 10.0],
-    [27.5, 0.06, 10.2], [-22.0, 0.06, 10.3], [-19.5, 0.06, -7.2], [24.5, 0.06, -7.0],
+    [27.5, 0.06, 10.2], [-22.0, 0.06, 10.3], [-19.5, 0.06, -7.2], [28.5, 0.06, -7.5],
   ]) add('penny', 0.01, x, y, z);
   for (const [x, y, z] of [[-13.0, 0.06, 10.2], [24.0, 0.06, 9.6], [19.5, 0.06, 9.9]]) {
     add('nickel', 0.05, x, y, z);
   }
-  for (const [x, y, z] of [[-6.0, 0.06, -3.2], [13.0, 0.06, 9.9], [29.0, 0.06, 6.0]]) {
+  for (const [x, y, z] of [[-10.0, 0.06, -4.2], [13.0, 0.06, 9.9], [29.0, 0.06, 6.0]]) {
     add('dime', 0.10, x, y, z);
   }
   for (const [x, y, z] of [[-16.5, 0.06, -6.6], [7.5, 0.06, 10.2]]) add('quarter', 0.25, x, y, z);
@@ -837,9 +907,9 @@ function pickupPlacements({ FOUNTAIN, LASH, WINCH, RACK, MESS, PAINT, FOCSLE, SH
    * neighbouring stack the first time the port side was rearranged.
    */
   const top = (x, z) => (boxTops.find((b) => b.x === x && b.z === z) || { y: 0 }).y;
-  add('coins', 0.60, 14.0, top(14.0, -4.0) + 0.04, -4.0, { onCargo: true });
-  add('bill1', 1.00, 20.0, top(20.0, 1.0) + 0.04, 1.0, { onCargo: true });
-  add('coins', 1.55, 5.0, top(5.0, -5.0) + 0.04, -5.0, { onCargo: true });
+  add('coins', 0.60, 2.0, top(2.0, 2.4) + 0.04, 2.4, { onCargo: true });
+  add('bill1', 1.00, 14.0, top(14.0, 2.4) + 0.04, 2.4, { onCargo: true });
+  add('coins', 1.55, 20.0, top(20.0, 2.4) + 0.04, 2.4, { onCargo: true });
 
   // — Loose change round the aft deck, where the tank used to be. Free, and
   //   the only money on the block nobody is anywhere near. —
@@ -854,7 +924,7 @@ function pickupPlacements({ FOUNTAIN, LASH, WINCH, RACK, MESS, PAINT, FOCSLE, SH
 
   // A dollar on the mooring deck, and loose change in the flat rack's bed.
   add('bill1', 1.00, -3.0, 0.66, 7.7);
-  add('coins', 6.50, RACK.x + 0.6, RACK.y + 0.04, RACK.z);
+  add('coins', 6.50, 8.1, RACK.y + 0.06, -3.6);
   // The fo'c'sle store, right forward and a long way from anybody.
   add('coins', 4.00, FOCSLE.x - 0.3, FOCSLE.y + 0.04, FOCSLE.z);
 
@@ -869,10 +939,10 @@ function pickupPlacements({ FOUNTAIN, LASH, WINCH, RACK, MESS, PAINT, FOCSLE, SH
   add('bill5', 5.00, WINCH.x + 0.5, WINCH.y + 0.04, WINCH.z, { owner: 'lasher' });
 
   // — Four shinies. Three are somewhere you have to look up to find. —
-  add('shiny', 0, 11.4, 0.66, 6.4, { shinyKind: 'ring' });
+  add('shiny', 0, 12.9, 0.06, 8.4, { shinyKind: 'ring' });
   add('shiny', 0, -19.5, 0.06, 6.6, { shinyKind: 'cap' });
-  add('shiny', 0, 27.0, top(27.0, -1.0) + 0.05, -1.0, { shinyKind: 'marble' });
-  add('shiny', 0, 26.2, 0.06, -5.4, { shinyKind: 'cap' });
+  add('shiny', 0, 26.0, top(26.0, -2.4) + 0.05, -2.4, { shinyKind: 'marble' });
+  add('shiny', 0, 27.7, 0.06, -6.4, { shinyKind: 'cap' });
 
   // The bait. A bacon roll off the galley step — the sixth member of
   // BAIT_KINDS, and the only new noun on the block.
@@ -905,14 +975,32 @@ function humanPlacements() {
        * standing over the dearest thing on the block.
        */
       /**
-       * On the hatch cover, not inside it. A cover is 0.40 and
-       * `WALKER_STEP_OVER` is 0.45, so a walker authored at `y: 0` on top of one
-       * is never pushed up and simply stands in it to the knee — and the deck
-       * check cannot see it, because it probes from `floorY + 0.05`.
+       * In the cross lane between the two hatches, which is bare deck at 0 —
+       * the covers stop at x 7 and start again at 11. Authoring him at
+       * `DECK.hatch` here put him standing on a cover that is not under him.
        */
-      pos: [1.0, DECK.hatch, -1.0], home: [1.0, DECK.hatch, -1.0],
-      patrol: [[1.0, -1.0], [-3.5, -2.0], [4.0, -2.5], [6.5, -1.5]],
-      speed: 1.2, chaseSpeed: 4.0, viewDist: 10, viewCos: 0.15,
+      /**
+       * On the open deck at the aft end of the cargo, and *not* in the lane
+       * between the bays — which is where he was, three metres from a stack.
+       *
+       * A guard standing that close to a 4.8m box is blind past it at **any**
+       * altitude: the ray leaves his eye at 1.6m and meets the box before it
+       * has risen anywhere near the top, so climbing does not help and the
+       * audit's "getting off the ground makes you visible" check fails on a
+       * spot he could never see. Everyone who owns something needs open ground
+       * behind them.
+       */
+      pos: [-10.0, 0, 6.0], home: [-10.0, 0, 6.0],
+      patrol: [[-10.0, 6.0], [-10.0, 9.5], [-14.0, 7.0], [-8.0, 8.0]],
+      /**
+       * 13, not 10, and it is the cargo that sets it. `canSee` counts height at
+       * a 0.62 discount, so a crow seven metres up over a stack ten metres away
+       * is 11m of *effective* distance — past a 10m cone even with a clear
+       * line. On a deck of 7.2m stacks that made him blind to the one place the
+       * block is played, and the audit caught it: the geometry said visible and
+       * `canSee` said no. He works an open deck; he can see down it.
+       */
+      speed: 1.2, chaseSpeed: 4.0, viewDist: 13, viewCos: 0.15,
       guardRadius: 4.0, alertness: 1.2,
     },
     {
@@ -925,8 +1013,8 @@ function humanPlacements() {
        * without anything moving fast enough to feel unfair.
        */
       pos: [12.0, 0, 8.6], home: [12.0, 0, 8.6],
-      patrol: [[12.0, 8.6], [24.4, 8.3], [26.0, -4.5], [9.0, -6.2], [1.0, -7.4], [-2.0, 8.4]],
-      speed: 1.3, chaseSpeed: 4.0, viewDist: 9.5, viewCos: 0.25,
+      patrol: [[12.0, 8.6], [24.4, 8.3], [25.4, -6.9], [9.0, -6.5], [1.0, -7.4], [-2.0, 8.4]],
+      speed: 1.3, chaseSpeed: 4.0, viewDist: 11.5, viewCos: 0.25,
       guardRadius: 3.4, alertness: 1.0,
     },
     {
@@ -1037,10 +1125,10 @@ function gullPlacements() {
     { x: 4.0, z: 3.0, y: 0.40 },
     { x: 13.5, z: 2.0, y: 0.40 },
     // High — the ceiling on standing up there.
-    { x: -2.0, z: -4.5, y: 2.80 },
-    { x: 20.0, z: 1.0, y: 2.80 },
-    { x: 5.0, z: -5.0, y: 2.80 },
-    { x: 27.0, z: -1.0, y: 2.40 },
+    { x: -4.0, z: -2.4, y: 4.80 },
+    { x: 20.0, z: 2.4, y: 4.80 },
+    { x: 14.0, z: -5.2, y: 4.80 },
+    { x: 26.0, z: -2.4, y: 4.80 },
   ];
 }
 

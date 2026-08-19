@@ -877,7 +877,7 @@ export const LEVELS = [
       ['the aft deck, round the pool', 0, [-13.5, 11.0], [-13.5, -2.0]],
       ['the aft deck, corner to corner', 0, [-22.5, -6.9], [-5.5, 10.7]],
       ['number one hatch, round the cargo', 0, [-7.7, -7.0], [8, 8.0]],
-      ['number two hatch, round the cargo', 0, [10, 8.5], [26, -5.0]],
+      ['number two hatch, round the cargo', 0, [10, 8.5], [25.5, -6.9]],
       ['the cross lane, past the mast', 0, [9, 10.5], [9, -6.5]],
       ['forward, round the flat rack', 0, [3, -7.0], [15, -7.0]],
     ],
